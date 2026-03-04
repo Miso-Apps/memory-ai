@@ -1,0 +1,437 @@
+const en = {
+  // Tab labels
+  tabs: {
+    home: 'Home',
+    library: 'Library',
+    insights: 'Insights',
+    chat: 'Ask AI',
+    profile: 'Profile',
+    capture: 'Capture',
+  },
+
+  // Profile screen
+  profile: {
+    title: 'Profile',
+    subtitle: 'Manage your settings',
+
+    // Recall toggle
+    recall: {
+      label: 'Allow proactive recall when relevant',
+      description: "I'll only appear when there's a real reason",
+      info: "I'll analyze what you save and only suggest recall when related events occur (e.g. you've saved many things on the same topic, or you ask about something you once saved).",
+    },
+
+    // Menu items
+    menu: {
+      account: {
+        title: 'Account',
+        subtitle: 'Email, password, delete account',
+      },
+      privacy: {
+        title: 'Privacy',
+        subtitle: 'Your data is always protected',
+      },
+      about: {
+        title: 'About',
+        subtitle: 'Version, terms, contact',
+      },
+    },
+
+    dismissed: 'Dismissed',
+    tagline: "I'm here to help you\nnot forget what's important",
+
+    // AI feature toggles
+    autoCategory: {
+      label: 'Auto-categorize',
+      description: 'Automatically organize memories into categories',
+    },
+    autoSummarize: {
+      label: 'Auto-summarize',
+      description: 'Generate AI summaries for new memories',
+    },
+    streamingResponses: {
+      label: 'Streaming responses',
+      description: 'Show AI replies word-by-word as they are generated',
+    },
+  },
+
+  // Account modal
+  account: {
+    title: 'Account',
+    email: 'Email',
+    changeEmail: 'Change email',
+    password: 'Password',
+    changePassword: 'Change password',
+    signOut: 'Sign out',
+    deleteWarning:
+      '⚠️ Deleting your account will permanently erase all your data. This action cannot be undone.',
+    deleteAccount: 'Delete account permanently',
+  },
+
+  // Privacy modal
+  privacy: {
+    title: 'Privacy',
+    dataProtected: 'Your data is protected',
+    dataProtectedDesc:
+      'All content you save is end-to-end encrypted. Only you can access your data.',
+    dataStorage: 'Data storage',
+    storagePoint1:
+      'Data is stored securely on cloud servers with AES-256 encryption',
+    storagePoint2:
+      'AI only processes data when necessary and does not store analysis history',
+    storagePoint3: 'You can export or delete all your data at any time',
+    downloadData: 'Download your data',
+    privacyPolicy: 'Privacy policy',
+    deleteDataWarning:
+      '⚠️ Deleting all data will permanently erase all content you have saved. Your account will be kept.',
+    deleteAllData: 'Delete all data',
+  },
+
+  // About modal
+  about: {
+    title: 'About',
+    version: 'Version 1.0.0',
+    description:
+      'AI companion helping you store and connect what matters, following the philosophy "Saving is central. Forgetting is normal."',
+    philosophy: 'Philosophy',
+    philosophyPoint1: 'Saving is central. Anything you find important.',
+    philosophyPoint2: "Forgetting is normal. I'll remember for you.",
+    philosophyPoint3: "Insights appear when there's a reason. No pressure.",
+    terms: 'Terms of Service',
+    privacyPolicy: 'Privacy Policy',
+    contactSupport: 'Contact support',
+    credits: 'Built with ❤️\n© 2025 AI Living Memory',
+  },
+
+  // Home screen
+  home: {
+    greetingMorning: 'Good morning',
+    greetingAfternoon: 'Good afternoon',
+    greetingEvening: 'Good evening',
+    subtitle: "Here's what you might want to remember",
+    noMemories: 'Nothing to recall yet',
+    noMemoriesSubtitle: 'Start saving your thoughts and we\'ll remind you when they\'re relevant',
+    createFirst: 'Create your first memory',
+    recallReason: 'Recall reason',
+    statsTotal: 'Total',
+    statsWeek: 'This week',
+    statsToday: 'Today',
+    unreviewed: 'Needs Your Attention',
+    unreviewedHint: 'Not yet opened',
+    recentRecall: 'For You',
+    revisit: 'Worth Revisiting',
+    onThisDay: 'On This Day',
+    groupUncategorized: 'Other',
+    // New home page strings
+    streak: '{{count}}-day streak',
+    streakStart: 'Start your streak!',
+    captureText: 'Text',
+    captureVoice: 'Voice',
+    captureLink: 'Link',
+    capturePhoto: 'Photo',
+    quickCapture: 'Quick Capture',
+    seeAll: 'See all',
+    focusTitle: "Today's Focus",
+    focusUnreviewed: 'You have {{count}} unreviewed memories. Take a moment to review them and keep your ideas fresh.',
+    focusRevisit: 'Rediscover {{count}} memories from the past. They might spark something new today.',
+    focusStreak: "You're on a {{count}}-day streak! Keep the momentum going — save something meaningful today.",
+    focusKeepGoing: 'Save a thought today to start building your memory streak.',
+    focusGreat: 'Great day! You\'ve already saved {{count}} memories today.',
+    connectedIdeas: 'Connected Ideas',
+    viewMemory: 'View',
+    memoriesCount: '{{count}} memories',
+  },
+
+  // Library screen
+  library: {
+    title: 'Library',
+    searchPlaceholder: 'Search memories…',
+    filterAll: 'All',
+    allCategories: 'All categories',
+    loading: 'Loading…',
+    empty: 'No memories found',
+    clearSearch: 'Clear search',
+  },
+
+  // System category names (used in library, memory badges)
+  categories: {
+    Work: 'Work',
+    Personal: 'Personal',
+    Ideas: 'Ideas',
+    Tasks: 'Tasks',
+    Research: 'Research',
+    Entertainment: 'Entertainment',
+    Health: 'Health',
+    Finance: 'Finance',
+    Travel: 'Travel',
+    Recipes: 'Recipes',
+  },
+
+  // Memory detail
+  memory: {
+    aiSummary: 'AI Summary',
+    aiDescription: 'AI Description',
+    yourNote: 'Your Note',
+    original: 'Original',
+    generateSummary: 'Generate AI summary',
+    generatingSummary: 'Generating…',
+    summaryFailed: 'Could not generate summary',
+    playAudio: 'Play',
+    pauseAudio: 'Pause',
+    noAudio: 'No audio available',
+    created: 'Created',
+    edit: 'Edit',
+    share: 'Share',
+    delete: 'Delete',
+    deleteTitle: 'Delete Memory',
+    deleteMessage: 'Are you sure you want to delete this memory? This action cannot be undone.',
+    transcription: 'Transcription',
+    copied: 'Copied to clipboard',
+    editTitle: 'Edit Memory',
+    savingEdit: 'Saving…',
+    saveEdit: 'Save',
+    noAudioAlert: 'No Audio',
+    noAudioMessage: 'This voice note has no audio file attached.',
+    playbackError: 'Playback Error',
+    playbackErrorMessage: 'Could not play audio. Please try again.',
+    notFound: 'Memory not found.',
+    goBack: 'Go back',
+    saveFailed: 'Failed to save changes. Please try again.',
+    copy: 'Copy',
+    dismiss: 'Dismiss',
+    openLink: 'Open ↗',
+    viaApp: '— via Memory AI',
+    contentPlaceholder: 'Memory content…',
+    typeText: 'Text',
+    typeVoice: 'Voice',
+    typeLink: 'Link',
+    typePhoto: 'Photo',
+    relatedMemories: 'Related Memories',
+    match: 'match',
+  },
+
+  // Capture screen
+  capture: {
+    title: 'New Memory',
+    cancel: 'Cancel',
+    save: 'Save',
+    saving: 'Saving…',
+    modeText: 'Text',
+    modeVoice: 'Voice',
+    modeLink: 'Link',
+    modePhoto: 'Image',
+    modeTextDesc: 'Note, thought, idea',
+    modeVoiceDesc: 'Record & transcribe',
+    modeLinkDesc: 'Save a URL',
+    modePhotoDesc: 'Upload & describe',
+    textPlaceholder: "What's on your mind?",
+    linkPlaceholder: 'Paste a URL…',
+    linkError: 'Please enter a valid URL starting with http:// or https://',
+    tapToRecord: 'Tap to start recording',
+    recording: 'Recording…',
+    processingAudio: 'Processing audio…',
+    transcriptionReady: 'Transcription ready ✓',
+    recordingSaved: 'Recording saved ✓',
+    tapToStop: 'Tap the button again to stop',
+    clipboardDetected: 'URL detected in clipboard',
+    quickSave: 'Save Link',
+    useLink: 'Paste',
+    linkSaved: 'Link saved!',
+    permissionRequired: 'Permission required',
+    microphonePermission: 'Microphone access is needed to record voice memos.',
+    photoLibraryPermission: 'Photo library access is needed to upload image memories.',
+    chooseImage: 'Choose Image',
+    chooseImageSub: 'Select a photo from your library',
+    analyzingImage: 'Analyzing image with AI…',
+    imageAnalysis: 'AI Analysis',
+    imageAnalysisFailed: 'Image saved — AI analysis was unavailable',
+    imageNote: 'Image memory',
+    photoNotePlaceholder: 'Add a note about this image… (optional)',
+    changeImage: 'Change Image',
+    recordingError: 'Recording error',
+    recordingErrorMessage: 'Could not start recording. Please try again.',
+    voiceNote: 'Voice note',
+    error: 'Error',
+    saveFailed: 'Failed to save memory. Please try again.',
+    linkSaveFailed: 'Failed to save link.',
+    photoSaved: 'Image saved ✓',
+    saved: 'Saved!',
+  },
+
+  // Language switcher
+  language: {
+    title: 'Language',
+    en: 'English',
+    vi: 'Vietnamese',
+  },
+
+  // Appearance / theme
+  appearance: {
+    title: 'Appearance',
+    auto: 'System',
+    autoDesc: 'Follow your device settings',
+    light: 'Light',
+    lightDesc: 'Always use light theme',
+    dark: 'Dark',
+    darkDesc: 'Always use dark theme',
+  },
+
+  // Dismissed screen
+  dismissed: {
+    title: 'Dismissed',
+    empty: 'Nothing dismissed',
+    emptySubtitle: 'Memories you dismiss will appear here',
+    restore: 'Restore',
+    restoreTitle: 'Restore Memory',
+    restoreMessage: 'This memory will be moved back to your library.',
+    restoreFailed: 'Failed to restore memory',
+    permanentTitle: 'Delete Permanently',
+    permanentMessage: 'This memory will be gone forever. This cannot be undone.',
+    permanentDelete: 'Delete Forever',
+    deleteFailed: 'Failed to delete memory',
+  },
+
+  // Common
+  common: {
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    close: 'Close',
+    save: 'Save',
+    delete: 'Delete',
+    signOut: 'Sign out',
+    error: 'Error',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    justNow: 'Just now',
+    minutesAgo: '{{count}}m ago',
+    hoursAgo: '{{count}}h ago',
+    daysAgo: '{{count}}d ago',
+    weeksAgo: '{{count}}w ago',
+  },
+
+  // Alerts
+  alerts: {
+    signOutTitle: 'Sign out',
+    signOutMessage: 'Are you sure you want to sign out?',
+    deleteAccountTitle: 'Delete account',
+    deleteAccountMessage:
+      'Are you sure you want to permanently delete your account? This cannot be undone.',
+    deleteDataTitle: 'Delete all data',
+    deleteDataMessage:
+      'Are you sure you want to permanently delete all your data? This cannot be undone.',
+  },
+
+  // Login screen
+  login: {
+    title: 'Memory AI',
+    subtitle: 'Your personal memory companion',
+    signIn: 'Sign in',
+    createAccount: 'Create account',
+    namePlaceholder: 'Name (optional)',
+    emailPlaceholder: 'Email',
+    passwordPlaceholder: 'Password',
+    errorTitle: 'Error',
+    emailRequired: 'Email and password are required',
+    passwordMinLength: 'Password must be at least 8 characters',
+    loginFailed: 'Login Failed',
+    registerFailed: 'Registration Failed',
+    genericError: 'Something went wrong. Please try again.',
+    continueWithGoogle: 'Continue with Google',
+    orDivider: 'or',
+  },
+
+  // Navigation titles
+  nav: {
+    memoryDetail: 'Memory Detail',
+    quickCapture: 'Quick Capture',
+    dismissed: 'Dismissed',
+  },
+
+  // Archive screen
+  archive: {
+    title: 'Archive',
+    subtitle: 'Search and browse memories',
+    searchPlaceholder: 'Search in memories…',
+    empty: 'Start saving memories to see them here',
+  },
+
+  // Insights screen
+  insights: {
+    title: 'Insights',
+    subtitle: 'Patterns & trends from your memories',
+    loading: 'Analyzing your memories…',
+    empty: 'No insights yet',
+    emptySubtitle: 'Start capturing memories and we\'ll show you patterns and trends over time.',
+    startCapturing: 'Start Capturing',
+
+    // Periods
+    period7: '7 days',
+    period30: '30 days',
+    period90: '3 months',
+
+    // Weekly recap
+    weeklyRecap: 'Weekly Recap',
+    generatingInsights: '✨ Generating insights…',
+    noRecap: 'Nothing to recap this week. Start saving to get weekly insights!',
+    memories: 'Memories',
+    topics: 'Topics',
+    types: 'Types',
+    highlights: 'Highlights',
+
+    // Overview
+    overview: 'Overview',
+    totalMemories: 'Total',
+    activeDays: 'Active Days',
+    avgPerDay: 'Avg/Day',
+    longestStreak: 'Best Streak',
+
+    // Activity
+    activity: 'Activity',
+    less: 'Less',
+    more: 'More',
+
+    // Breakdowns
+    byType: 'By Type',
+    byCategory: 'By Category',
+
+    // Hourly
+    whenYouCapture: 'When You Capture',
+    peakHour: 'Peak hour',
+
+    // Streaks & Consistency
+    streakConsistency: 'Streaks & Consistency',
+    consistency: 'Consistency',
+    totalDays: 'Total Days',
+    consistencyExcellent: 'Outstanding! You\'re building an incredible memory archive. Keep it up! 🌟',
+    consistencyGood: 'Great consistency! You\'re actively capturing what matters to you.',
+    consistencyBuilding: 'You\'re building a good habit. Try capturing at least one memory each day!',
+    consistencyStart: 'Every journey starts with a single step. Capture something today!',
+
+    // Growth
+    vsPrevious: 'vs previous period',
+  },
+
+  // AI Chat screen
+  chat: {
+    title: 'Ask AI',
+    subtitle: 'Chat with your memories',
+    placeholder: 'Ask about your memories…',
+    welcomeTitle: 'Ask me anything',
+    welcomeSubtitle: 'I can search through your memories and answer questions about things you\'ve saved.',
+    newChat: 'New chat',
+    error: 'Sorry, I couldn\'t process that. Please try again.',
+    fromMemories: 'From {{count}} memories',
+    defaultSuggestion1: 'What did I save this week?',
+    defaultSuggestion2: 'Summarize my recent notes',
+    defaultSuggestion3: 'What are the main themes in my memories?',
+  },
+
+  // Recall screen
+  recall: {
+    title: 'Recall',
+    subtitle: 'What you saved may be useful again',
+    empty: 'No content to recall right now.',
+  },
+} as const;
+
+export default en;

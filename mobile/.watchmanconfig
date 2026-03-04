@@ -1,0 +1,9 @@
+{
+  "ignore_dirs": [
+    ".expo",
+    ".git",
+    "ios/Pods",
+    "android/.gradle",
+    "android/app/build"
+  ]
+}

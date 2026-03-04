@@ -1,18 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, text, func
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 import uuid
+import json
+import logging
 
 from app.database import get_db
 from app.models.memory import Memory
+from app.models.category import Category
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.api.preferences import get_or_create_preferences
 from app.services import ai_service
 
 router = APIRouter()
+log = logging.getLogger(__name__)
 
 _VALID_LANGS = {"en", "vi"}
 
@@ -97,6 +102,11 @@ async def semantic_search(
             "audio_duration": m.audio_duration,
             "image_url": m.image_url,
             "ai_summary": m.ai_summary,
+            "metadata": m.extra_metadata,
+            "is_dismissed": m.is_deleted,
+            "category_id": str(m.category_id) if m.category_id else None,
+            "category_confidence": m.category_confidence,
+            "last_viewed_at": m.last_viewed_at.isoformat() if m.last_viewed_at else None,
             "created_at": m.created_at.isoformat() if m.created_at else None,
             "updated_at": m.updated_at.isoformat() if m.updated_at else None,
         }
@@ -145,18 +155,36 @@ async def semantic_search(
             log.warning("Vector search failed, falling back to keyword: %s", exc)
 
     # ── 2. Keyword fallback (always runs to catch memories without embeddings) ─
-    search_pattern = f"%{q}%"
+    # Split query into words for better matching of multi-word queries
+    words = [w.strip() for w in q.split() if w.strip()]
+    if len(words) > 1:
+        # Each word must appear in at least one searchable field
+        word_conditions = []
+        for word in words:
+            wp = f"%{word}%"
+            word_conditions.append(
+                or_(
+                    Memory.content.ilike(wp),
+                    Memory.transcription.ilike(wp),
+                    Memory.ai_summary.ilike(wp),
+                )
+            )
+        keyword_filter = and_(*word_conditions)
+    else:
+        search_pattern = f"%{q}%"
+        keyword_filter = or_(
+            Memory.content.ilike(search_pattern),
+            Memory.transcription.ilike(search_pattern),
+            Memory.ai_summary.ilike(search_pattern),
+        )
+
     keyword_stmt = (
         select(Memory)
         .where(
             and_(
                 Memory.user_id == current_user.id,
                 Memory.is_deleted == False,  # noqa: E712
-                or_(
-                    Memory.content.ilike(search_pattern),
-                    Memory.transcription.ilike(search_pattern),
-                    Memory.ai_summary.ilike(search_pattern),
-                ),
+                keyword_filter,
             )
         )
         .order_by(Memory.created_at.desc())
@@ -168,6 +196,35 @@ async def semantic_search(
         if mid not in seen_ids:
             seen_ids.add(mid)
             results.append(_mem_to_dict(m))
+
+    # ── 3. Enrich results with category info ───────────────────────────────
+    category_ids = set()
+    for r in results:
+        cid = r.get("category_id")
+        if cid:
+            try:
+                category_ids.add(uuid.UUID(cid))
+            except (ValueError, TypeError):
+                pass
+
+    category_map: dict[str, dict] = {}
+    if category_ids:
+        cat_result = await db.execute(
+            select(Category).where(Category.id.in_(category_ids))
+        )
+        for cat in cat_result.scalars().all():
+            category_map[str(cat.id)] = {
+                "category_name": cat.name,
+                "category_icon": cat.icon,
+                "category_color": cat.color,
+            }
+
+    for r in results:
+        cid = r.get("category_id")
+        cat_info = category_map.get(cid, {}) if cid else {}
+        r["category_name"] = cat_info.get("category_name")
+        r["category_icon"] = cat_info.get("category_icon")
+        r["category_color"] = cat_info.get("category_color")
 
     return {"query": q, "results": results[:limit], "total": len(results[:limit])}
 
@@ -338,3 +395,326 @@ async def backfill_embeddings(
         "failed": failed,
         "remaining": remaining,
     }
+
+
+# ─── AI Chat (RAG) — Ask questions about your memories ────────────────────────
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+    history: Optional[List[ChatMessage]] = None
+    stream: bool = False
+
+
+async def _retrieve_relevant_memories(
+    db: AsyncSession, user_id: uuid.UUID, query: str, limit: int = 10
+) -> list[dict]:
+    """Retrieve the most relevant memories for RAG context using hybrid search."""
+    results: list[dict] = []
+    seen_ids: set[str] = set()
+
+    # Strategy 1: Embedding similarity search
+    query_embedding = await ai_service.generate_embedding(query)
+    if query_embedding is not None:
+        try:
+            stmt = (
+                select(
+                    Memory,
+                    Memory.embedding.cosine_distance(query_embedding).label("distance"),
+                )
+                .where(
+                    and_(
+                        Memory.user_id == user_id,
+                        Memory.is_deleted == False,  # noqa: E712
+                        Memory.embedding != None,    # noqa: E711
+                    )
+                )
+                .order_by(text("distance"))
+                .limit(limit)
+            )
+            vector_results = await db.execute(stmt)
+            for row in vector_results.all():
+                mem = row[0]
+                distance = float(row[1])
+                similarity = max(0.0, 1.0 - distance)
+                if similarity > 0.15:
+                    mid = str(mem.id)
+                    if mid not in seen_ids:
+                        seen_ids.add(mid)
+                        # Get category
+                        cat_name = None
+                        if mem.category_id:
+                            cat_r = await db.execute(
+                                select(Category).where(Category.id == mem.category_id)
+                            )
+                            cat = cat_r.scalar_one_or_none()
+                            if cat:
+                                cat_name = cat.name
+                        results.append({
+                            "id": mid,
+                            "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
+                            "content": mem.content or "",
+                            "summary": mem.ai_summary or "",
+                            "transcription": mem.transcription or "",
+                            "category": cat_name,
+                            "created_at": mem.created_at.isoformat() if mem.created_at else "",
+                            "similarity": round(similarity, 3),
+                        })
+        except Exception as exc:
+            log.warning("RAG vector search failed: %s", exc)
+
+    # Strategy 2: Keyword fallback
+    if len(results) < 3:
+        pattern = f"%{query}%"
+        kw_stmt = (
+            select(Memory)
+            .where(
+                and_(
+                    Memory.user_id == user_id,
+                    Memory.is_deleted == False,  # noqa: E712
+                    or_(
+                        Memory.content.ilike(pattern),
+                        Memory.transcription.ilike(pattern),
+                        Memory.ai_summary.ilike(pattern),
+                    ),
+                )
+            )
+            .order_by(Memory.created_at.desc())
+            .limit(5)
+        )
+        kw_results = await db.execute(kw_stmt)
+        for mem in kw_results.scalars().all():
+            mid = str(mem.id)
+            if mid not in seen_ids:
+                seen_ids.add(mid)
+                cat_name = None
+                if mem.category_id:
+                    cat_r = await db.execute(
+                        select(Category).where(Category.id == mem.category_id)
+                    )
+                    cat = cat_r.scalar_one_or_none()
+                    if cat:
+                        cat_name = cat.name
+                results.append({
+                    "id": mid,
+                    "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
+                    "content": mem.content or "",
+                    "summary": mem.ai_summary or "",
+                    "transcription": mem.transcription or "",
+                    "category": cat_name,
+                    "created_at": mem.created_at.isoformat() if mem.created_at else "",
+                    "similarity": None,
+                })
+
+    return results[:limit]
+
+
+def _build_rag_context(memories: list[dict]) -> str:
+    """Format retrieved memories into context for the LLM."""
+    if not memories:
+        return "No relevant memories found."
+
+    parts = []
+    for i, m in enumerate(memories, 1):
+        content = m["summary"] or m["transcription"] or m["content"]
+        # Truncate long content
+        if len(content) > 500:
+            content = content[:500] + "..."
+        date_str = m["created_at"][:10] if m["created_at"] else "unknown date"
+        cat_str = f" [{m['category']}]" if m.get("category") else ""
+        type_str = m["type"]
+        parts.append(f"Memory #{i} ({type_str}, {date_str}{cat_str}):\n{content}")
+
+    return "\n\n".join(parts)
+
+
+@router.post("/chat", response_model=dict)
+async def chat_with_memories(
+    body: ChatRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    AI Chat with your memories (RAG).
+
+    Retrieves relevant memories based on the user's question, then uses GPT
+    to generate an answer grounded in the user's own data. Returns the
+    answer along with the source memory IDs used for context.
+
+    Supports conversation history for multi-turn chats.
+    """
+    from openai import AsyncOpenAI
+    from app.config import settings
+
+    if not ai_service._has_valid_key():
+        raise HTTPException(
+            status_code=503,
+            detail="AI features require an OpenAI API key."
+        )
+
+    user_language = await _get_user_language(request, db, current_user.id)
+
+    # Count total memories for context
+    total_q = await db.execute(
+        select(func.count()).select_from(Memory).where(
+            and_(Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+        )
+    )
+    total_memories = total_q.scalar() or 0
+
+    # Retrieve relevant memories
+    relevant = await _retrieve_relevant_memories(db, current_user.id, body.message, limit=8)
+    context = _build_rag_context(relevant)
+
+    # Build conversation
+    lang_inst = ai_service._language_instruction(user_language)
+    system_prompt = (
+        f"You are a personal memory assistant. The user has {total_memories} saved memories "
+        f"(text notes, voice memos, links, photos). They are asking questions about their "
+        f"own life and saved information.\n\n"
+        f"RELEVANT MEMORIES:\n{context}\n\n"
+        f"INSTRUCTIONS:\n"
+        f"- Answer the user's question using ONLY the memories provided above.\n"
+        f"- If the memories contain the answer, be specific and reference dates/details.\n"
+        f"- If the memories don't contain enough information, say so honestly.\n"
+        f"- Be conversational, warm, and helpful — you're their personal assistant.\n"
+        f"- Keep answers concise but informative (2-4 sentences usually).\n"
+        f"- When referencing memories, mention approximate dates when available."
+        f"{lang_inst}"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+
+    # Add conversation history (last 10 turns)
+    if body.history:
+        for msg in body.history[-10:]:
+            if msg.role in ("user", "assistant"):
+                messages.append({"role": msg.role, "content": msg.content})
+
+    messages.append({"role": "user", "content": body.message})
+
+    # Stream or non-stream response
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+
+    if body.stream:
+        async def generate():
+            try:
+                stream = await client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=800,
+                    stream=True,
+                )
+                # Send source memories first
+                yield f"data: {json.dumps({'type': 'sources', 'sources': [{'id': m['id'], 'type': m['type'], 'content': (m['summary'] or m['content'])[:100], 'created_at': m['created_at'], 'similarity': m.get('similarity')} for m in relevant]})}\n\n"
+
+                async for chunk in stream:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        yield f"data: {json.dumps({'type': 'token', 'content': chunk.choices[0].delta.content})}\n\n"
+
+                yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            except Exception as exc:
+                log.error("Chat stream error: %s", exc)
+                yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
+
+        return StreamingResponse(generate(), media_type="text/event-stream")
+
+    # Non-streaming
+    try:
+        completion = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=800,
+        )
+        answer = completion.choices[0].message.content or ""
+    except Exception as exc:
+        log.error("Chat completion failed: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to generate response")
+
+    return {
+        "answer": answer,
+        "sources": [
+            {
+                "id": m["id"],
+                "type": m["type"],
+                "content": (m["summary"] or m["content"])[:100],
+                "created_at": m["created_at"],
+                "similarity": m.get("similarity"),
+            }
+            for m in relevant
+        ],
+        "total_memories": total_memories,
+    }
+
+
+@router.post("/chat/suggestions", response_model=dict)
+async def get_chat_suggestions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Generate smart conversation starters based on user's memory patterns.
+
+    Returns contextual questions the user might want to ask about their memories.
+    """
+    from datetime import datetime, timezone, timedelta
+
+    now = datetime.now(timezone.utc)
+    base = and_(Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+
+    suggestions = []
+
+    # Get recent categories
+    cat_q = await db.execute(
+        select(Category.name)
+        .join(Memory, Memory.category_id == Category.id)
+        .where(and_(base, Memory.created_at >= now - timedelta(days=30)))
+        .group_by(Category.name)
+        .order_by(func.count().desc())
+        .limit(3)
+    )
+    top_cats = [r[0] for r in cat_q.all()]
+
+    # Get memory count
+    count_q = await db.execute(select(func.count()).select_from(Memory).where(base))
+    total = count_q.scalar() or 0
+
+    # Get type distribution
+    type_q = await db.execute(
+        select(Memory.type, func.count().label("cnt"))
+        .where(base)
+        .group_by(Memory.type)
+        .order_by(text("cnt DESC"))
+    )
+    types = {r[0].value if hasattr(r[0], "value") else str(r[0]): r[1] for r in type_q.all()}
+
+    # Build contextual suggestions
+    if total == 0:
+        suggestions = [
+            "What can you help me with?",
+            "How does memory search work?",
+        ]
+    else:
+        suggestions.append("What did I save this week?")
+
+        if top_cats:
+            suggestions.append(f"Summarize my {top_cats[0].lower()} memories")
+            if len(top_cats) > 1:
+                suggestions.append(f"What patterns do you see in my {top_cats[1].lower()} notes?")
+
+        if types.get("link", 0) > 2:
+            suggestions.append("What articles have I saved recently?")
+        if types.get("voice", 0) > 2:
+            suggestions.append("What have I been talking about in my voice notes?")
+        if total > 20:
+            suggestions.append("What are the main themes in my memories?")
+            suggestions.append("What was I focused on last month?")
+
+    return {"suggestions": suggestions[:5]}

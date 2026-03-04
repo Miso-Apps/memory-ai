@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Memory AI",
+    "slug": "memory-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "scheme": "memoryai",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#121212"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.memoryai.app",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t"
+            ]
+          }
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#121212"
+      },
+      "package": "com.memoryai.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-localization",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Memory AI to access your camera to capture memories."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Memory AI to access your microphone to record voice memories."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Memory AI to access your photo library to save image memories."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "googleClientId": "382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t.apps.googleusercontent.com",
+      "googleReversedClientId": "com.googleusercontent.apps.382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t"
+    }
+  }
+}

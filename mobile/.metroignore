@@ -1,0 +1,6 @@
+.expo/
+.git/
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/

@@ -40,6 +40,7 @@ class UserPreferences(Base):
     # AI features
     ai_recall_enabled = Column(Boolean, default=True, server_default='true')
     ai_suggestions_enabled = Column(Boolean, default=True, server_default='true')
+    streaming_responses = Column(Boolean, default=True, server_default='true')
     
     # Privacy
     save_location = Column(Boolean, default=False, server_default='false')

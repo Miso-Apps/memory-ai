@@ -1,0 +1,38 @@
+{
+  "name": "memory-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Memory AI - Your personal memory companion",
+  "scripts": {
+    "setup": "./scripts/setup.sh",
+    "dev": "./scripts/dev.sh",
+    "ios": "npm run mobile:ios",
+    "android": "npm run mobile:android",
+    "mobile": "cd mobile && npm start",
+    "mobile:ios": "cd mobile && npm run ios",
+    "mobile:android": "cd mobile && npm run android",
+    "web": "cd web && npm run dev",
+    "backend": "cd backend && source venv/bin/activate && uvicorn app.main:app --reload",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "clean": "rm -rf mobile/node_modules web/node_modules node_modules && docker-compose down -v"
+  },
+  "keywords": [
+    "memory",
+    "ai",
+    "personal-assistant",
+    "note-taking",
+    "voice-recording"
+  ],
+  "author": "Your Name",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/memory-ai"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

@@ -206,6 +206,7 @@ class UserPreferencesUpdate(BaseModel):
     auto_categorize: Optional[bool] = None
     ai_recall_enabled: Optional[bool] = None
     ai_suggestions_enabled: Optional[bool] = None
+    streaming_responses: Optional[bool] = None
     save_location: Optional[bool] = None
     analytics_enabled: Optional[bool] = None
     daily_digest: Optional[bool] = None
@@ -228,6 +229,7 @@ class UserPreferencesResponse(BaseModel):
     auto_categorize: bool = True
     ai_recall_enabled: bool = True
     ai_suggestions_enabled: bool = True
+    streaming_responses: bool = True
     save_location: bool = False
     analytics_enabled: bool = True
     daily_digest: bool = True

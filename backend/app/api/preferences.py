@@ -26,6 +26,7 @@ def _to_dict(p: UserPreferences) -> dict:
         "auto_categorize": p.auto_categorize,
         "ai_recall_enabled": p.ai_recall_enabled,
         "ai_suggestions_enabled": p.ai_suggestions_enabled,
+        "streaming_responses": p.streaming_responses if p.streaming_responses is not None else True,
         "save_location": p.save_location,
         "analytics_enabled": p.analytics_enabled,
         "daily_digest": p.daily_digest,
@@ -109,6 +110,9 @@ async def update_preferences(
     if update.ai_suggestions_enabled is not None:
         prefs.ai_suggestions_enabled = update.ai_suggestions_enabled
     
+    if update.streaming_responses is not None:
+        prefs.streaming_responses = update.streaming_responses
+    
     if update.save_location is not None:
         prefs.save_location = update.save_location
     
@@ -162,6 +166,7 @@ async def reset_preferences(
         prefs.auto_categorize = True
         prefs.ai_recall_enabled = True
         prefs.ai_suggestions_enabled = True
+        prefs.streaming_responses = True
         prefs.save_location = False
         prefs.analytics_enabled = True
         prefs.daily_digest = True

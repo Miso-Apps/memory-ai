@@ -324,6 +324,7 @@ async def get_reminders(
     revisit = [_to_dict(m) for m in revisit_q.scalars().all()]
 
     # 3. On this day — same day/month in previous years or months
+    #    Enhanced: ±1 day window, enriched with time_ago context
     today_day = now.day
     today_month = now.month
     on_this_day_q = await db.execute(
@@ -331,15 +332,29 @@ async def get_reminders(
         .where(
             and_(
                 base,
-                func.extract("day", Memory.created_at) == today_day,
+                func.extract("day", Memory.created_at).between(today_day - 1, today_day + 1),
                 func.extract("month", Memory.created_at) == today_month,
                 Memory.created_at < now - timedelta(days=28),  # at least 4 weeks old
             )
         )
         .order_by(Memory.created_at.desc())
-        .limit(5)
+        .limit(8)
     )
-    on_this_day = [_to_dict(m) for m in on_this_day_q.scalars().all()]
+    on_this_day = []
+    for m in on_this_day_q.scalars().all():
+        d = _to_dict(m)
+        # Calculate how long ago
+        if m.created_at:
+            delta = now - m.created_at
+            months_ago = int(delta.days / 30)
+            years_ago = int(delta.days / 365)
+            if years_ago >= 1:
+                d["time_ago"] = f"{years_ago} year{'s' if years_ago > 1 else ''} ago"
+                d["time_ago_months"] = months_ago
+            else:
+                d["time_ago"] = f"{months_ago} month{'s' if months_ago > 1 else ''} ago"
+                d["time_ago_months"] = months_ago
+        on_this_day.append(d)
 
     return {
         "unreviewed": unreviewed,
