@@ -161,7 +161,7 @@ export default function ProfileScreen() {
     useCallback(() => {
       memoriesApi.listDismissed({ limit: 100 })
         .then((items) => setDismissedCount(items.length))
-        .catch(() => {});
+        .catch(() => { });
     }, [])
   );
 
@@ -183,14 +183,14 @@ export default function ProfileScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(t('alerts.deleteAccountTitle'), t('alerts.deleteAccountMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => {} },
+      { text: t('common.delete'), style: 'destructive', onPress: () => { } },
     ]);
   };
 
   const handleDeleteAllData = () => {
     Alert.alert(t('alerts.deleteDataTitle'), t('alerts.deleteDataMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => {} },
+      { text: t('common.delete'), style: 'destructive', onPress: () => { } },
     ]);
   };
 
@@ -230,7 +230,7 @@ export default function ProfileScreen() {
               <Text style={[s.infoText, { color: colors.textTertiary }]}>{t('profile.recall.info')}</Text>
             </View>
           )}
-          
+
           {/* Auto-categorization toggle */}
           <View style={[s.recallRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
             <View style={[s.recallIcon, { backgroundColor: 'rgba(16,185,129,0.1)' }]}>
@@ -247,7 +247,7 @@ export default function ProfileScreen() {
               thumbColor={preferences?.auto_categorize ? '#10B981' : colors.cardBg}
             />
           </View>
-          
+
           {/* Auto-summarize toggle */}
           <View style={[s.recallRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
             <View style={[s.recallIcon, { backgroundColor: 'rgba(245,158,11,0.1)' }]}>
@@ -551,7 +551,7 @@ const m = StyleSheet.create({
   credits: { fontSize: 12, lineHeight: 18, textAlign: 'center' },
   bottomPad: { height: 40 },
   langOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, marginBottom: 10, borderWidth: 1.5, borderColor: 'transparent' },
-  langOptionActive: { },
+  langOptionActive: {},
   langLabel: { fontSize: 15 },
   langLabelActive: { fontWeight: '600' },
   langCheck: { width: 10, height: 10, borderRadius: 5 },

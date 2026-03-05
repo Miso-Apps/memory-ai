@@ -18,7 +18,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
+import { memoriesApi } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 
 interface Memory {
@@ -100,7 +100,7 @@ function AudioPlayer({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      soundRef.current?.unloadAsync().catch(() => {});
+      soundRef.current?.unloadAsync().catch(() => { });
     };
   }, []);
 
@@ -237,106 +237,7 @@ function EditPanel({
   );
 }
 
-// ─── Related Memories ─────────────────────────────────────────────────────
-function RelatedMemories({ memoryId }: { memoryId: string }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const [related, setRelated] = useState<RelatedMemory[]>([]);
-  const [loadingRelated, setLoadingRelated] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await insightsApi.getRelated(memoryId, 4);
-        if (!cancelled) setRelated(res.related);
-      } catch {
-        // no-op
-      } finally {
-        if (!cancelled) setLoadingRelated(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [memoryId]);
-
-  if (loadingRelated || related.length === 0) return null;
-
-  return (
-    <View style={relStyles.container}>
-      <Text style={[relStyles.title, { color: colors.textMuted }]}>
-        🔗 {t('memory.relatedMemories')}
-      </Text>
-      {related.map((r) => (
-        <TouchableOpacity
-          key={r.id}
-          style={[relStyles.card, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
-          onPress={() => router.push(`/memory/${r.id}`)}
-          activeOpacity={0.7}
-        >
-          <View style={relStyles.cardRow}>
-            <View style={[relStyles.iconWrap, {
-              backgroundColor: r.type === 'voice' ? 'rgba(16,185,129,0.1)' : r.type === 'link' ? 'rgba(245,158,11,0.1)' : r.type === 'photo' ? 'rgba(236,72,153,0.1)' : 'rgba(99,102,241,0.1)',
-            }]}>
-              <Text style={relStyles.icon}>
-                {r.type === 'voice' ? '🎤' : r.type === 'link' ? '🔗' : r.type === 'photo' ? '📷' : '📝'}
-              </Text>
-            </View>
-            <View style={relStyles.cardContent}>
-              <Text style={[relStyles.cardText, { color: colors.textPrimary }]} numberOfLines={2}>
-                {r.content}
-              </Text>
-              <View style={relStyles.cardMeta}>
-                {r.similarity != null && (
-                  <Text style={[relStyles.similarity, { color: colors.accent }]}>
-                    {Math.round(r.similarity * 100)}% {t('memory.match')}
-                  </Text>
-                )}
-                {r.category_name && (
-                  <Text style={[relStyles.category, { color: r.category_color || colors.textMuted }]}>
-                    {r.category_icon} {r.category_name}
-                  </Text>
-                )}
-              </View>
-            </View>
-            <Text style={[relStyles.chevron, { color: colors.border }]}>›</Text>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
-const relStyles = StyleSheet.create({
-  container: { marginTop: 8, marginBottom: 16 },
-  title: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-  card: {
-    borderRadius: 12,
-    borderWidth: 1,
-    padding: 12,
-    marginBottom: 6,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: { fontSize: 14 },
-  cardContent: { flex: 1 },
-  cardText: { fontSize: 13, lineHeight: 19, marginBottom: 3 },
-  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  similarity: { fontSize: 11, fontWeight: '600' },
-  category: { fontSize: 11, fontWeight: '500' },
-  chevron: { fontSize: 18 },
-});
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function MemoryDetailScreen() {
@@ -373,7 +274,7 @@ export default function MemoryDetailScreen() {
         updatedAt: new Date(response.updated_at),
       });
       // Mark as viewed
-      memoriesApi.markViewed(response.id).catch(() => {});
+      memoriesApi.markViewed(response.id).catch(() => { });
     } catch {
       // no-op
     } finally {
@@ -390,7 +291,7 @@ export default function MemoryDetailScreen() {
         text: t('memory.dismiss'),
         style: 'destructive',
         onPress: async () => {
-          try { await memoriesApi.delete(id!); } catch {}
+          try { await memoriesApi.delete(id!); } catch { }
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           router.back();
         },
@@ -406,7 +307,7 @@ export default function MemoryDetailScreen() {
           ? `${memory.aiSummary}\n\n${t('memory.viaApp')}`
           : `${memory.content}\n\n${t('memory.viaApp')}`,
       });
-    } catch {}
+    } catch { }
   };
 
   const handleCopy = async () => {
@@ -539,7 +440,7 @@ export default function MemoryDetailScreen() {
                 dismissButtonStyle: 'close',
                 presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
                 controlsColor: '#6366F1',
-              }).catch(() => {})}
+              }).catch(() => { })}
               activeOpacity={0.7}
             >
               <View style={[styles.linkCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
@@ -574,9 +475,6 @@ export default function MemoryDetailScreen() {
             <Text style={[styles.transcriptionText, { color: colors.textSecondary }]}>{memory.transcription}</Text>
           </View>
         )}
-
-        {/* Related memories */}
-        {memory && <RelatedMemories memoryId={memory.id} />}
 
         {/* Date info */}
         <View style={[styles.dateSection, { borderTopColor: colors.border }]}>

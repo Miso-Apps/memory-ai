@@ -22,12 +22,14 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       loadStoredAuth(),
       loadSettings(),
     ]).then(async () => {
-      // Once auth is resolved, load server preferences so the user's language
-      // (and other settings) are applied even before they visit the Profile screen
-      try {
-        await loadPreferences();
-      } catch {
-        // non-blocking — offline or not authenticated yet
+      // Only load server preferences when we have a valid authenticated session.
+      // Calling it unauthenticated causes a 403 → refresh attempt → spurious logout.
+      if (useAuthStore.getState().isAuthenticated) {
+        try {
+          await loadPreferences();
+        } catch {
+          // non-blocking — offline or token unexpectedly expired
+        }
       }
     }).finally(() => setChecking(false));
   }, []);
@@ -73,7 +75,7 @@ function ThemedStack() {
         name="capture"
         options={{
           headerShown: false,
-          presentation: 'modal',
+          presentation: 'card',
           title: 'Quick Capture',
           contentStyle: { backgroundColor: colors.bg },
         }}

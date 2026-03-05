@@ -1,8 +1,8 @@
 const vi = {
   // Tab labels
   tabs: {
-    home: 'Trang chủ',
-    library: 'Thư viện',
+    home: 'Home',
+    library: 'Ký ức',
     insights: 'Thống kê',
     chat: 'Hỏi AI',
     profile: 'Cá nhân',
@@ -139,6 +139,8 @@ const vi = {
     connectedIdeas: 'Ý tưởng liên quan',
     viewMemory: 'Xem',
     memoriesCount: '{{count}} ký ức',
+    insightStreakSub: '🔥 Chuỗi {{streak}} ngày · {{count}} tuần này',
+    insightWeekSub: '{{count}} ký ức tuần này',
   },
 
   // Library screen
@@ -150,6 +152,12 @@ const vi = {
     loading: 'Đang tải…',
     empty: 'Không tìm thấy ký ức nào',
     clearSearch: 'Xóa tìm kiếm',
+    searching: 'Đang tìm…',
+    searchResultCount: 'Tìm thấy {{count}} kết quả',
+    searchResultCount_plural: 'Tìm thấy {{count}} kết quả',
+    aiInsight: 'Gợi ý AI',
+    filterCategory: 'Lọc theo danh mục',
+    pressEnterToSearch: 'Nhấn return để tìm kiếm',
   },
 
   // System category names (used in library, memory badges)

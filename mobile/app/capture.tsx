@@ -27,9 +27,9 @@ import { useSettingsStore } from '../store/settingsStore';
 type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
 
 const modeConfig: Record<CaptureMode, { icon: string; keyboardType: 'default' | 'url' }> = {
-  text:  { icon: '📝', keyboardType: 'default' },
+  text: { icon: '📝', keyboardType: 'default' },
   voice: { icon: '🎤', keyboardType: 'default' },
-  link:  { icon: '🔗', keyboardType: 'url' },
+  link: { icon: '🔗', keyboardType: 'url' },
   photo: { icon: '📷', keyboardType: 'default' },
 };
 
@@ -100,7 +100,7 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => {});
+        recordingRef.current.stopAndUnloadAsync().catch(() => { });
       }
     };
   }, []);
@@ -466,7 +466,7 @@ export default function CaptureScreen() {
           setClipboardUrl(clip.trim());
           Animated.timing(clipOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
         }
-      } catch {}
+      } catch { }
     })();
   }, []);
 
@@ -560,8 +560,8 @@ export default function CaptureScreen() {
     mode === 'voice'
       ? isVoiceReady
       : mode === 'photo'
-      ? isImageReady
-      : content.trim().length > 0;
+        ? isImageReady
+        : content.trim().length > 0;
   const config = modeConfig[mode];
 
   return (

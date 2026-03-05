@@ -252,6 +252,7 @@ export default function ChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const { preferences } = useSettingsStore();
+  const { language } = useSettingsStore();
 
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -268,6 +269,13 @@ export default function ChatScreen() {
       }
     }, [])
   );
+
+  // Reload suggestions when language changes (so they show in the right language)
+  useEffect(() => {
+    if (messages.length === 0) {
+      loadSuggestions();
+    }
+  }, [language]);
 
   const loadSuggestions = async () => {
     try {

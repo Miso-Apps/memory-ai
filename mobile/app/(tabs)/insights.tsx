@@ -214,12 +214,12 @@ function ActivityHeatmap({
                   intensity === 0
                     ? colors.inputBg
                     : intensity < 0.3
-                    ? colors.accentSubtle
-                    : intensity < 0.6
-                    ? colors.accentLight
-                    : intensity < 0.85
-                    ? colors.accentMid
-                    : colors.accent,
+                      ? colors.accentSubtle
+                      : intensity < 0.6
+                        ? colors.accentLight
+                        : intensity < 0.85
+                          ? colors.accentMid
+                          : colors.accent,
               },
             ]}
           />

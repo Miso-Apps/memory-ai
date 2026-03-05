@@ -52,10 +52,12 @@ api.interceptors.response.use(
     if ((status === 401 || status === 403) && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        const refreshToken = await AsyncStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
+      // No refresh token means there was never a valid session — reject
+      // silently without touching auth state (avoids spurious logout on startup).
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      if (!refreshToken) return Promise.reject(error);
 
+      try {
         const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshToken,
         });
@@ -66,9 +68,8 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed — clear all stored auth so login screen shows
+        // Refresh token existed but is invalid/expired — force logout.
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
-        // Update Zustand store so AuthGate redirects to login
         const { useAuthStore } = require('../store/authStore');
         useAuthStore.getState().logout().catch(() => {});
         return Promise.reject(refreshError);
@@ -230,12 +231,91 @@ export const memoriesApi = {
   },
 
   // Search memories (uses AI semantic search endpoint)
-  search: async (query: string) => {
-    const response = await api.get<{ results: Memory[]; query: string; total: number }>(
+  search: async (query: string, options?: { category_id?: string; with_summary?: boolean }) => {
+    const response = await api.get<{
+      results: Memory[];
+      query: string;
+      total: number;
+      ai_summary?: string;
+    }>(
       '/ai/search',
-      { params: { q: query } }
+      {
+        params: {
+          q: query,
+          ...(options?.category_id ? { category_id: options.category_id } : {}),
+          with_summary: options?.with_summary ?? false,
+        },
+      }
     );
     return response.data;
+  },
+
+  // Stream search results + AI summary via SSE
+  searchStream: async (
+    query: string,
+    options: { category_id?: string; limit?: number } | undefined,
+    onResults: (results: Memory[], total: number) => void,
+    onToken: (token: string) => void,
+    onDone: () => void,
+    onError: (err: string) => void,
+  ): Promise<void> => {
+    const token = await AsyncStorage.getItem('accessToken');
+    const lang = await AsyncStorage.getItem('app_language');
+
+    const params = new URLSearchParams({ q: query, stream: 'true' });
+    if (options?.category_id) params.set('category_id', options.category_id);
+    if (options?.limit) params.set('limit', String(options.limit));
+
+    return new Promise<void>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', `${API_BASE_URL}/ai/search?${params.toString()}`, true);
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      if (lang) xhr.setRequestHeader('Accept-Language', lang);
+      xhr.timeout = 60000;
+
+      let cursor = 0;
+      let buf = '';
+
+      const processText = (text: string) => {
+        buf += text;
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+          try {
+            const evt = JSON.parse(raw) as
+              | { type: 'results'; results: Memory[]; total: number }
+              | { type: 'token'; content: string }
+              | { type: 'done' }
+              | { type: 'error'; message: string };
+            if (evt.type === 'results') onResults(evt.results, evt.total);
+            else if (evt.type === 'token') onToken(evt.content);
+            else if (evt.type === 'done') onDone();
+            else if (evt.type === 'error') onError(evt.message);
+          } catch { /* ignore malformed lines */ }
+        }
+      };
+
+      xhr.onprogress = () => {
+        const newText = xhr.responseText.slice(cursor);
+        if (newText.length > 0) {
+          cursor = xhr.responseText.length;
+          processText(newText);
+        }
+      };
+
+      xhr.onload = () => {
+        const remaining = xhr.responseText.slice(cursor);
+        if (remaining.length > 0) processText(remaining);
+        resolve();
+      };
+
+      xhr.onerror = () => { onError(`Network error (status ${xhr.status})`); resolve(); };
+      xhr.ontimeout = () => { onError('Request timed out'); resolve(); };
+      xhr.send();
+    });
   },
 };
 

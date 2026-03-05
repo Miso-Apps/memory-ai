@@ -233,8 +233,8 @@ function InsightsTeaserCard({ stats, t }: { stats: Stats; t: Function }) {
         </Text>
         <Text style={[styles.insightsTeaserSub, { color: colors.textMuted }]}>
           {streak > 0
-            ? `🔥 ${streak}-day streak · ${stats.this_week} this week`
-            : `${stats.this_week} memories this week`}
+            ? t('home.insightStreakSub', { streak, count: stats.this_week })
+            : t('home.insightWeekSub', { count: stats.this_week })}
         </Text>
       </View>
       <ChevronRight size={16} color={colors.textMuted} />
@@ -383,7 +383,6 @@ export default function HomeScreen() {
             <Text style={[styles.greeting, { color: colors.textPrimary }]}>
               {t(getGreetingKey())}{firstName ? `, ${firstName}` : ''} 👋
             </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
           </View>
           {streak > 0 && (
             <View style={[styles.streakBadge, { backgroundColor: colors.streakBg, borderColor: colors.streakBorder }]}>

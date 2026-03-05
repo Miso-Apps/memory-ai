@@ -2,7 +2,7 @@ const en = {
   // Tab labels
   tabs: {
     home: 'Home',
-    library: 'Library',
+    library: 'Memories',
     insights: 'Insights',
     chat: 'Ask AI',
     profile: 'Profile',
@@ -140,6 +140,8 @@ const en = {
     connectedIdeas: 'Connected Ideas',
     viewMemory: 'View',
     memoriesCount: '{{count}} memories',
+    insightStreakSub: '🔥 {{streak}}-day streak · {{count}} this week',
+    insightWeekSub: '{{count}} memories this week',
   },
 
   // Library screen
@@ -151,6 +153,12 @@ const en = {
     loading: 'Loading…',
     empty: 'No memories found',
     clearSearch: 'Clear search',
+    searching: 'Searching…',
+    searchResultCount: '{{count}} result found',
+    searchResultCount_plural: '{{count}} results found',
+    aiInsight: 'AI Insight',
+    filterCategory: 'Filter by category',
+    pressEnterToSearch: 'Press return to search',
   },
 
   // System category names (used in library, memory badges)

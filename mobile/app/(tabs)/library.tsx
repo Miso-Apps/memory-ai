@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,15 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { memoriesApi, categoriesApi, Memory as ApiMemory, Category } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
+import { useSettingsStore } from '../../store/settingsStore';
 
 type FilterType = 'all' | 'text' | 'voice' | 'link' | 'photo';
 
@@ -69,16 +72,16 @@ const TYPE_ICON: Record<Memory['type'], string> = {
 // Map English system category names → i18n keys so they translate regardless of language.
 // Keys match SYSTEM_CATEGORIES in backend/app/models/category.py
 const SYSTEM_CATEGORY_I18N: Record<string, string> = {
-  Work:          'categories.Work',
-  Personal:      'categories.Personal',
-  Ideas:         'categories.Ideas',
-  Tasks:         'categories.Tasks',
-  Research:      'categories.Research',
+  Work: 'categories.Work',
+  Personal: 'categories.Personal',
+  Ideas: 'categories.Ideas',
+  Tasks: 'categories.Tasks',
+  Research: 'categories.Research',
   Entertainment: 'categories.Entertainment',
-  Health:        'categories.Health',
-  Finance:       'categories.Finance',
-  Travel:        'categories.Travel',
-  Recipes:       'categories.Recipes',
+  Health: 'categories.Health',
+  Finance: 'categories.Finance',
+  Travel: 'categories.Travel',
+  Recipes: 'categories.Recipes',
 };
 
 /** Returns translated display name for a category.
@@ -124,14 +127,6 @@ function MemoryListItem({ memory }: { memory: Memory }) {
         </Text>
         <View style={styles.memoryMeta}>
           <Text style={[styles.memoryTypeLabel, { color: dotColor }]}>{TYPE_ICON[memory.type]}</Text>
-          {memory.categoryName && (
-            <>
-              <Text style={[styles.memoryDot, { color: colors.border }]}>·</Text>
-              <Text style={[styles.categoryLabel, { color: memory.categoryColor || colors.textMuted }]}>
-                {memory.categoryIcon} {getCategoryDisplayName(memory.categoryName, t)}
-              </Text>
-            </>
-          )}
           <Text style={[styles.memoryDot, { color: colors.border }]}>·</Text>
           <Text style={[styles.memoryDate, { color: colors.textMuted }]}>{formatDate(memory.createdAt, t)}</Text>
         </View>
@@ -145,16 +140,22 @@ function MemoryListItem({ memory }: { memory: Memory }) {
 export default function LibraryScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { preferences } = useSettingsStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [allMemories, setAllMemories] = useState<Memory[]>([]);
   const [searchResults, setSearchResults] = useState<Memory[] | null>(null);
+  const [searchSummary, setSearchSummary] = useState<string | null>(null);
+  const [summaryStreaming, setSummaryStreaming] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [searching, setSearching] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether a streaming search is still in-flight so we can cancel on re-search
+  const streamAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
 
   const loadCategories = useCallback(async () => {
     try {
@@ -203,41 +204,117 @@ export default function LibraryScreen() {
     }, [loadMemories])
   );
 
-  // Debounced semantic search
-  const handleSearchChange = useCallback((text: string) => {
-    setSearchQuery(text);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
+  // Also reload when selectedCategory changes while screen is already focused
+  useEffect(() => {
+    loadMemories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]);
 
-    if (!text.trim()) {
+  // performSearch — called on Enter press or when category changes while a query is active
+  const performSearch = useCallback(async (query: string, catId: string | null) => {
+    if (!query.trim()) {
       setSearchResults(null);
+      setSearchSummary(null);
+      setSummaryStreaming(false);
+      setHasSearched(false);
       setSearching(false);
       return;
     }
 
+    // Abort any previous stream
+    streamAbortRef.current = { aborted: false };
+    const thisAbort = streamAbortRef.current;
+
+    setHasSearched(true);
     setSearching(true);
-    searchTimer.current = setTimeout(async () => {
+    setSearchSummary(null);
+    setSummaryStreaming(false);
+
+    const useStreaming = preferences?.streaming_responses !== false; // default true
+
+    const mapResult = (item: ApiMemory): Memory => ({
+      id: item.id,
+      content: item.ai_summary || item.content,
+      type: item.type,
+      createdAt: new Date(item.created_at),
+      aiSummary: item.ai_summary,
+      categoryId: item.category_id,
+      categoryName: item.category_name,
+      categoryIcon: item.category_icon,
+      categoryColor: item.category_color,
+    });
+
+    if (useStreaming) {
+      // ── Streaming path ─────────────────────────────────────────────────
+      await memoriesApi.searchStream(
+        query.trim(),
+        { category_id: catId ?? undefined },
+        (results, _total) => {
+          if (thisAbort.aborted) return;
+          setSearchResults(results.map(mapResult as any));
+          setSearching(false);
+          setSummaryStreaming(true);
+        },
+        (token) => {
+          if (thisAbort.aborted) return;
+          setSearchSummary((prev) => (prev ?? '') + token);
+        },
+        () => {
+          if (thisAbort.aborted) return;
+          setSummaryStreaming(false);
+        },
+        (_err) => {
+          if (thisAbort.aborted) return;
+          setSummaryStreaming(false);
+          setSearching(false);
+        },
+      );
+    } else {
+      // ── Non-streaming path ─────────────────────────────────────────────
       try {
-        const data = await memoriesApi.search(text.trim());
-        const mapped: Memory[] = data.results.map((item: ApiMemory) => ({
-          id: item.id,
-          content: item.ai_summary || item.content,
-          type: item.type,
-          createdAt: new Date(item.created_at),
-          aiSummary: item.ai_summary,
-          categoryId: item.category_id,
-          categoryName: item.category_name,
-          categoryIcon: item.category_icon,
-          categoryColor: item.category_color,
-        }));
-        setSearchResults(mapped);
+        const data = await memoriesApi.search(query.trim(), {
+          category_id: catId ?? undefined,
+          with_summary: true,
+        });
+        if (thisAbort.aborted) return;
+        setSearchResults(data.results.map(mapResult as any));
+        setSearchSummary(data.ai_summary ?? null);
       } catch {
-        // Fallback to local filter
-        setSearchResults(null);
+        if (!thisAbort.aborted) {
+          setSearchResults(null);
+          setSearchSummary(null);
+        }
       } finally {
-        setSearching(false);
+        if (!thisAbort.aborted) setSearching(false);
       }
-    }, 400);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preferences?.streaming_responses]);
+
+  // Text change — just updates input state, no auto-search
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchQuery(text);
+    if (!text.trim()) {
+      streamAbortRef.current = { aborted: true };
+      setSearchResults(null);
+      setSearchSummary(null);
+      setSummaryStreaming(false);
+      setHasSearched(false);
+    }
   }, []);
+
+  // Triggered when user presses the Return / Search key
+  const handleSubmitSearch = useCallback(() => {
+    performSearch(searchQuery, selectedCategory);
+  }, [performSearch, searchQuery, selectedCategory]);
+
+  // Re-run search when category is changed and a query is already active
+  useEffect(() => {
+    if (hasSearched && searchQuery.trim()) {
+      performSearch(searchQuery, selectedCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory]);
 
   const counts = useMemo(() => ({
     all: allMemories.length,
@@ -260,10 +337,10 @@ export default function LibraryScreen() {
   };
 
   const FILTERS: { key: FilterType; label: string }[] = [
-    { key: 'all',   label: `${t('library.filterAll')}  ${counts.all}` },
-    { key: 'text',  label: `📝  ${counts.text}` },
+    { key: 'all', label: `${t('library.filterAll')}  ${counts.all}` },
+    { key: 'text', label: `📝  ${counts.text}` },
     { key: 'voice', label: `🎤  ${counts.voice}` },
-    { key: 'link',  label: `🔗  ${counts.link}` },
+    { key: 'link', label: `🔗  ${counts.link}` },
     { key: 'photo', label: `📷  ${counts.photo}` },
   ];
 
@@ -275,80 +352,113 @@ export default function LibraryScreen() {
         <Text style={[styles.title, { color: colors.textPrimary }]}>{t('library.title')}</Text>
       </View>
 
-      {/* ── Search ── */}
-      <View style={[styles.searchRow, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-        <Text style={styles.searchMagnifier}>🔍</Text>
-        <TextInput
-          style={[styles.searchInput, { color: colors.textPrimary }]}
-          placeholder={t('library.searchPlaceholder')}
-          placeholderTextColor={colors.textMuted}
-          value={searchQuery}
-          onChangeText={handleSearchChange}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-        />
-        {searching && <ActivityIndicator size="small" color={colors.accent} />}
+      {/* ── Search bar + Category filter button ── */}
+      <View style={styles.searchBarRow}>
+        <View style={[styles.searchInputWrap, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <Text style={styles.searchMagnifier}>🔍</Text>
+          <TextInput
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder={t('library.searchPlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            onSubmitEditing={handleSubmitSearch}
+            returnKeyType="search"
+            blurOnSubmit={false}
+          />
+          {searching && <ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 6 }} />}
+          {!searching && searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                streamAbortRef.current = { aborted: true };
+                setSearchQuery('');
+                setSearchResults(null);
+                setSearchSummary(null);
+                setSummaryStreaming(false);
+                setHasSearched(false);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.clearBtn, { backgroundColor: colors.textMuted }]}
+            >
+              <Text style={styles.clearBtnText}>×</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Category filter pill */}
+        <TouchableOpacity
+          style={[
+            styles.catFilterBtn,
+            { backgroundColor: colors.cardBg, borderColor: selectedCategory ? colors.accent : colors.border },
+          ]}
+          onPress={() => setCategoryModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.catFilterIcon}>
+            {selectedCategory
+              ? (categories.find((c) => c.id === selectedCategory)?.icon ?? '📂')
+              : '📂'}
+          </Text>
+          {!selectedCategory && (
+            <Text style={[styles.catFilterChevron, { color: colors.textMuted }]}>▾</Text>
+          )}
+          {selectedCategory && (
+            <TouchableOpacity
+              onPress={(e) => { e.stopPropagation(); setSelectedCategory(null); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.catFilterChevron, { color: colors.textMuted }]}>×</Text>
+            </TouchableOpacity>
+          )}
+        </TouchableOpacity>
       </View>
 
-      {/* ── Filter chips (type) ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterRow}
-        contentContainerStyle={styles.filterContent}
-      >
-        {FILTERS.map(({ key, label }) => (
-          <TouchableOpacity
-            key={key}
-            style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }, filter === key && { backgroundColor: colors.accent, borderColor: colors.accent }]}
-            onPress={() => setFilter(key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.chipText, { color: colors.textSecondary }, filter === key && styles.chipTextActive]}>
-              {label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* ── Category chips ── */}
-      {categories.length > 0 && (
+      {/* ── Filter chips (type) — hidden during active search ── */}
+      {!hasSearched && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.categoryRow}
+          style={styles.filterRow}
           contentContainerStyle={styles.filterContent}
         >
-          <TouchableOpacity
-            style={[styles.categoryChip, { backgroundColor: colors.cardBg, borderColor: colors.border }, !selectedCategory && { backgroundColor: 'rgba(99, 102, 241, 0.1)', borderColor: colors.accent }]}
-            onPress={() => setSelectedCategory(null)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.categoryChipIcon}>📂</Text>
-            <Text style={[styles.categoryChipText, { color: colors.textSecondary }, !selectedCategory && { color: colors.accent }]}>
-              {t('library.allCategories')}
-            </Text>
-          </TouchableOpacity>
-          {categories.map((cat) => (
+          {FILTERS.map(({ key, label }) => (
             <TouchableOpacity
-              key={cat.id}
-              style={[
-                styles.categoryChip, { backgroundColor: colors.cardBg, borderColor: colors.border },
-                selectedCategory === cat.id && { backgroundColor: 'rgba(99, 102, 241, 0.1)', borderColor: cat.color },
-              ]}
-              onPress={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+              key={key}
+              style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }, filter === key && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+              onPress={() => setFilter(key)}
               activeOpacity={0.7}
             >
-              <Text style={styles.categoryChipIcon}>{cat.icon}</Text>
-              <Text style={[
-                styles.categoryChipText, { color: colors.textSecondary },
-                selectedCategory === cat.id && { color: cat.color },
-              ]}>
-                {getCategoryDisplayName(cat.name, t)}
+              <Text style={[styles.chipText, { color: colors.textSecondary }, filter === key && styles.chipTextActive]}>
+                {label}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
+      )}
+
+      {/* ── AI Insight card (shown after search + while streaming) ── */}
+      {hasSearched && (searchSummary != null || summaryStreaming) && (
+        <View style={[styles.insightCard, { backgroundColor: colors.cardBg, borderColor: colors.accent }]}>
+          <Text style={styles.insightIcon}>✨</Text>
+          <View style={{ flex: 1 }}>
+            <View style={styles.insightHeader}>
+              <Text style={[styles.insightLabel, { color: colors.accent }]}>{t('library.aiInsight')}</Text>
+              {summaryStreaming && (
+                <ActivityIndicator size="small" color={colors.accent} style={{ marginLeft: 6 }} />
+              )}
+            </View>
+            <Text style={[styles.insightText, { color: colors.textPrimary }]}>
+              {searchSummary ?? ''}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* ── Search result count (when searching is complete) ── */}
+      {hasSearched && !searching && searchResults != null && (
+        <Text style={[styles.resultCount, { color: colors.textMuted }]}>
+          {t('library.searchResultCount', { count: memories.length })}
+        </Text>
       )}
 
       {/* ── List ── */}
@@ -366,13 +476,75 @@ export default function LibraryScreen() {
             <Text style={styles.emptyIcon}>{loading ? '⏳' : '📭'}</Text>
             <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>{loading ? t('library.loading') : t('library.empty')}</Text>
             {!!searchQuery && (
-              <TouchableOpacity onPress={() => { setSearchQuery(''); setSearchResults(null); }}>
+              <TouchableOpacity onPress={() => {
+                streamAbortRef.current = { aborted: true };
+                setSearchQuery(''); setSearchResults(null); setSearchSummary(null);
+                setSummaryStreaming(false); setHasSearched(false);
+              }}>
                 <Text style={[styles.emptyClear, { color: colors.accent }]}>{t('library.clearSearch')}</Text>
               </TouchableOpacity>
             )}
           </View>
         }
       />
+
+      {/* ── Category picker Modal ── */}
+      <Modal
+        visible={categoryModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCategoryModalVisible(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setCategoryModalVisible(false)}>
+          <Pressable style={[styles.modalSheet, { backgroundColor: colors.bg }]} onPress={() => { }}>
+            {/* Handle bar */}
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('library.filterCategory')}</Text>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* "All categories" option */}
+              <TouchableOpacity
+                style={[
+                  styles.modalRow,
+                  { borderColor: colors.border },
+                  !selectedCategory && { backgroundColor: 'rgba(99,102,241,0.08)' },
+                ]}
+                onPress={() => { setSelectedCategory(null); setCategoryModalVisible(false); }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalRowIcon}>📂</Text>
+                <Text style={[styles.modalRowText, { color: !selectedCategory ? colors.accent : colors.textPrimary }]}>
+                  {t('library.allCategories')}
+                </Text>
+                {!selectedCategory && <Text style={{ color: colors.accent, fontSize: 16 }}>✓</Text>}
+              </TouchableOpacity>
+
+              {categories.map((cat) => {
+                const isSelected = selectedCategory === cat.id;
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[
+                      styles.modalRow,
+                      { borderColor: colors.border },
+                      isSelected && { backgroundColor: 'rgba(99,102,241,0.08)' },
+                    ]}
+                    onPress={() => { setSelectedCategory(isSelected ? null : cat.id); setCategoryModalVisible(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.modalRowIcon}>{cat.icon}</Text>
+                    <Text style={[styles.modalRowText, { color: isSelected ? (cat.color || colors.accent) : colors.textPrimary }]}>
+                      {getCategoryDisplayName(cat.name, t)}
+                    </Text>
+                    {isSelected && <Text style={{ color: cat.color || colors.accent, fontSize: 16 }}>✓</Text>}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -399,12 +571,18 @@ const styles = StyleSheet.create({
   },
 
 
-  // ── Search ──────────────────────────────────────────────
-  searchRow: {
+  // ── Search bar row ──────────────────────────────────────
+  searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 12,
+    gap: 10,
+  },
+  searchInputWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     height: 44,
     borderRadius: 12,
     paddingHorizontal: 14,
@@ -418,6 +596,37 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     paddingVertical: 0,
+  },
+  clearBtn: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  clearBtnText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  // Category filter button (sits to the right of the search bar)
+  catFilterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 44,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  catFilterIcon: {
+    fontSize: 17,
+  },
+  catFilterChevron: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 
   // ── Filter chips ────────────────────────────────────────
@@ -448,6 +657,45 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
+  // ── AI Insight card ─────────────────────────────────────
+  insightCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginHorizontal: 20,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 10,
+  },
+  insightIcon: {
+    fontSize: 16,
+    marginTop: 1,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  insightLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  insightText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+
+  // ── Result count ────────────────────────────────────────
+  resultCount: {
+    fontSize: 12,
+    paddingHorizontal: 20,
+    marginBottom: 6,
+  },
+
   // ── List ────────────────────────────────────────────────
   list: {
     flex: 1,
@@ -459,7 +707,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 15,          // edge-to-edge; only slight inset from bar
+    marginLeft: 15,
   },
 
   // ── Row item ────────────────────────────────────────────
@@ -530,28 +778,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── Category chips ──────────────────────────────────────
-  categoryRow: {
-    flexGrow: 0,
-    flexShrink: 0,
-    marginBottom: 8,
+  // ── Category picker Modal ────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
   },
-  categoryChip: {
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
+    maxHeight: '70%',
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginBottom: 14,
+  },
+  modalRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 30,
-    paddingHorizontal: 10,
-    borderRadius: 15,
-    borderWidth: 1,
-    gap: 4,
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
   },
-  categoryChipIcon: {
-    fontSize: 12,
+  modalRowIcon: {
+    fontSize: 20,
+    width: 28,
+    textAlign: 'center',
   },
-  categoryChipText: {
-    fontSize: 12,
+  modalRowText: {
+    flex: 1,
+    fontSize: 15,
     fontWeight: '500',
   },
-
 });
 
