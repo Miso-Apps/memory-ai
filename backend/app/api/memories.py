@@ -25,14 +25,18 @@ _VALID_LANGS = {"en", "vi"}
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
     """Get user language from Accept-Language header (real-time) or DB preference (fallback)."""
-    header_lang = (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    header_lang = (
+        (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    )
     if header_lang in _VALID_LANGS:
         return header_lang
     prefs = await get_or_create_preferences(db, user_id)
     return (prefs.language or "en") if prefs else "en"
 
 
-async def _generate_and_save_summary(memory_id: uuid.UUID, content: str, memory_type: str, language: str = "en") -> None:
+async def _generate_and_save_summary(
+    memory_id: uuid.UUID, content: str, memory_type: str, language: str = "en"
+) -> None:
     """Background task: generate AI summary and write it back to the DB."""
     # For links: fetch the page and summarise its content instead of the URL string
     if memory_type.upper() == "LINK":
@@ -61,16 +65,14 @@ async def _get_category_info(db: AsyncSession, category_id) -> dict:
     """Get category info by ID, with caching."""
     if not category_id:
         return {}
-    
+
     cache_key = str(category_id)
     if cache_key in _category_cache:
         return _category_cache[cache_key]
-    
-    result = await db.execute(
-        select(Category).where(Category.id == category_id)
-    )
+
+    result = await db.execute(select(Category).where(Category.id == category_id))
     cat = result.scalar_one_or_none()
-    
+
     if cat:
         info = {
             "category_id": str(cat.id),
@@ -80,7 +82,7 @@ async def _get_category_info(db: AsyncSession, category_id) -> dict:
         }
         _category_cache[cache_key] = info
         return info
-    
+
     return {}
 
 
@@ -104,7 +106,7 @@ def _to_dict(m: Memory, category_info: dict = None) -> dict:
         "created_at": m.created_at.isoformat() if m.created_at else None,
         "updated_at": m.updated_at.isoformat() if m.updated_at else None,
     }
-    
+
     # Add category info if provided
     if category_info:
         result.update(category_info)
@@ -112,17 +114,15 @@ def _to_dict(m: Memory, category_info: dict = None) -> dict:
         result["category_name"] = None
         result["category_icon"] = None
         result["category_color"] = None
-    
+
     return result
 
 
 # ============ CRUD Endpoints ============
 
+
 async def _classify_and_save_category(
-    memory_id: uuid.UUID,
-    user_id: uuid.UUID,
-    content: str,
-    memory_type: str
+    memory_id: uuid.UUID, user_id: uuid.UUID, content: str, memory_type: str
 ) -> None:
     """Background task: auto-classify memory and save category."""
     try:
@@ -131,22 +131,22 @@ async def _classify_and_save_category(
             categories = await ensure_system_categories(session, user_id)
             if not categories:
                 return
-            
+
             # Check user preferences
             prefs = await get_or_create_preferences(session, user_id)
             if not prefs.auto_categorize:
                 return
-            
+
             # Prepare category list for classification
             cat_list = [
                 {"id": str(c.id), "name": c.name, "description": c.description or ""}
                 for c in categories
                 if c.is_active
             ]
-            
+
             # Classify content
             result = await ai_service.classify_content(content, memory_type, cat_list)
-            
+
             if result.get("category_id"):
                 mem_result = await session.execute(
                     select(Memory).where(Memory.id == memory_id)
@@ -156,8 +156,12 @@ async def _classify_and_save_category(
                     m.category_id = uuid.UUID(result["category_id"])
                     m.category_confidence = result.get("confidence", 0)
                     await session.commit()
-                    log.info("Auto-classified memory %s to category %s (confidence: %d%%)",
-                             memory_id, result["category_id"], result.get("confidence", 0))
+                    log.info(
+                        "Auto-classified memory %s to category %s (confidence: %d%%)",
+                        memory_id,
+                        result["category_id"],
+                        result.get("confidence", 0),
+                    )
     except Exception as exc:
         log.warning("Auto-classification failed for memory %s: %s", memory_id, exc)
 
@@ -174,7 +178,9 @@ async def _generate_and_save_embedding(memory_id: uuid.UUID, content: str) -> No
             if m and not m.is_deleted:
                 m.embedding = embedding
                 await session.commit()
-                log.info("Embedding saved for memory %s (dim=%d)", memory_id, len(embedding))
+                log.info(
+                    "Embedding saved for memory %s (dim=%d)", memory_id, len(embedding)
+                )
     except Exception as exc:
         log.warning("Failed to save embedding for memory %s: %s", memory_id, exc)
 
@@ -208,18 +214,16 @@ async def create_memory(
     # Use Accept-Language header (real-time) or DB preference (fallback)
     user_language = await _get_user_language(request, db, current_user.id)
 
-    background_tasks.add_task(_generate_and_save_summary, m.id, summary_content, mem_type, user_language)
-    
+    background_tasks.add_task(
+        _generate_and_save_summary, m.id, summary_content, mem_type, user_language
+    )
+
     # Fire-and-forget embedding generation for semantic search
     background_tasks.add_task(_generate_and_save_embedding, m.id, summary_content)
 
     # Fire-and-forget auto-classification
     background_tasks.add_task(
-        _classify_and_save_category,
-        m.id,
-        current_user.id,
-        summary_content,
-        mem_type
+        _classify_and_save_category, m.id, current_user.id, summary_content, mem_type
     )
 
     return _to_dict(m)
@@ -254,7 +258,9 @@ async def get_memory_stats(
     this_week = week_result.scalar() or 0
 
     # Today count
-    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(timezone.utc).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
     today_result = await db.execute(
         select(func.count()).where(and_(base, Memory.created_at >= today_start))
     )
@@ -317,7 +323,13 @@ async def get_reminders(
     revisit_end = now - timedelta(days=7)
     revisit_q = await db.execute(
         select(Memory)
-        .where(and_(base, Memory.created_at >= revisit_start, Memory.created_at <= revisit_end))
+        .where(
+            and_(
+                base,
+                Memory.created_at >= revisit_start,
+                Memory.created_at <= revisit_end,
+            )
+        )
         .order_by(func.coalesce(Memory.last_viewed_at, Memory.created_at).asc())
         .limit(5)
     )
@@ -332,7 +344,9 @@ async def get_reminders(
         .where(
             and_(
                 base,
-                func.extract("day", Memory.created_at).between(today_day - 1, today_day + 1),
+                func.extract("day", Memory.created_at).between(
+                    today_day - 1, today_day + 1
+                ),
                 func.extract("month", Memory.created_at) == today_month,
                 Memory.created_at < now - timedelta(days=28),  # at least 4 weeks old
             )
@@ -395,7 +409,11 @@ async def restore_memory(
 
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == True)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == True,
+            )  # noqa: E712
         )
     )
     m = result.scalar_one_or_none()
@@ -421,9 +439,7 @@ async def permanently_delete_memory(
         raise HTTPException(status_code=404, detail="Memory not found")
 
     result = await db.execute(
-        select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id)
-        )
+        select(Memory).where(and_(Memory.id == mid, Memory.user_id == current_user.id))
     )
     m = result.scalar_one_or_none()
     if not m:
@@ -431,7 +447,9 @@ async def permanently_delete_memory(
 
     await db.delete(m)
     await db.flush()
-    return StatusResponse(status="permanently_deleted", message="Memory permanently deleted")
+    return StatusResponse(
+        status="permanently_deleted", message="Memory permanently deleted"
+    )
 
 
 @router.post("/{memory_id}/view", response_model=dict)
@@ -448,7 +466,11 @@ async def mark_viewed(
 
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
         )
     )
     m = result.scalar_one_or_none()
@@ -463,7 +485,9 @@ async def mark_viewed(
 
 @router.get("/", response_model=List[dict])
 async def list_memories(
-    type: Optional[str] = Query(None, description="Filter by type: text, link, voice, photo"),
+    type: Optional[str] = Query(
+        None, description="Filter by type: text, link, voice, photo"
+    ),
     category_id: Optional[str] = Query(None, description="Filter by category ID"),
     search: Optional[str] = Query(None, description="Text search in content"),
     limit: int = Query(100, le=200, ge=1),
@@ -502,14 +526,14 @@ async def list_memories(
         .limit(limit)
         .offset(offset)
     )
-    
+
     # Fetch category info for all memories
     memories = result.scalars().all()
     results = []
     for m in memories:
         cat_info = await _get_category_info(db, m.category_id)
         results.append(_to_dict(m, cat_info))
-    
+
     return results
 
 
@@ -527,7 +551,11 @@ async def get_memory(
 
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
         )
     )
     m = result.scalar_one_or_none()
@@ -551,7 +579,11 @@ async def update_memory(
 
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
         )
     )
     m = result.scalar_one_or_none()
@@ -580,7 +612,11 @@ async def delete_memory(
 
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
         )
     )
     m = result.scalar_one_or_none()

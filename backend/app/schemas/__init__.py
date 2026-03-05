@@ -1,6 +1,7 @@
 """
 Pydantic schemas for Memory AI API
 """
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -8,6 +9,7 @@ from enum import Enum
 
 
 # ============ Memory Schemas ============
+
 
 class MemoryType(str, Enum):
     TEXT = "text"
@@ -18,6 +20,7 @@ class MemoryType(str, Enum):
 
 class MemoryCreate(BaseModel):
     """Request schema for creating a memory"""
+
     type: MemoryType
     # content can be empty for voice memories where only an audio_url is provided
     content: str = Field("", max_length=50000)
@@ -34,19 +37,21 @@ class MemoryCreate(BaseModel):
             "example": {
                 "type": "text",
                 "content": "Meeting notes: Discuss product launch timeline",
-                "metadata": {"tags": ["work", "meeting"]}
+                "metadata": {"tags": ["work", "meeting"]},
             }
         }
 
 
 class MemoryUpdate(BaseModel):
     """Request schema for updating a memory"""
+
     content: Optional[str] = Field(None, min_length=1, max_length=50000)
     metadata: Optional[dict] = None
 
 
 class MemoryResponse(BaseModel):
     """Response schema for a single memory"""
+
     id: str
     user_id: str
     type: MemoryType
@@ -71,6 +76,7 @@ class MemoryResponse(BaseModel):
 
 class MemoryListResponse(BaseModel):
     """Response schema for listing memories"""
+
     memories: List[MemoryResponse]
     total: int
     limit: int
@@ -79,19 +85,23 @@ class MemoryListResponse(BaseModel):
 
 # ============ AI Schemas ============
 
+
 class RecallItem(BaseModel):
     """A memory with context for why it's being recalled"""
+
     memory: MemoryResponse
     reason: str = Field(..., description="Why this memory is relevant now")
 
 
 class RecallResponse(BaseModel):
     """Response schema for AI recall suggestions"""
+
     items: List[RecallItem]
 
 
 class SearchResponse(BaseModel):
     """Response schema for semantic search"""
+
     query: str
     results: List[MemoryResponse]
     total: int
@@ -99,21 +109,25 @@ class SearchResponse(BaseModel):
 
 # ============ Auth Schemas ============
 
+
 class UserCreate(BaseModel):
     """Request schema for user registration"""
-    email: str = Field(..., pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$')
+
+    email: str = Field(..., pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
     password: str = Field(..., min_length=8)
     name: Optional[str] = None
 
 
 class UserLogin(BaseModel):
     """Request schema for user login"""
+
     email: str
     password: str
 
 
 class TokenResponse(BaseModel):
     """Response schema for authentication tokens"""
+
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
@@ -121,6 +135,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """Response schema for user data"""
+
     id: str
     email: str
     name: Optional[str] = None
@@ -132,16 +147,20 @@ class UserResponse(BaseModel):
 
 # ============ Common Schemas ============
 
+
 class StatusResponse(BaseModel):
     """Generic status response"""
+
     status: str
     message: Optional[str] = None
 
 
 # ============ Category Schemas ============
 
+
 class CategoryCreate(BaseModel):
     """Request schema for creating a category"""
+
     name: str = Field(..., min_length=1, max_length=100)
     icon: Optional[str] = Field("📁", max_length=10)
     color: Optional[str] = Field("#6B7280", max_length=20)
@@ -150,6 +169,7 @@ class CategoryCreate(BaseModel):
 
 class CategoryUpdate(BaseModel):
     """Request schema for updating a category"""
+
     name: Optional[str] = Field(None, min_length=1, max_length=100)
     icon: Optional[str] = Field(None, max_length=10)
     color: Optional[str] = Field(None, max_length=20)
@@ -160,6 +180,7 @@ class CategoryUpdate(BaseModel):
 
 class CategoryResponse(BaseModel):
     """Response schema for a category"""
+
     id: str
     name: str
     icon: Optional[str] = "📁"
@@ -169,12 +190,13 @@ class CategoryResponse(BaseModel):
     is_active: bool = True
     sort_order: int = 0
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 # ============ User Preferences Schemas ============
+
 
 class ThemeModeEnum(str, Enum):
     LIGHT = "light"
@@ -191,6 +213,7 @@ class DefaultCaptureEnum(str, Enum):
 
 class HomeSections(BaseModel):
     """Home screen section visibility"""
+
     unreviewed: bool = True
     revisit: bool = True
     on_this_day: bool = True
@@ -199,6 +222,7 @@ class HomeSections(BaseModel):
 
 class UserPreferencesUpdate(BaseModel):
     """Request schema for updating user preferences"""
+
     theme_mode: Optional[ThemeModeEnum] = None
     accent_color: Optional[str] = Field(None, max_length=20)
     default_capture_type: Optional[DefaultCaptureEnum] = None
@@ -220,6 +244,7 @@ class UserPreferencesUpdate(BaseModel):
 
 class UserPreferencesResponse(BaseModel):
     """Response schema for user preferences"""
+
     id: str
     user_id: str
     theme_mode: str = "auto"
@@ -238,10 +263,9 @@ class UserPreferencesResponse(BaseModel):
     home_sections: dict = {}
     pinned_categories: List[str] = []
     hidden_categories: List[str] = []
-    language: str = 'en'
+    language: str = "en"
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
-

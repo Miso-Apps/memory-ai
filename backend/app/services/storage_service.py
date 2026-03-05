@@ -2,6 +2,7 @@
 Storage service — uploads files to MinIO / S3-compatible storage.
 Gracefully degrades if MinIO is unreachable.
 """
+
 from __future__ import annotations
 
 import io
@@ -50,7 +51,9 @@ async def upload_audio(file_bytes: bytes, original_filename: str) -> Optional[st
         import asyncio
         from app.config import settings
 
-        ext = original_filename.rsplit(".", 1)[-1] if "." in original_filename else "m4a"
+        ext = (
+            original_filename.rsplit(".", 1)[-1] if "." in original_filename else "m4a"
+        )
         key = f"audio/{uuid.uuid4()}.{ext}"
 
         def _upload():
@@ -84,7 +87,9 @@ async def upload_image(file_bytes: bytes, original_filename: str) -> Optional[st
         import asyncio
         from app.config import settings
 
-        ext = original_filename.rsplit(".", 1)[-1] if "." in original_filename else "jpg"
+        ext = (
+            original_filename.rsplit(".", 1)[-1] if "." in original_filename else "jpg"
+        )
         content_type_map = {
             "jpg": "image/jpeg",
             "jpeg": "image/jpeg",

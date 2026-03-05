@@ -1,6 +1,7 @@
 """
 Shared FastAPI dependencies — auth, DB, etc.
 """
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession

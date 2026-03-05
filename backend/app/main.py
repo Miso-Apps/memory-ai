@@ -43,11 +43,7 @@ app.include_router(insights.router, prefix="/insights", tags=["Insights"])
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {
-        "message": "Memory AI API",
-        "status": "running",
-        "version": "1.0.0"
-    }
+    return {"message": "Memory AI API", "status": "running", "version": "1.0.0"}
 
 
 @app.get("/health")
@@ -58,4 +54,5 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

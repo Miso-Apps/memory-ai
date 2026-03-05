@@ -1,4 +1,5 @@
 """Categories API endpoints"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func
@@ -33,7 +34,9 @@ def _to_dict(c: Category) -> dict:
     }
 
 
-async def ensure_system_categories(db: AsyncSession, user_id: uuid.UUID) -> List[Category]:
+async def ensure_system_categories(
+    db: AsyncSession, user_id: uuid.UUID
+) -> List[Category]:
     """
     Ensure system categories exist for a user.
     Creates them if they don't exist, returns all user's categories.
@@ -43,18 +46,18 @@ async def ensure_system_categories(db: AsyncSession, user_id: uuid.UUID) -> List
         select(Category).where(
             and_(
                 Category.user_id == user_id,
-                Category.is_system == True  # noqa: E712
+                Category.is_system == True,  # noqa: E712
             )
         )
     )
     existing = result.scalars().all()
-    
+
     if len(existing) >= len(SYSTEM_CATEGORIES):
         # Already initialized
         return list(existing)
-    
+
     existing_names = {c.name.lower() for c in existing}
-    
+
     # Create missing system categories
     for i, cat_data in enumerate(SYSTEM_CATEGORIES):
         if cat_data["name"].lower() not in existing_names:
@@ -68,17 +71,19 @@ async def ensure_system_categories(db: AsyncSession, user_id: uuid.UUID) -> List
                 sort_order=i,
             )
             db.add(cat)
-    
+
     await db.flush()
-    
+
     # Return all categories
     result = await db.execute(
-        select(Category).where(
+        select(Category)
+        .where(
             and_(
                 Category.user_id == user_id,
-                Category.is_active == True  # noqa: E712
+                Category.is_active == True,  # noqa: E712
             )
-        ).order_by(Category.sort_order)
+        )
+        .order_by(Category.sort_order)
     )
     return list(result.scalars().all())
 
@@ -92,22 +97,22 @@ async def list_categories(
     """List all categories for the current user."""
     # Ensure system categories exist
     await ensure_system_categories(db, current_user.id)
-    
+
     query = select(Category).where(
         and_(
             Category.user_id == current_user.id,
-            Category.is_active == True  # noqa: E712
+            Category.is_active == True,  # noqa: E712
         )
     )
-    
+
     if not include_system:
         query = query.where(Category.is_system == False)  # noqa: E712
-    
+
     query = query.order_by(Category.sort_order, Category.name)
-    
+
     result = await db.execute(query)
     categories = result.scalars().all()
-    
+
     return [_to_dict(c) for c in categories]
 
 
@@ -124,19 +129,21 @@ async def create_category(
             and_(
                 Category.user_id == current_user.id,
                 func.lower(Category.name) == category.name.lower(),
-                Category.is_active == True  # noqa: E712
+                Category.is_active == True,  # noqa: E712
             )
         )
     )
     if result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Category with this name already exists")
-    
+        raise HTTPException(
+            status_code=400, detail="Category with this name already exists"
+        )
+
     # Get max sort order
     max_order_result = await db.execute(
         select(func.max(Category.sort_order)).where(Category.user_id == current_user.id)
     )
     max_order = max_order_result.scalar() or 0
-    
+
     cat = Category(
         user_id=current_user.id,
         name=category.name,
@@ -148,7 +155,7 @@ async def create_category(
     )
     db.add(cat)
     await db.flush()
-    
+
     return _to_dict(cat)
 
 
@@ -163,20 +170,17 @@ async def get_category(
         cat_uuid = uuid.UUID(category_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid category ID")
-    
+
     result = await db.execute(
         select(Category).where(
-            and_(
-                Category.id == cat_uuid,
-                Category.user_id == current_user.id
-            )
+            and_(Category.id == cat_uuid, Category.user_id == current_user.id)
         )
     )
     cat = result.scalar_one_or_none()
-    
+
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
-    
+
     return _to_dict(cat)
 
 
@@ -192,20 +196,17 @@ async def update_category(
         cat_uuid = uuid.UUID(category_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid category ID")
-    
+
     result = await db.execute(
         select(Category).where(
-            and_(
-                Category.id == cat_uuid,
-                Category.user_id == current_user.id
-            )
+            and_(Category.id == cat_uuid, Category.user_id == current_user.id)
         )
     )
     cat = result.scalar_one_or_none()
-    
+
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
-    
+
     # System categories have limited editability
     if cat.is_system:
         # Can only update icon, color, is_active for system categories
@@ -229,7 +230,7 @@ async def update_category(
             cat.is_active = update.is_active
         if update.sort_order is not None:
             cat.sort_order = update.sort_order
-    
+
     await db.flush()
     return _to_dict(cat)
 
@@ -245,27 +246,24 @@ async def delete_category(
         cat_uuid = uuid.UUID(category_id)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid category ID")
-    
+
     result = await db.execute(
         select(Category).where(
-            and_(
-                Category.id == cat_uuid,
-                Category.user_id == current_user.id
-            )
+            and_(Category.id == cat_uuid, Category.user_id == current_user.id)
         )
     )
     cat = result.scalar_one_or_none()
-    
+
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
-    
+
     if cat.is_system:
         # System categories are hidden, not deleted
         cat.is_active = False
     else:
         # Custom categories are soft-deleted
         cat.is_active = False
-    
+
     await db.flush()
     return StatusResponse(status="success", message="Category deleted")
 
@@ -277,10 +275,10 @@ async def get_category_counts(
 ):
     """Get memory counts per category."""
     from app.models import Memory
-    
+
     # Ensure categories exist
     await ensure_system_categories(db, current_user.id)
-    
+
     # Get all categories with counts
     result = await db.execute(
         select(
@@ -288,30 +286,35 @@ async def get_category_counts(
             Category.name,
             Category.icon,
             Category.color,
-            func.count(Memory.id).label("memory_count")
+            func.count(Memory.id).label("memory_count"),
         )
-        .outerjoin(Memory, and_(
-            Memory.category_id == Category.id,
-            Memory.is_deleted == False  # noqa: E712
-        ))
+        .outerjoin(
+            Memory,
+            and_(
+                Memory.category_id == Category.id,
+                Memory.is_deleted == False,  # noqa: E712
+            ),
+        )
         .where(
             and_(
                 Category.user_id == current_user.id,
-                Category.is_active == True  # noqa: E712
+                Category.is_active == True,  # noqa: E712
             )
         )
         .group_by(Category.id, Category.name, Category.icon, Category.color)
         .order_by(Category.sort_order)
     )
-    
+
     counts = []
     for row in result.all():
-        counts.append({
-            "id": str(row.id),
-            "name": row.name,
-            "icon": row.icon,
-            "color": row.color,
-            "count": row.memory_count,
-        })
-    
+        counts.append(
+            {
+                "id": str(row.id),
+                "name": row.name,
+                "icon": row.icon,
+                "color": row.color,
+                "count": row.memory_count,
+            }
+        )
+
     return {"categories": counts}

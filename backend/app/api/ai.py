@@ -24,7 +24,9 @@ _VALID_LANGS = {"en", "vi"}
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
     """Get user language from Accept-Language header (real-time) or DB preference (fallback)."""
-    header_lang = (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    header_lang = (
+        (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    )
     if header_lang in _VALID_LANGS:
         return header_lang
     prefs = await get_or_create_preferences(db, user_id)
@@ -67,10 +69,20 @@ async def get_recall(
     }
 
 
-@router.get("/search", response_model=dict)
+@router.get("/search")
 async def semantic_search(
     q: str = Query(..., min_length=1, description="Natural language search query"),
     limit: int = Query(20, ge=1, le=50),
+    category_id: Optional[str] = Query(
+        None, description="Filter results to this category UUID"
+    ),
+    with_summary: bool = Query(
+        False, description="Generate AI insight summary of results (non-streaming)"
+    ),
+    stream: bool = Query(
+        False, description="Stream the AI summary via SSE after returning results"
+    ),
+    request: Request = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -79,14 +91,24 @@ async def semantic_search(
 
     Strategy:
       1. Generate an embedding for the query via OpenAI.
-      2. If embeddings are available, perform pgvector cosine-distance search
-         among the user's memories that have embeddings.
-      3. Fall back to multi-field keyword ILIKE search when embeddings are
-         unavailable (no OpenAI key or no embeddings stored yet).
+      2. If embeddings are available, perform pgvector cosine-distance search.
+      3. Fall back to multi-field keyword ILIKE search.
       4. Return a merged, deduplicated result set.
+      5. With with_summary=true: generate AI insight synchronously (JSON).
+      6. With stream=true: return SSE — first event is the results, then
+         token-by-token AI summary, then a "done" event.
     """
     import logging
+
     log = logging.getLogger(__name__)
+
+    # Resolve optional category UUID filter
+    category_uuid: Optional[uuid.UUID] = None
+    if category_id:
+        try:
+            category_uuid = uuid.UUID(category_id)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=422, detail="Invalid category_id UUID")
 
     results: list[dict] = []
     seen_ids: set[str] = set()
@@ -106,7 +128,9 @@ async def semantic_search(
             "is_dismissed": m.is_deleted,
             "category_id": str(m.category_id) if m.category_id else None,
             "category_confidence": m.category_confidence,
-            "last_viewed_at": m.last_viewed_at.isoformat() if m.last_viewed_at else None,
+            "last_viewed_at": m.last_viewed_at.isoformat()
+            if m.last_viewed_at
+            else None,
             "created_at": m.created_at.isoformat() if m.created_at else None,
             "updated_at": m.updated_at.isoformat() if m.updated_at else None,
         }
@@ -122,18 +146,19 @@ async def semantic_search(
             # We use raw SQL for the ordering since SQLAlchemy ORM doesn't
             # natively support pgvector operators in ORDER BY.
             embedding_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
+            vec_conditions = [
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+                Memory.embedding != None,  # noqa: E711
+            ]
+            if category_uuid is not None:
+                vec_conditions.append(Memory.category_id == category_uuid)
             stmt = (
                 select(
                     Memory,
                     Memory.embedding.cosine_distance(query_embedding).label("distance"),
                 )
-                .where(
-                    and_(
-                        Memory.user_id == current_user.id,
-                        Memory.is_deleted == False,  # noqa: E712
-                        Memory.embedding != None,    # noqa: E711
-                    )
-                )
+                .where(and_(*vec_conditions))
                 .order_by(text("distance"))
                 .limit(limit)
             )
@@ -178,15 +203,16 @@ async def semantic_search(
             Memory.ai_summary.ilike(search_pattern),
         )
 
+    kw_conditions = [
+        Memory.user_id == current_user.id,
+        Memory.is_deleted == False,  # noqa: E712
+        keyword_filter,
+    ]
+    if category_uuid is not None:
+        kw_conditions.append(Memory.category_id == category_uuid)
     keyword_stmt = (
         select(Memory)
-        .where(
-            and_(
-                Memory.user_id == current_user.id,
-                Memory.is_deleted == False,  # noqa: E712
-                keyword_filter,
-            )
-        )
+        .where(and_(*kw_conditions))
         .order_by(Memory.created_at.desc())
         .limit(limit)
     )
@@ -226,7 +252,61 @@ async def semantic_search(
         r["category_icon"] = cat_info.get("category_icon")
         r["category_color"] = cat_info.get("category_color")
 
-    return {"query": q, "results": results[:limit], "total": len(results[:limit])}
+    # ── 4. Streaming SSE response ──────────────────────────────────────────
+    if stream:
+        # Build snippets for AI summary
+        snippets = []
+        for r in results[:12]:
+            text_content = (
+                r.get("ai_summary") or r.get("transcription") or r.get("content") or ""
+            )
+            if text_content.strip():
+                snippets.append(text_content.strip())
+
+        user_lang = (
+            await _get_user_language(request, db, current_user.id) if request else "en"
+        )
+
+        async def _stream_search():
+            # First event: full results payload
+            yield f"data: {json.dumps({'type': 'results', 'results': results[:limit], 'total': len(results[:limit])})}\n\n"
+            # Then stream AI summary tokens
+            if snippets:
+                async for token in ai_service.stream_search_summary(
+                    q, snippets, user_lang
+                ):
+                    yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        return StreamingResponse(_stream_search(), media_type="text/event-stream")
+
+    # ── 5. Non-streaming: optionally generate AI insight synchronously ──────
+    ai_summary: Optional[str] = None
+    if with_summary and results:
+        # Build plain-text snippets for each result
+        snippets = []
+        for r in results[:12]:
+            text_content = (
+                r.get("ai_summary") or r.get("transcription") or r.get("content") or ""
+            )
+            if text_content.strip():
+                snippets.append(text_content.strip())
+        if snippets:
+            user_lang = (
+                await _get_user_language(request, db, current_user.id)
+                if request
+                else "en"
+            )
+            ai_summary = await ai_service.summarize_search_results(
+                q, snippets, user_lang
+            )
+
+    return {
+        "query": q,
+        "results": results[:limit],
+        "total": len(results[:limit]),
+        "ai_summary": ai_summary,
+    }
 
 
 @router.post("/summarize/{memory_id}")
@@ -268,7 +348,9 @@ async def summarize_memory(
     # Use Accept-Language header or DB preference
     user_language = await _get_user_language(request, db, current_user.id)
 
-    summary = await ai_service.generate_summary(content_to_summarise, mem_type, user_language)
+    summary = await ai_service.generate_summary(
+        content_to_summarise, mem_type, user_language
+    )
 
     if summary:
         m.ai_summary = summary
@@ -332,7 +414,9 @@ async def group_memories(
 
 @router.post("/embeddings/backfill", response_model=dict)
 async def backfill_embeddings(
-    batch_size: int = Query(50, ge=1, le=200, description="Number of memories to process per call"),
+    batch_size: int = Query(
+        50, ge=1, le=200, description="Number of memories to process per call"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -344,6 +428,7 @@ async def backfill_embeddings(
     Call repeatedly until `remaining` reaches 0.
     """
     import logging
+
     log = logging.getLogger(__name__)
 
     # Find memories without embeddings
@@ -353,7 +438,7 @@ async def backfill_embeddings(
             and_(
                 Memory.user_id == current_user.id,
                 Memory.is_deleted == False,  # noqa: E712
-                Memory.embedding == None,    # noqa: E711
+                Memory.embedding == None,  # noqa: E711
             )
         )
         .order_by(Memory.created_at.desc())
@@ -376,7 +461,11 @@ async def backfill_embeddings(
 
     if processed > 0:
         await db.flush()
-        log.info("Backfilled embeddings for %d memories (user=%s)", processed, current_user.id)
+        log.info(
+            "Backfilled embeddings for %d memories (user=%s)",
+            processed,
+            current_user.id,
+        )
 
     # Count remaining
     remaining_result = await db.execute(
@@ -384,7 +473,7 @@ async def backfill_embeddings(
             and_(
                 Memory.user_id == current_user.id,
                 Memory.is_deleted == False,  # noqa: E712
-                Memory.embedding == None,    # noqa: E711
+                Memory.embedding == None,  # noqa: E711
             )
         )
     )
@@ -398,6 +487,7 @@ async def backfill_embeddings(
 
 
 # ─── AI Chat (RAG) — Ask questions about your memories ────────────────────────
+
 
 class ChatMessage(BaseModel):
     role: str  # "user" or "assistant"
@@ -430,7 +520,7 @@ async def _retrieve_relevant_memories(
                     and_(
                         Memory.user_id == user_id,
                         Memory.is_deleted == False,  # noqa: E712
-                        Memory.embedding != None,    # noqa: E711
+                        Memory.embedding != None,  # noqa: E711
                     )
                 )
                 .order_by(text("distance"))
@@ -454,16 +544,22 @@ async def _retrieve_relevant_memories(
                             cat = cat_r.scalar_one_or_none()
                             if cat:
                                 cat_name = cat.name
-                        results.append({
-                            "id": mid,
-                            "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
-                            "content": mem.content or "",
-                            "summary": mem.ai_summary or "",
-                            "transcription": mem.transcription or "",
-                            "category": cat_name,
-                            "created_at": mem.created_at.isoformat() if mem.created_at else "",
-                            "similarity": round(similarity, 3),
-                        })
+                        results.append(
+                            {
+                                "id": mid,
+                                "type": mem.type.value
+                                if hasattr(mem.type, "value")
+                                else str(mem.type),
+                                "content": mem.content or "",
+                                "summary": mem.ai_summary or "",
+                                "transcription": mem.transcription or "",
+                                "category": cat_name,
+                                "created_at": mem.created_at.isoformat()
+                                if mem.created_at
+                                else "",
+                                "similarity": round(similarity, 3),
+                            }
+                        )
         except Exception as exc:
             log.warning("RAG vector search failed: %s", exc)
 
@@ -499,16 +595,22 @@ async def _retrieve_relevant_memories(
                     cat = cat_r.scalar_one_or_none()
                     if cat:
                         cat_name = cat.name
-                results.append({
-                    "id": mid,
-                    "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
-                    "content": mem.content or "",
-                    "summary": mem.ai_summary or "",
-                    "transcription": mem.transcription or "",
-                    "category": cat_name,
-                    "created_at": mem.created_at.isoformat() if mem.created_at else "",
-                    "similarity": None,
-                })
+                results.append(
+                    {
+                        "id": mid,
+                        "type": mem.type.value
+                        if hasattr(mem.type, "value")
+                        else str(mem.type),
+                        "content": mem.content or "",
+                        "summary": mem.ai_summary or "",
+                        "transcription": mem.transcription or "",
+                        "category": cat_name,
+                        "created_at": mem.created_at.isoformat()
+                        if mem.created_at
+                        else "",
+                        "similarity": None,
+                    }
+                )
 
     return results[:limit]
 
@@ -553,22 +655,25 @@ async def chat_with_memories(
 
     if not ai_service._has_valid_key():
         raise HTTPException(
-            status_code=503,
-            detail="AI features require an OpenAI API key."
+            status_code=503, detail="AI features require an OpenAI API key."
         )
 
     user_language = await _get_user_language(request, db, current_user.id)
 
     # Count total memories for context
     total_q = await db.execute(
-        select(func.count()).select_from(Memory).where(
+        select(func.count())
+        .select_from(Memory)
+        .where(
             and_(Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
         )
     )
     total_memories = total_q.scalar() or 0
 
     # Retrieve relevant memories
-    relevant = await _retrieve_relevant_memories(db, current_user.id, body.message, limit=8)
+    relevant = await _retrieve_relevant_memories(
+        db, current_user.id, body.message, limit=8
+    )
     context = _build_rag_context(relevant)
 
     # Build conversation
@@ -602,6 +707,7 @@ async def chat_with_memories(
     client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
     if body.stream:
+
         async def generate():
             try:
                 stream = await client.chat.completions.create(
@@ -656,6 +762,7 @@ async def chat_with_memories(
 
 @router.post("/chat/suggestions", response_model=dict)
 async def get_chat_suggestions(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -663,15 +770,18 @@ async def get_chat_suggestions(
     Generate smart conversation starters based on user's memory patterns.
 
     Returns contextual questions the user might want to ask about their memories.
+    Respects the Accept-Language header to return suggestions in the user's language.
     """
     from datetime import datetime, timezone, timedelta
+
+    lang = await _get_user_language(request, db, current_user.id)
 
     now = datetime.now(timezone.utc)
     base = and_(Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
 
     suggestions = []
 
-    # Get recent categories
+    # Get recent categories (raw names – will be localised inline for vi)
     cat_q = await db.execute(
         select(Category.name)
         .join(Memory, Memory.category_id == Category.id)
@@ -693,28 +803,56 @@ async def get_chat_suggestions(
         .group_by(Memory.type)
         .order_by(text("cnt DESC"))
     )
-    types = {r[0].value if hasattr(r[0], "value") else str(r[0]): r[1] for r in type_q.all()}
+    types = {
+        r[0].value if hasattr(r[0], "value") else str(r[0]): r[1] for r in type_q.all()
+    }
 
-    # Build contextual suggestions
-    if total == 0:
-        suggestions = [
-            "What can you help me with?",
-            "How does memory search work?",
-        ]
+    # Build contextual suggestions (language-aware)
+    if lang == "vi":
+        if total == 0:
+            suggestions = [
+                "Bạn có thể giúp tôi gì?",
+                "Tìm kiếm ký ức hoạt động như thế nào?",
+            ]
+        else:
+            suggestions.append("Tôi đã lưu gì tuần này?")
+
+            if top_cats:
+                suggestions.append(f"Tóm tắt ký ức {top_cats[0].lower()} của tôi")
+                if len(top_cats) > 1:
+                    suggestions.append(
+                        f"Có mô hình nào trong ghi chú {top_cats[1].lower()} của tôi không?"
+                    )
+
+            if types.get("link", 0) > 2:
+                suggestions.append("Tôi đã lưu những bài viết nào gần đây?")
+            if types.get("voice", 0) > 2:
+                suggestions.append("Tôi đã nói về điều gì trong các ghi âm của mình?")
+            if total > 20:
+                suggestions.append("Chủ đề chính trong ký ức của tôi là gì?")
+                suggestions.append("Tháng trước tôi tập trung vào điều gì?")
     else:
-        suggestions.append("What did I save this week?")
+        if total == 0:
+            suggestions = [
+                "What can you help me with?",
+                "How does memory search work?",
+            ]
+        else:
+            suggestions.append("What did I save this week?")
 
-        if top_cats:
-            suggestions.append(f"Summarize my {top_cats[0].lower()} memories")
-            if len(top_cats) > 1:
-                suggestions.append(f"What patterns do you see in my {top_cats[1].lower()} notes?")
+            if top_cats:
+                suggestions.append(f"Summarize my {top_cats[0].lower()} memories")
+                if len(top_cats) > 1:
+                    suggestions.append(
+                        f"What patterns do you see in my {top_cats[1].lower()} notes?"
+                    )
 
-        if types.get("link", 0) > 2:
-            suggestions.append("What articles have I saved recently?")
-        if types.get("voice", 0) > 2:
-            suggestions.append("What have I been talking about in my voice notes?")
-        if total > 20:
-            suggestions.append("What are the main themes in my memories?")
-            suggestions.append("What was I focused on last month?")
+            if types.get("link", 0) > 2:
+                suggestions.append("What articles have I saved recently?")
+            if types.get("voice", 0) > 2:
+                suggestions.append("What have I been talking about in my voice notes?")
+            if total > 20:
+                suggestions.append("What are the main themes in my memories?")
+                suggestions.append("What was I focused on last month?")
 
     return {"suggestions": suggestions[:5]}

@@ -2,6 +2,7 @@
 AI service — wraps OpenAI for summarisation and Whisper transcription.
 Gracefully degrades (returns None) when no valid API key is configured.
 """
+
 from __future__ import annotations
 
 import logging
@@ -16,11 +17,17 @@ _PLACEHOLDER_PREFIXES = ("sk-your-", "your-", "")
 def _has_valid_key() -> bool:
     """Return True only when the settings key looks like a real OpenAI key."""
     from app.config import settings
+
     key = (settings.OPENAI_API_KEY or "").strip()
     if not key:
         return False
     for prefix in _PLACEHOLDER_PREFIXES:
-        if prefix and key.startswith(prefix) and "openai" not in key.lower() and len(key) < 30:
+        if (
+            prefix
+            and key.startswith(prefix)
+            and "openai" not in key.lower()
+            and len(key) < 30
+        ):
             return False
     # Real keys start with "sk-" and are > 30 chars
     return key.startswith("sk-") and len(key) > 30
@@ -41,7 +48,9 @@ def _language_instruction(language: str) -> str:
     return f" Always respond in {name}."
 
 
-async def generate_summary(content: str, memory_type: str, language: str = "en") -> Optional[str]:
+async def generate_summary(
+    content: str, memory_type: str, language: str = "en"
+) -> Optional[str]:
     """
     Generate a concise AI summary for a memory.
 
@@ -158,6 +167,122 @@ async def transcribe_audio(file_bytes: bytes, filename: str) -> Optional[str]:
         return None
 
 
+async def stream_search_summary(
+    query: str,
+    memory_snippets: list[str],
+    language: str = "en",
+):
+    """
+    Async generator that streams an AI insight about search results token-by-token.
+
+    Yields plain text chunks (strings).  Stops immediately if OpenAI is not
+    configured or the snippet list is empty.
+    """
+    if not _has_valid_key() or not memory_snippets:
+        return
+
+    try:
+        from openai import AsyncOpenAI
+        from app.config import settings
+
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+
+        snippets_text = "\n".join(f"- {s[:150]}" for s in memory_snippets[:12])
+        lang_note = _language_instruction(language)
+
+        stream = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a personal memory assistant. "
+                        "When a user searches their saved memories, provide a brief "
+                        "1-2 sentence insight that synthesizes the key themes, "
+                        "patterns, or connections across the results. "
+                        "Be warm, personal, and concise. "
+                        "Do not list items — give a flowing narrative observation."
+                        + lang_note
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f'The user searched for: "{query}"\n\n'
+                        f"Relevant memories found:\n{snippets_text}\n\n"
+                        "Provide a brief insight about what these memories reveal."
+                    ),
+                },
+            ],
+            max_tokens=120,
+            temperature=0.45,
+            stream=True,
+        )
+        async for chunk in stream:
+            if chunk.choices and chunk.choices[0].delta.content:
+                yield chunk.choices[0].delta.content
+    except Exception as exc:
+        log.warning("OpenAI search results stream failed: %s", exc)
+
+
+async def summarize_search_results(
+    query: str,
+    memory_snippets: list[str],
+    language: str = "en",
+) -> Optional[str]:
+    """
+    Generate a 1-2 sentence AI insight about a set of search results.
+
+    Given the user's search query and the content of relevant memories,
+    returns a warm, concise synthesis of themes or patterns found.
+    Returns None when OpenAI is unavailable or the snippet list is empty.
+    """
+    if not _has_valid_key() or not memory_snippets:
+        return None
+
+    try:
+        from openai import AsyncOpenAI
+        from app.config import settings
+
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+
+        snippets_text = "\n".join(f"- {s[:150]}" for s in memory_snippets[:12])
+        lang_note = _language_instruction(language)
+
+        response = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a personal memory assistant. "
+                        "When a user searches their saved memories, provide a brief "
+                        "1-2 sentence insight that synthesizes the key themes, "
+                        "patterns, or connections across the results. "
+                        "Be warm, personal, and concise. "
+                        "Do not list items — give a flowing narrative observation."
+                        + lang_note
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f'The user searched for: "{query}"\n\n'
+                        f"Relevant memories found:\n{snippets_text}\n\n"
+                        "Provide a brief insight about what these memories reveal."
+                    ),
+                },
+            ],
+            max_tokens=120,
+            temperature=0.45,
+        )
+        result = response.choices[0].message.content or ""
+        return result.strip() or None
+    except Exception as exc:
+        log.warning("OpenAI search results summary failed: %s", exc)
+        return None
+
+
 async def group_memories_by_topic(
     memory_contents: dict[str, str],
     language: str = "en",
@@ -186,7 +311,7 @@ async def group_memories_by_topic(
 
         # Build numbered list for the prompt
         items_text = "\n".join(
-            f"{i+1}. [{mid}] {content}"
+            f"{i + 1}. [{mid}] {content}"
             for i, (mid, content) in enumerate(memory_contents.items())
         )
 
@@ -231,7 +356,11 @@ async def group_memories_by_topic(
         assigned = set()
         for g in groups:
             if isinstance(g, dict) and "title" in g and "memory_ids" in g:
-                ids = [mid for mid in g["memory_ids"] if mid in memory_contents and mid not in assigned]
+                ids = [
+                    mid
+                    for mid in g["memory_ids"]
+                    if mid in memory_contents and mid not in assigned
+                ]
                 if ids:
                     valid_groups.append({"title": g["title"], "memory_ids": ids})
                     assigned.update(ids)
@@ -241,13 +370,17 @@ async def group_memories_by_topic(
         if unassigned:
             valid_groups.append({"title": "Other", "memory_ids": unassigned})
 
-        return valid_groups if valid_groups else [{"title": "All", "memory_ids": all_ids}]
+        return (
+            valid_groups if valid_groups else [{"title": "All", "memory_ids": all_ids}]
+        )
     except Exception as exc:
         log.warning("OpenAI grouping failed: %s", exc)
         return [{"title": "All", "memory_ids": all_ids}]
 
 
-async def describe_image(file_bytes: bytes, filename: str, language: str = "en") -> Optional[str]:
+async def describe_image(
+    file_bytes: bytes, filename: str, language: str = "en"
+) -> Optional[str]:
     """
     Use GPT-4o Vision to analyse an uploaded image and produce a rich text
     description that can be stored as the memory content for later search
@@ -364,7 +497,10 @@ async def fetch_and_summarize_link(url: str, language: str = "en") -> Optional[s
                     d = dict(attrs)
                     name = d.get("name", "").lower()
                     prop = d.get("property", "").lower()
-                    if (name == "description" or prop in ("og:description", "twitter:description")):
+                    if name == "description" or prop in (
+                        "og:description",
+                        "twitter:description",
+                    ):
                         if not self.description:
                             self.description = d.get("content", "").strip()
 
@@ -434,72 +570,124 @@ async def fetch_and_summarize_link(url: str, language: str = "en") -> Optional[s
         return None
 
 
-async def classify_content(content: str, memory_type: str, available_categories: list[dict]) -> dict:
+async def classify_content(
+    content: str, memory_type: str, available_categories: list[dict]
+) -> dict:
     """
     Auto-classify content into one of the available categories using AI.
-    
+
     Args:
         content: The memory content to classify
         memory_type: Type of memory (text, link, voice, photo)
         available_categories: List of dicts with 'id', 'name', 'description'
-    
+
     Returns:
         Dict with 'category_id' and 'confidence' (0-100).
         Returns {'category_id': None, 'confidence': 0} if classification fails.
     """
     if not available_categories:
         return {"category_id": None, "confidence": 0}
-    
+
     # Rule-based classification for common patterns (fast fallback)
     content_lower = content.lower()
-    
+
     # URL pattern detection
     if memory_type == "link" or content_lower.startswith(("http://", "https://")):
         # Detect specific URL types
-        if any(x in content_lower for x in ["youtube.com", "netflix.com", "spotify.com", "twitch.tv"]):
+        if any(
+            x in content_lower
+            for x in ["youtube.com", "netflix.com", "spotify.com", "twitch.tv"]
+        ):
             for cat in available_categories:
                 if cat["name"].lower() == "entertainment":
                     return {"category_id": cat["id"], "confidence": 85}
-        if any(x in content_lower for x in ["github.com", "stackoverflow.com", "docs.", "developer."]):
+        if any(
+            x in content_lower
+            for x in ["github.com", "stackoverflow.com", "docs.", "developer."]
+        ):
             for cat in available_categories:
                 if cat["name"].lower() in ("research", "work"):
                     return {"category_id": cat["id"], "confidence": 80}
-    
+
     # Task detection
-    task_keywords = ["todo", "task", "reminder", "need to", "don't forget", "must", "deadline", "by tomorrow"]
+    task_keywords = [
+        "todo",
+        "task",
+        "reminder",
+        "need to",
+        "don't forget",
+        "must",
+        "deadline",
+        "by tomorrow",
+    ]
     if any(kw in content_lower for kw in task_keywords):
         for cat in available_categories:
             if cat["name"].lower() == "tasks":
                 return {"category_id": cat["id"], "confidence": 85}
-    
+
     # Recipe detection
-    recipe_keywords = ["recipe", "ingredients", "cook", "bake", "tablespoon", "teaspoon", "preheat"]
+    recipe_keywords = [
+        "recipe",
+        "ingredients",
+        "cook",
+        "bake",
+        "tablespoon",
+        "teaspoon",
+        "preheat",
+    ]
     if any(kw in content_lower for kw in recipe_keywords):
         for cat in available_categories:
             if cat["name"].lower() == "recipes":
                 return {"category_id": cat["id"], "confidence": 90}
-    
+
     # Health detection
-    health_keywords = ["doctor", "appointment", "medicine", "symptom", "workout", "exercise", "calories", "health"]
+    health_keywords = [
+        "doctor",
+        "appointment",
+        "medicine",
+        "symptom",
+        "workout",
+        "exercise",
+        "calories",
+        "health",
+    ]
     if any(kw in content_lower for kw in health_keywords):
         for cat in available_categories:
             if cat["name"].lower() == "health":
                 return {"category_id": cat["id"], "confidence": 80}
-    
+
     # Travel detection
-    travel_keywords = ["flight", "hotel", "booking", "trip", "vacation", "airport", "passport", "travel"]
+    travel_keywords = [
+        "flight",
+        "hotel",
+        "booking",
+        "trip",
+        "vacation",
+        "airport",
+        "passport",
+        "travel",
+    ]
     if any(kw in content_lower for kw in travel_keywords):
         for cat in available_categories:
             if cat["name"].lower() == "travel":
                 return {"category_id": cat["id"], "confidence": 85}
-    
+
     # Finance detection
-    finance_keywords = ["invoice", "payment", "budget", "expense", "bank", "salary", "investment", "tax"]
+    finance_keywords = [
+        "invoice",
+        "payment",
+        "budget",
+        "expense",
+        "bank",
+        "salary",
+        "investment",
+        "tax",
+    ]
     if any(kw in content_lower for kw in finance_keywords):
         for cat in available_categories:
             if cat["name"].lower() == "finance":
                 return {"category_id": cat["id"], "confidence": 85}
-    
+
     # Use AI for more nuanced classification
     if not _has_valid_key():
         # Default to first category or "Personal" if no AI available
@@ -507,20 +695,20 @@ async def classify_content(content: str, memory_type: str, available_categories:
             if cat["name"].lower() == "personal":
                 return {"category_id": cat["id"], "confidence": 50}
         return {"category_id": available_categories[0]["id"], "confidence": 30}
-    
+
     try:
         import json as _json
         from openai import AsyncOpenAI
         from app.config import settings
-        
+
         client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        
+
         # Build category list for prompt
         cat_list = "\n".join(
             f"- {cat['name']}: {cat.get('description', 'No description')}"
             for cat in available_categories
         )
-        
+
         response = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
@@ -529,7 +717,7 @@ async def classify_content(content: str, memory_type: str, available_categories:
                     "content": (
                         "You are a classification assistant for a personal memory app. "
                         "Given content and a list of categories, classify the content into the most appropriate category. "
-                        "Return ONLY valid JSON: {\"category\": \"CategoryName\", \"confidence\": 0-100}. "
+                        'Return ONLY valid JSON: {"category": "CategoryName", "confidence": 0-100}. '
                         "Higher confidence means you're more certain about the classification."
                     ),
                 },
@@ -542,23 +730,26 @@ async def classify_content(content: str, memory_type: str, available_categories:
             temperature=0.1,
             response_format={"type": "json_object"},
         )
-        
+
         result = _json.loads(response.choices[0].message.content or "{}")
         category_name = result.get("category", "")
         confidence = int(result.get("confidence", 50))
-        
+
         # Find matching category
         for cat in available_categories:
             if cat["name"].lower() == category_name.lower():
-                return {"category_id": cat["id"], "confidence": min(100, max(0, confidence))}
-        
+                return {
+                    "category_id": cat["id"],
+                    "confidence": min(100, max(0, confidence)),
+                }
+
         # No match - default to Personal
         for cat in available_categories:
             if cat["name"].lower() == "personal":
                 return {"category_id": cat["id"], "confidence": 40}
-        
+
         return {"category_id": available_categories[0]["id"], "confidence": 30}
-    
+
     except Exception as exc:
         log.warning("AI classification failed: %s", exc)
         # Fallback to Personal category
@@ -566,4 +757,3 @@ async def classify_content(content: str, memory_type: str, available_categories:
             if cat["name"].lower() == "personal":
                 return {"category_id": cat["id"], "confidence": 30}
         return {"category_id": None, "confidence": 0}
-

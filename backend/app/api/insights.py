@@ -7,6 +7,7 @@ Endpoints:
   GET /insights/related/{memory_id} — Semantically related memories (embedding-based)
   GET /insights/streaks     — Detailed streak & consistency data
 """
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, func, text, case, cast, Integer
@@ -31,7 +32,9 @@ _VALID_LANGS = {"en", "vi"}
 
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
-    header_lang = (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    header_lang = (
+        (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    )
     if header_lang in _VALID_LANGS:
         return header_lang
     prefs = await get_or_create_preferences(db, user_id)
@@ -72,8 +75,7 @@ async def get_insights_dashboard(
         .order_by(text("day"))
     )
     activity_heatmap = [
-        {"date": str(row.day), "count": row.count}
-        for row in heatmap_q.all()
+        {"date": str(row.day), "count": row.count} for row in heatmap_q.all()
     ]
 
     # ── 2. Category breakdown ──────────────────────────────────────────────
@@ -103,11 +105,15 @@ async def get_insights_dashboard(
                     "icon": cat.icon,
                     "color": cat.color,
                 }
-        category_breakdown.append({
-            **cat_info,
-            "count": row.count,
-            "percentage": round(row.count / total_categorized * 100, 1) if total_categorized > 0 else 0,
-        })
+        category_breakdown.append(
+            {
+                **cat_info,
+                "count": row.count,
+                "percentage": round(row.count / total_categorized * 100, 1)
+                if total_categorized > 0
+                else 0,
+            }
+        )
 
     # ── 3. Type breakdown ──────────────────────────────────────────────────
     type_q = await db.execute(
@@ -125,7 +131,11 @@ async def get_insights_dashboard(
         type_counts[key] = row.count
         total_typed += row.count
     type_breakdown = [
-        {"type": t, "count": c, "percentage": round(c / total_typed * 100, 1) if total_typed > 0 else 0}
+        {
+            "type": t,
+            "count": c,
+            "percentage": round(c / total_typed * 100, 1) if total_typed > 0 else 0,
+        }
         for t, c in sorted(type_counts.items(), key=lambda x: -x[1])
     ]
 
@@ -141,7 +151,10 @@ async def get_insights_dashboard(
         .order_by(text("week_start"))
     )
     weekly_trend = [
-        {"week": row.week_start.isoformat() if row.week_start else None, "count": row.count}
+        {
+            "week": row.week_start.isoformat() if row.week_start else None,
+            "count": row.count,
+        }
         for row in weekly_q.all()
     ]
 
@@ -158,11 +171,14 @@ async def get_insights_dashboard(
     # Fill all 24 hours
     hourly_map = {row.hour: row.count for row in hourly_q.all()}
     hourly_distribution = [
-        {"hour": h, "count": hourly_map.get(h, 0)}
-        for h in range(24)
+        {"hour": h, "count": hourly_map.get(h, 0)} for h in range(24)
     ]
     # Find peak hours
-    peak_hour = max(hourly_distribution, key=lambda x: x["count"])["hour"] if hourly_distribution else 12
+    peak_hour = (
+        max(hourly_distribution, key=lambda x: x["count"])["hour"]
+        if hourly_distribution
+        else 12
+    )
 
     # ── 6. Top active days ─────────────────────────────────────────────────
     top_days_q = await db.execute(
@@ -175,16 +191,14 @@ async def get_insights_dashboard(
         .order_by(text("count DESC"))
         .limit(5)
     )
-    top_days = [
-        {"date": str(row.day), "count": row.count}
-        for row in top_days_q.all()
-    ]
+    top_days = [{"date": str(row.day), "count": row.count} for row in top_days_q.all()]
 
     # ── 7. Growth vs. previous period ──────────────────────────────────────
     current_count = total_typed
     prev_q = await db.execute(
-        select(func.count())
-        .where(and_(base, Memory.created_at >= prev_start, Memory.created_at < start_date))
+        select(func.count()).where(
+            and_(base, Memory.created_at >= prev_start, Memory.created_at < start_date)
+        )
     )
     prev_count = prev_q.scalar() or 0
     growth_pct = (
@@ -306,15 +320,19 @@ async def get_weekly_recap(
     )
 
     # Pick top 3 highlights (most interesting memories based on length & recency)
-    sorted_mems = sorted(memories, key=lambda m: len(m.ai_summary or m.content or ""), reverse=True)
+    sorted_mems = sorted(
+        memories, key=lambda m: len(m.ai_summary or m.content or ""), reverse=True
+    )
     highlights = []
     for m in sorted_mems[:3]:
-        highlights.append({
-            "id": str(m.id),
-            "type": m.type.value if hasattr(m.type, "value") else str(m.type),
-            "content": (m.ai_summary or m.content or "")[:100],
-            "created_at": m.created_at.isoformat() if m.created_at else None,
-        })
+        highlights.append(
+            {
+                "id": str(m.id),
+                "type": m.type.value if hasattr(m.type, "value") else str(m.type),
+                "content": (m.ai_summary or m.content or "")[:100],
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+            }
+        )
 
     return {
         "period": {"start": week_ago.isoformat(), "end": now.isoformat()},
@@ -336,7 +354,11 @@ async def _generate_weekly_recap(
     if not ai_service._has_valid_key():
         # Fallback: generate a simple text recap without AI
         total = sum(type_counts.values())
-        cat_names = ", ".join(c["name"] for c in categories[:3]) if categories else "various topics"
+        cat_names = (
+            ", ".join(c["name"] for c in categories[:3])
+            if categories
+            else "various topics"
+        )
         return (
             f"This week you saved {total} memories across {cat_names}. "
             f"You captured {type_counts.get('text', 0)} notes, "
@@ -388,7 +410,9 @@ async def _generate_weekly_recap(
 @router.get("/related/{memory_id}", response_model=dict)
 async def get_related_memories(
     memory_id: str,
-    limit: int = Query(5, ge=1, le=15, description="Number of related memories to return"),
+    limit: int = Query(
+        5, ge=1, le=15, description="Number of related memories to return"
+    ),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -406,7 +430,11 @@ async def get_related_memories(
     # Get the source memory
     result = await db.execute(
         select(Memory).where(
-            and_(Memory.id == mid, Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
         )
     )
     source = result.scalar_one_or_none()
@@ -421,14 +449,16 @@ async def get_related_memories(
             stmt = (
                 select(
                     Memory,
-                    Memory.embedding.cosine_distance(source.embedding).label("distance"),
+                    Memory.embedding.cosine_distance(source.embedding).label(
+                        "distance"
+                    ),
                 )
                 .where(
                     and_(
                         Memory.user_id == current_user.id,
                         Memory.is_deleted == False,  # noqa: E712
-                        Memory.embedding != None,     # noqa: E711
-                        Memory.id != mid,              # exclude self
+                        Memory.embedding != None,  # noqa: E711
+                        Memory.id != mid,  # exclude self
                     )
                 )
                 .order_by(text("distance"))
@@ -454,14 +484,25 @@ async def get_related_memories(
                                 "category_color": cat.color,
                             }
 
-                    related.append({
-                        "id": str(mem.id),
-                        "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
-                        "content": mem.ai_summary or (mem.content[:120] + "..." if len(mem.content or "") > 120 else mem.content),
-                        "similarity": round(similarity, 3),
-                        "created_at": mem.created_at.isoformat() if mem.created_at else None,
-                        **cat_info,
-                    })
+                    related.append(
+                        {
+                            "id": str(mem.id),
+                            "type": mem.type.value
+                            if hasattr(mem.type, "value")
+                            else str(mem.type),
+                            "content": mem.ai_summary
+                            or (
+                                mem.content[:120] + "..."
+                                if len(mem.content or "") > 120
+                                else mem.content
+                            ),
+                            "similarity": round(similarity, 3),
+                            "created_at": mem.created_at.isoformat()
+                            if mem.created_at
+                            else None,
+                            **cat_info,
+                        }
+                    )
         except Exception as exc:
             log.warning("Embedding similarity search failed: %s", exc)
 
@@ -477,10 +518,16 @@ async def get_related_memories(
                     Memory.is_deleted == False,  # noqa: E712
                     Memory.category_id == source.category_id,
                     Memory.id != mid,
-                    Memory.id.notin_([uuid.UUID(i) for i in already_ids if i != str(mid)]) if already_ids - {str(mid)} else True,
+                    Memory.id.notin_(
+                        [uuid.UUID(i) for i in already_ids if i != str(mid)]
+                    )
+                    if already_ids - {str(mid)}
+                    else True,
                 )
             )
-            .order_by(func.abs(func.extract("epoch", Memory.created_at - source.created_at)))
+            .order_by(
+                func.abs(func.extract("epoch", Memory.created_at - source.created_at))
+            )
             .limit(limit - len(related))
         )
         for mem in fallback_q.scalars().all():
@@ -497,14 +544,25 @@ async def get_related_memories(
                             "category_icon": cat.icon,
                             "category_color": cat.color,
                         }
-                related.append({
-                    "id": str(mem.id),
-                    "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
-                    "content": mem.ai_summary or (mem.content[:120] + "..." if len(mem.content or "") > 120 else mem.content),
-                    "similarity": None,
-                    "created_at": mem.created_at.isoformat() if mem.created_at else None,
-                    **cat_info,
-                })
+                related.append(
+                    {
+                        "id": str(mem.id),
+                        "type": mem.type.value
+                        if hasattr(mem.type, "value")
+                        else str(mem.type),
+                        "content": mem.ai_summary
+                        or (
+                            mem.content[:120] + "..."
+                            if len(mem.content or "") > 120
+                            else mem.content
+                        ),
+                        "similarity": None,
+                        "created_at": mem.created_at.isoformat()
+                        if mem.created_at
+                        else None,
+                        **cat_info,
+                    }
+                )
 
     return {
         "memory_id": memory_id,
@@ -530,9 +588,7 @@ async def get_streak_details(
     base = and_(Memory.user_id == current_user.id, Memory.is_deleted == False)  # noqa: E712
 
     # Get first memory date
-    first_q = await db.execute(
-        select(func.min(Memory.created_at)).where(base)
-    )
+    first_q = await db.execute(select(func.min(Memory.created_at)).where(base))
     first_date = first_q.scalar()
     if not first_date:
         return {
@@ -582,8 +638,14 @@ async def get_streak_details(
         longest_streak = max(longest_streak, temp_streak)
 
     # Days since start
-    total_days_since_start = (today - first_date.date() if hasattr(first_date, 'date') else today - first_date).days + 1
-    consistency_rate = round(total_active / total_days_since_start * 100, 1) if total_days_since_start > 0 else 0
+    total_days_since_start = (
+        today - first_date.date() if hasattr(first_date, "date") else today - first_date
+    ).days + 1
+    consistency_rate = (
+        round(total_active / total_days_since_start * 100, 1)
+        if total_days_since_start > 0
+        else 0
+    )
 
     # Monthly activity
     monthly = defaultdict(int)
@@ -591,8 +653,7 @@ async def get_streak_details(
         key = d.strftime("%Y-%m")
         monthly[key] += 1
     monthly_activity = [
-        {"month": k, "active_days": v}
-        for k, v in sorted(monthly.items())
+        {"month": k, "active_days": v} for k, v in sorted(monthly.items())
     ]
 
     return {

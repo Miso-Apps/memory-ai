@@ -1,6 +1,7 @@
 """
 Storage API — audio upload with real MinIO + optional Whisper transcription.
 """
+
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
@@ -18,11 +19,14 @@ _VALID_LANGS = {"en", "vi"}
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
     """Get user language from Accept-Language header or DB preference."""
-    header_lang = (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    header_lang = (
+        (request.headers.get("accept-language") or "").split(",")[0].strip()[:2].lower()
+    )
     if header_lang in _VALID_LANGS:
         return header_lang
     prefs = await get_or_create_preferences(db, user_id)
     return (prefs.language or "en") if prefs else "en"
+
 
 _ALLOWED_AUDIO_TYPES = {
     "audio/m4a",
@@ -64,7 +68,9 @@ async def upload_audio(
     4. Return audio_url + transcription
     """
     content_type = (file.content_type or "").lower()
-    if content_type not in _ALLOWED_AUDIO_TYPES and not content_type.startswith("audio/"):
+    if content_type not in _ALLOWED_AUDIO_TYPES and not content_type.startswith(
+        "audio/"
+    ):
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported audio type '{content_type}'. Allowed: m4a, mp3, wav, aac, ogg",
@@ -110,7 +116,9 @@ async def upload_image(
     4. Return image_url + description
     """
     content_type = (file.content_type or "").lower()
-    if content_type not in _ALLOWED_IMAGE_TYPES and not content_type.startswith("image/"):
+    if content_type not in _ALLOWED_IMAGE_TYPES and not content_type.startswith(
+        "image/"
+    ):
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported image type '{content_type}'. Allowed: jpeg, png, heic, webp",
@@ -147,7 +155,11 @@ async def get_file(
     current_user: User = Depends(get_current_user),
 ):
     """Get a signed URL for a stored file (stub — direct MinIO URLs are used for now)."""
-    return {"file_id": file_id, "url": None, "message": "Use the audio_url returned on upload"}
+    return {
+        "file_id": file_id,
+        "url": None,
+        "message": "Use the audio_url returned on upload",
+    }
 
 
 @router.delete("/{file_id}")
