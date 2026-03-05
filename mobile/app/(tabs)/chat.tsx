@@ -302,9 +302,8 @@ export default function ChatScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.headerEmoji}>🧠</Text>
-          <View>
+        <View style={styles.headerTop}>
+          <View style={styles.headerTextWrap}>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               {t('chat.title')}
             </Text>
@@ -312,14 +311,14 @@ export default function ChatScreen() {
               {t('chat.subtitle')}
             </Text>
           </View>
+          {messages.length > 0 && (
+            <TouchableOpacity onPress={clearChat} style={styles.clearBtn}>
+              <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>
+                {t('chat.newChat')}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
-        {messages.length > 0 && (
-          <TouchableOpacity onPress={clearChat} style={styles.clearBtn}>
-            <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>
-              {t('chat.newChat')}
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <KeyboardAvoidingView
@@ -427,17 +426,15 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  headerEmoji: { fontSize: 28 },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
-  headerSubtitle: { fontSize: 12, marginTop: 1 },
+  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  headerTextWrap: { flex: 1 },
+  headerTitle: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
+  headerSubtitle: { fontSize: 14 },
   clearBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,

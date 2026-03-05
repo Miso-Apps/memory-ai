@@ -146,7 +146,7 @@ const en = {
 
   // Library screen
   library: {
-    title: 'Library',
+    title: 'Memories',
     searchPlaceholder: 'Search memories…',
     filterAll: 'All',
     allCategories: 'All categories',

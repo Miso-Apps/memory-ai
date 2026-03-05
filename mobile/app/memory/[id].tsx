@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
 
   // Scroll
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16, paddingBottom: 16 },
+  scrollContent: { paddingHorizontal: 20, paddingVertical: 16 },
 
   // AI Summary card
   summaryCard: {

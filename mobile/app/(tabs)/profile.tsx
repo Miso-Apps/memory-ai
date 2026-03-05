@@ -201,7 +201,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={s.header}>
+      <View style={[s.header, { borderBottomColor: colors.border }]}>
         <Text style={[s.title, { color: colors.textPrimary }]}>{t('profile.title')}</Text>
         <Text style={[s.subtitle, { color: colors.textMuted }]}>{t('profile.subtitle')}</Text>
       </View>
@@ -488,11 +488,11 @@ export default function ProfileScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
-  title: { fontSize: 26, fontWeight: '600', marginBottom: 4 },
-  subtitle: { fontSize: 13 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
+  title: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
+  subtitle: { fontSize: 14 },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 120 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
   card: {
     borderRadius: 20, borderWidth: 1,
     marginBottom: 12, overflow: 'hidden',

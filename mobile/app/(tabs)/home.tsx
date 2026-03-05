@@ -377,7 +377,7 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header with greeting + streak */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
           <View style={styles.headerTextWrap}>
             <Text style={[styles.greeting, { color: colors.textPrimary }]}>
@@ -492,7 +492,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   headerTextWrap: { flex: 1 },
   greeting: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
 
   // Memory cards
   memCard: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 14,
     marginBottom: 8,

@@ -145,7 +145,7 @@ const vi = {
 
   // Library screen
   library: {
-    title: 'Thư viện',
+    title: 'Ký ức',
     searchPlaceholder: 'Tìm kiếm ký ức…',
     filterAll: 'Tất cả',
     allCategories: 'Tất cả danh mục',

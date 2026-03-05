@@ -465,117 +465,84 @@ async def describe_image(
 
 async def fetch_and_summarize_link(url: str, language: str = "en") -> Optional[str]:
     """
-    Verify a URL is reachable, extract its title and description, and produce
-    an AI summary of the page content.
+    Extract rich content from a URL and produce an AI summary.
 
-    Steps:
-      1. Fetch the page with httpx (10 s timeout, follows redirects)
-      2. Parse <title> and <meta name="description"> / og:description
-      3. Ask OpenAI to write a one-sentence summary
-      4. Falls back to generic generate_summary(url) when AI is unavailable
+    Supported sources (auto-detected):
+      • YouTube videos  — oEmbed metadata + captions/transcript
+      • Twitter / X     — oEmbed tweet text
+      • General pages   — full article body via trafilatura + HTML meta fallback
 
-    Returns None on any network or parsing failure.
+    Returns a concise AI summary string, or the page title when OpenAI is
+    unavailable.  Returns None when the URL is unreachable or yields no content.
     """
+    from app.services.link_service import fetch_link_content, build_prompt_text
+
+    # ── 1. Extract content ────────────────────────────────────────────────────
     try:
-        import httpx
-        from html.parser import HTMLParser
+        lc = await fetch_link_content(url)
+    except Exception as exc:
+        log.warning("Link content extraction failed for %s: %s", url, exc)
+        return None
 
-        # ── 1. Fetch ──────────────────────────────────────────────────────────
-        req_headers = {
-            "User-Agent": "Mozilla/5.0 (compatible; MemoryAI/1.0; +https://memory.ai)",
-            "Accept": "text/html,application/xhtml+xml,*/*;q=0.9",
-        }
-        async with httpx.AsyncClient(follow_redirects=True, timeout=10.0) as client:
-            response = await client.get(url, headers=req_headers)
-            response.raise_for_status()
-            html_content = response.text
+    # Nothing useful extracted → fall back to URL-only summary
+    if not lc.get("title") and not lc.get("body") and not lc.get("description"):
+        return await generate_summary(url, "link", language)
 
-        # ── 2. Parse metadata ─────────────────────────────────────────────────
-        class _MetaParser(HTMLParser):
-            def __init__(self) -> None:
-                super().__init__()
-                self.title: str = ""
-                self.description: str = ""
-                self._in_title = False
+    # ── 2. No AI key — return title/description as plain text ─────────────────
+    if not _has_valid_key():
+        return lc.get("title") or lc.get("description") or None
 
-            def handle_starttag(self, tag: str, attrs: list) -> None:
-                if tag == "title":
-                    self._in_title = True
-                elif tag == "meta":
-                    d = dict(attrs)
-                    name = d.get("name", "").lower()
-                    prop = d.get("property", "").lower()
-                    if name == "description" or prop in (
-                        "og:description",
-                        "twitter:description",
-                    ):
-                        if not self.description:
-                            self.description = d.get("content", "").strip()
+    # ── 3. Build prompt ───────────────────────────────────────────────────────
+    source_type = lc.get("source_type", "webpage")
+    prompt_text = build_prompt_text(lc)
+    lang_note = _language_instruction(language)
 
-            def handle_data(self, data: str) -> None:
-                if self._in_title and not self.title:
-                    self.title = data.strip()
+    # Tailor system instruction based on source type
+    if source_type == "youtube":
+        system_msg = (
+            "You are a helpful assistant that summarises YouTube videos for a personal memory app. "
+            "Write 1-2 concise sentences describing what the video is about, its key topic, "
+            "and any notable insights from the transcript if available."
+            + lang_note
+        )
+        user_msg = f"Summarise this YouTube video:\n\n{prompt_text}"
+        max_tokens = 120
+    elif source_type == "twitter":
+        system_msg = (
+            "You are a helpful assistant. Summarise this tweet or thread in ONE sentence."
+            + lang_note
+        )
+        user_msg = f"Summarise this tweet:\n\n{prompt_text}"
+        max_tokens = 60
+    else:
+        system_msg = (
+            "You are a helpful assistant that summarises web pages and articles for a personal memory app. "
+            "Write 1-2 concise sentences capturing the main topic and key takeaway of the content."
+            + lang_note
+        )
+        user_msg = f"Summarise this web page:\n\n{prompt_text}"
+        max_tokens = 120
 
-            def handle_endtag(self, tag: str) -> None:
-                if tag == "title":
-                    self._in_title = False
-
-        parser = _MetaParser()
-        parser.feed(html_content[:60_000])
-        title = parser.title.strip()
-        description = parser.description.strip()
-
-        if not title and not description:
-            # No useful page metadata — summarise just the URL string
-            return await generate_summary(url, "link", language)
-
-        page_text = f"URL: {url}"
-        if title:
-            page_text += f"\nTitle: {title}"
-        if description:
-            page_text += f"\nPage description: {description}"
-
-        # ── 3. AI summary ─────────────────────────────────────────────────────
-        if not _has_valid_key():
-            # No OpenAI key — return the title or description as a plain summary
-            return title or description or None
-
+    # ── 4. AI summary ─────────────────────────────────────────────────────────
+    try:
         from openai import AsyncOpenAI
         from app.config import settings
 
         client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        lang_note = _language_instruction(language)
         ai_response = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful assistant that summarises web pages for a personal memory app. "
-                        "Write ONE concise sentence (max 25 words) describing what this page is about."
-                        + lang_note
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": f"Summarise this web page:\n\n{page_text}",
-                },
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
             ],
-            max_tokens=80,
+            max_tokens=max_tokens,
             temperature=0.3,
         )
         summary = (ai_response.choices[0].message.content or "").strip()
-        return summary or title or None
-
-    except httpx.HTTPStatusError as exc:
-        log.warning("Link fetch HTTP %s for %s", exc.response.status_code, url)
-        return None
-    except httpx.RequestError as exc:
-        log.warning("Link fetch network error for %s: %s", url, exc)
-        return None
+        return summary or lc.get("title") or None
     except Exception as exc:
-        log.warning("Link enrichment failed for %s: %s", url, exc)
-        return None
+        log.warning("OpenAI link summarisation failed for %s: %s", url, exc)
+        return lc.get("title") or lc.get("description") or None
 
 
 async def classify_content(
