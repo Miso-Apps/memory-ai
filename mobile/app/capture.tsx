@@ -23,41 +23,57 @@ import * as Haptics from 'expo-haptics';
 import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
 import { useSettingsStore } from '../store/settingsStore';
+import { useAuthStore } from '../store/authStore';
 
 type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
 
-const modeConfig: Record<CaptureMode, { icon: string; keyboardType: 'default' | 'url' }> = {
-  text: { icon: '📝', keyboardType: 'default' },
-  voice: { icon: '🎤', keyboardType: 'default' },
-  link: { icon: '🔗', keyboardType: 'url' },
-  photo: { icon: '📷', keyboardType: 'default' },
-};
+// ── Avatar initials helper ─────────────────────────────────────────────────
+function getInitials(name?: string, email?: string): string {
+  if (name) {
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return name[0].toUpperCase();
+  }
+  if (email) return email[0].toUpperCase();
+  return '?';
+}
 
-// ── Compact horizontal mode tab strip ─────────────────────────────────────
-function ModeTabStrip({ mode, onSelect }: { mode: CaptureMode; onSelect: (m: CaptureMode) => void }) {
+// ── Bottom mode bar (LinkedIn-style) ──────────────────────────────────────
+const MODE_DEFINITIONS: { key: CaptureMode; emoji: string; labelKey: string }[] = [
+  { key: 'text',  emoji: '📝', labelKey: 'capture.modeText' },
+  { key: 'voice', emoji: '🎤', labelKey: 'capture.modeVoice' },
+  { key: 'link',  emoji: '🔗', labelKey: 'capture.modeLink' },
+  { key: 'photo', emoji: '📷', labelKey: 'capture.modePhoto' },
+];
+
+function BottomModeBar({
+  mode,
+  onSelect,
+}: {
+  mode: CaptureMode;
+  onSelect: (m: CaptureMode) => void;
+}) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const modes: CaptureMode[] = ['text', 'voice', 'link', 'photo'];
-  const modeLabels: Record<CaptureMode, string> = {
-    text: t('capture.modeText'),
-    voice: t('capture.modeVoice'),
-    link: t('capture.modeLink'),
-    photo: t('capture.modePhoto'),
-  };
   return (
-    <View style={[stripStyles.strip, { backgroundColor: colors.cardBg, borderBottomColor: colors.border }]}>
-      {modes.map((m) => {
-        const active = m === mode;
+    <View style={[modeBarStyles.bar, { borderTopColor: colors.border, backgroundColor: colors.cardBg }]}>
+      {MODE_DEFINITIONS.map(({ key, emoji, labelKey }) => {
+        const active = key === mode;
         return (
           <TouchableOpacity
-            key={m}
-            style={[stripStyles.tab, active && { backgroundColor: colors.accentLight }]}
-            onPress={() => onSelect(m)}
+            key={key}
+            style={[
+              modeBarStyles.chip,
+              active
+                ? { backgroundColor: colors.accentLight, borderColor: colors.accent }
+                : { backgroundColor: colors.inputBg, borderColor: 'transparent' },
+            ]}
+            onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
             activeOpacity={0.7}
           >
-            <Text style={stripStyles.tabIcon}>{modeConfig[m].icon}</Text>
-            <Text style={[stripStyles.tabLabel, { color: active ? colors.accent : colors.textMuted }, active && { fontWeight: '600' }]}>
-              {modeLabels[m]}
+            <Text style={modeBarStyles.chipEmoji}>{emoji}</Text>
+            <Text style={[modeBarStyles.chipLabel, { color: active ? colors.accent : colors.textMuted }]}>
+              {t(labelKey)}
             </Text>
           </TouchableOpacity>
         );
@@ -66,11 +82,26 @@ function ModeTabStrip({ mode, onSelect }: { mode: CaptureMode; onSelect: (m: Cap
   );
 }
 
-const stripStyles = StyleSheet.create({
-  strip: { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 6, borderBottomWidth: 1 },
-  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 10, gap: 5 },
-  tabIcon: { fontSize: 16 },
-  tabLabel: { fontSize: 13, fontWeight: '500' },
+const modeBarStyles = StyleSheet.create({
+  bar: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  chip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 5,
+    borderWidth: 1.5,
+  },
+  chipEmoji: { fontSize: 14 },
+  chipLabel: { fontSize: 12, fontWeight: '600' },
 });
 
 interface VoiceData {
@@ -91,19 +122,34 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
   const [duration, setDuration] = useState(0);
   const [status, setStatus] = useState<'idle' | 'recording' | 'uploading' | 'done'>('idle');
   const [transcription, setTranscription] = useState<string | null>(null);
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pulseRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Clean up on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (recordingRef.current) {
-        recordingRef.current.stopAndUnloadAsync().catch(() => { });
-      }
+      if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => { });
+      pulseRef.current?.stop();
     };
   }, []);
+
+  useEffect(() => {
+    if (isRecording) {
+      pulseRef.current = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.14, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+        ])
+      );
+      pulseRef.current.start();
+    } else {
+      pulseRef.current?.stop();
+      Animated.timing(pulseAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    }
+  }, [isRecording]);
 
   const startRecording = async () => {
     try {
@@ -112,23 +158,13 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
         Alert.alert(t('capture.permissionRequired'), t('capture.microphonePermission'));
         return;
       }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
       recordingRef.current = recording;
       setIsRecording(true);
       setStatus('recording');
       setDuration(0);
-
-      timerRef.current = setInterval(() => {
-        setDuration((d) => d + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
     } catch (err) {
       Alert.alert(t('capture.recordingError'), t('capture.recordingErrorMessage'));
       console.error('startRecording error:', err);
@@ -137,96 +173,103 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
 
   const stopRecording = async () => {
     if (!recordingRef.current) return;
-
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     setIsRecording(false);
     setStatus('uploading');
     onVoiceData({ audioUrl: null, transcription: null, recorded: false, isUploading: true });
-
     try {
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
-
       if (!uri) throw new Error('No recording URI');
-
       const result = await storageApi.uploadAudio(uri);
       const tx = result.transcription || null;
       setTranscription(tx);
       setStatus('done');
-      onVoiceData({
-        audioUrl: result.audio_url || null,
-        transcription: tx,
-        recorded: true,
-        isUploading: false,
-      });
+      onVoiceData({ audioUrl: result.audio_url || null, transcription: tx, recorded: true, isUploading: false });
     } catch (err) {
       console.error('stopRecording / upload error:', err);
       setStatus('done');
-      // Still mark as recorded so user can save without audio_url
       onVoiceData({ audioUrl: null, transcription: null, recorded: true, isUploading: false });
     }
   };
 
-  const handleToggle = () => {
-    if (isRecording) {
-      stopRecording();
-    } else {
-      startRecording();
-    }
-  };
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const fmtDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
   return (
-    <View style={styles.voiceContainer}>
-      <TouchableOpacity
-        style={[
-          styles.recordButton, { backgroundColor: colors.accent, shadowColor: colors.accent },
-          isRecording && { backgroundColor: colors.error, shadowColor: colors.error },
-          status === 'uploading' && { backgroundColor: colors.textSecondary, shadowColor: colors.textSecondary },
-        ]}
-        onPress={handleToggle}
-        activeOpacity={0.8}
-        disabled={status === 'uploading'}
-      >
-        {status === 'uploading' ? (
-          <ActivityIndicator color="#FFFFFF" size="large" />
-        ) : isRecording ? (
-          <View style={styles.stopIcon} />
-        ) : (
-          <Text style={styles.micIcon}>🎤</Text>
+    <View style={voiceStyles.container}>
+      {/* Pulse ring + button */}
+      <View style={voiceStyles.btnWrap}>
+        {isRecording && (
+          <Animated.View
+            style={[voiceStyles.pulseRing, { borderColor: colors.error, transform: [{ scale: pulseAnim }] }]}
+          />
         )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[voiceStyles.btn, { backgroundColor: isRecording ? colors.error : colors.accent }]}
+          onPress={isRecording ? stopRecording : startRecording}
+          activeOpacity={0.85}
+          disabled={status === 'uploading'}
+        >
+          {status === 'uploading' ? (
+            <ActivityIndicator color="#FFF" size="large" />
+          ) : isRecording ? (
+            <View style={voiceStyles.stopSquare} />
+          ) : (
+            <Text style={voiceStyles.micEmoji}>🎤</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
-      <Text style={[styles.recordingStatus, { color: colors.textPrimary }]}>
+      <Text style={[voiceStyles.statusText, { color: colors.textPrimary }]}>
         {status === 'idle' && t('capture.tapToRecord')}
-        {status === 'recording' && `${t('capture.recording')} ${formatDuration(duration)}`}
+        {status === 'recording' && `${t('capture.recording')} ${fmtDuration(duration)}`}
         {status === 'uploading' && t('capture.processingAudio')}
         {status === 'done' && (transcription ? t('capture.transcriptionReady') : t('capture.recordingSaved'))}
       </Text>
-
       {status === 'recording' && (
-        <Text style={[styles.recordingHint, { color: colors.textMuted }]}>{t('capture.tapToStop')}</Text>
+        <Text style={[voiceStyles.hintText, { color: colors.textMuted }]}>{t('capture.tapToStop')}</Text>
       )}
-
       {status === 'done' && transcription && (
-        <View style={[styles.transcriptionBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[styles.transcriptionLabel, { color: colors.textMuted }]}>{t('capture.modeVoice')}</Text>
-          <Text style={[styles.transcriptionText, { color: colors.textPrimary }]}>{transcription}</Text>
+        <View style={[voiceStyles.txBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <Text style={[voiceStyles.txLabel, { color: colors.textMuted }]}>{t('capture.modeVoice')}</Text>
+          <Text style={[voiceStyles.txText, { color: colors.textPrimary }]}>{transcription}</Text>
         </View>
       )}
     </View>
   );
 }
+
+const voiceStyles = StyleSheet.create({
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
+  btnWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  pulseRing: {
+    position: 'absolute',
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    borderWidth: 3,
+    opacity: 0.45,
+  },
+  btn: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  stopSquare: { width: 30, height: 30, backgroundColor: '#FFF', borderRadius: 4 },
+  micEmoji: { fontSize: 42 },
+  statusText: { fontSize: 16, fontWeight: '500', textAlign: 'center' },
+  hintText: { marginTop: 6, fontSize: 13, textAlign: 'center' },
+  txBox: { marginTop: 20, padding: 16, borderRadius: 16, borderWidth: 1, maxWidth: '100%' },
+  txLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
+  txText: { fontSize: 15, lineHeight: 22 },
+});
 
 // ── Image Upload Component ─────────────────────────────────────────────────
 interface ImageUploadData {
@@ -424,6 +467,7 @@ export default function CaptureScreen() {
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
+  const user = useAuthStore((s) => s.user);
 
   // Smart default: explicit param > user preference > 'text'
   const resolveInitialMode = (): CaptureMode => {
@@ -550,19 +594,16 @@ export default function CaptureScreen() {
     }
   };
 
-  const handleCancel = () => {
-    router.back();
-  };
+  const handleCancel = () => router.back();
 
   const isVoiceReady = voiceData.recorded && !voiceData.isUploading;
   const isImageReady = imageData.picked && !imageData.isUploading;
   const canSave =
-    mode === 'voice'
-      ? isVoiceReady
-      : mode === 'photo'
-        ? isImageReady
-        : content.trim().length > 0;
-  const config = modeConfig[mode];
+    mode === 'voice' ? isVoiceReady :
+    mode === 'photo' ? isImageReady :
+    content.trim().length > 0;
+
+  const initials = getInitials(user?.name, user?.email);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -570,33 +611,34 @@ export default function CaptureScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.cardBg }]}>
-          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-            <Text style={[styles.cancelButton, { color: colors.textSecondary }]}>{t('capture.cancel')}</Text>
+        {/* ── Header (LinkedIn-style) ── */}
+        <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.bg }]}>
+          <TouchableOpacity
+            onPress={handleCancel}
+            style={[styles.closeBtn, { backgroundColor: colors.inputBg }]}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
           </TouchableOpacity>
+
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('capture.title')}</Text>
+
           <TouchableOpacity
             onPress={handleSave}
             disabled={!canSave || isSaving}
-            style={styles.headerButton}
+            style={[
+              styles.saveBtn,
+              { backgroundColor: canSave && !isSaving ? colors.accent : colors.textMuted },
+            ]}
+            activeOpacity={0.85}
           >
-            <Text
-              style={[
-                styles.saveButton, { color: colors.accent },
-                (!canSave || isSaving) && { color: colors.textMuted },
-              ]}
-            >
-              {isSaving ? t('capture.saving') : t('capture.save')}
-            </Text>
+            {isSaving ? (
+              <ActivityIndicator color="#FFF" size="small" />
+            ) : (
+              <Text style={styles.saveBtnText}>{t('capture.save')}</Text>
+            )}
           </TouchableOpacity>
         </View>
-
-        {/* Mode Selector — compact tab strip */}
-        <ModeTabStrip
-          mode={mode}
-          onSelect={(m) => { setMode(m); Haptics.selectionAsync(); }}
-        />
 
         {/* ── Clipboard URL Banner ── */}
         {clipboardUrl && (
@@ -610,11 +652,7 @@ export default function CaptureScreen() {
             </View>
             <View style={styles.clipActions}>
               <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.accent }]}>
-                {clipSaving ? (
-                  <ActivityIndicator color="#FFF" size="small" />
-                ) : (
-                  <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>
-                )}
+                {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>}
               </TouchableOpacity>
               <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.accent }]}>
                 <Text style={[styles.clipUseText, { color: colors.accent }]}>{t('capture.useLink')}</Text>
@@ -626,63 +664,64 @@ export default function CaptureScreen() {
           </Animated.View>
         )}
 
-        {/* Content Area */}
-        <View style={styles.content}>
-          {mode === 'voice' ? (
-            <VoiceRecorder onVoiceData={setVoiceData} />
-          ) : mode === 'photo' ? (
-            <>
-              <ImageUpload onImageData={(data) => { setImageData(data); if (!data.picked) setPhotoNote(''); }} />
-              {imageData.picked && !imageData.isUploading && (
-                <TextInput
-                  style={[styles.photoNoteInput, { color: colors.textPrimary, backgroundColor: colors.inputBg, borderColor: colors.border }]}
-                  placeholder={t('capture.photoNotePlaceholder')}
-                  placeholderTextColor={colors.textMuted}
-                  multiline
-                  value={photoNote}
-                  onChangeText={setPhotoNote}
-                  textAlignVertical="top"
-                />
-              )}
-            </>
-          ) : (
-            <>
+        {/* ── Composer / mode panel ── */}
+        {mode === 'text' || mode === 'link' ? (
+          /* LinkedIn-style composer row: avatar + text input */
+          <View style={styles.composerRow}>
+            <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+            <View style={styles.inputWrap}>
               <TextInput
-                style={[
-                  styles.input, { color: colors.textPrimary },
-                  mode === 'link' && [styles.inputSingleLine, { borderBottomColor: colors.border }],
-                ]}
-                placeholder={t(mode === 'text' ? 'capture.textPlaceholder' : 'capture.linkPlaceholder')}
+                style={[styles.composerInput, { color: colors.textPrimary }]}
+                placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
                 placeholderTextColor={colors.textMuted}
                 multiline={mode === 'text'}
                 autoFocus
                 value={content}
-                onChangeText={(v) => {
-                  setContent(v);
-                  if (mode === 'link' && linkError) setLinkError('');
-                }}
+                onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
                 textAlignVertical="top"
-                keyboardType={config.keyboardType}
+                keyboardType={mode === 'link' ? 'url' : 'default'}
                 autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
                 autoCorrect={mode !== 'link'}
               />
               {mode === 'link' && linkError ? (
                 <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
               ) : null}
-            </>
-          )}
-        </View>
+            </View>
+          </View>
+        ) : mode === 'voice' ? (
+          <View style={styles.modePanel}>
+            <VoiceRecorder onVoiceData={setVoiceData} />
+          </View>
+        ) : (
+          /* Photo */
+          <View style={styles.modePanel}>
+            <ImageUpload onImageData={(data) => { setImageData(data); if (!data.picked) setPhotoNote(''); }} />
+            {imageData.picked && !imageData.isUploading && (
+              <TextInput
+                style={[styles.photoNoteInput, { color: colors.textPrimary, backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                placeholder={t('capture.photoNotePlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                value={photoNote}
+                onChangeText={setPhotoNote}
+                textAlignVertical="top"
+              />
+            )}
+          </View>
+        )}
+
+        {/* ── Bottom mode bar ── */}
+        <BottomModeBar
+          mode={mode}
+          onSelect={(m) => { setMode(m); setContent(''); setLinkError(''); }}
+        />
       </KeyboardAvoidingView>
 
-      {/* Success overlay */}
+      {/* ── Success overlay ── */}
       {saveSuccess && (
-        <Animated.View
-          style={[
-            styles.successOverlay,
-            { opacity: successOpacity },
-          ]}
-          pointerEvents="none"
-        >
+        <Animated.View style={[styles.successOverlay, { opacity: successOpacity }]} pointerEvents="none">
           <Animated.View style={[styles.successBubble, { transform: [{ scale: successScale }] }]}>
             <Text style={styles.successIcon}>✓</Text>
             <Text style={styles.successText}>{t('capture.saved')}</Text>
@@ -694,9 +733,97 @@ export default function CaptureScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  keyboardView: { flex: 1 },
+
+  // ── Header ──
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  closeBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeBtnText: { fontSize: 15, fontWeight: '500' },
+  title: { fontSize: 16, fontWeight: '600' },
+  saveBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+
+  // ── Composer (text / link) ──
+  composerRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    gap: 12,
+  },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  inputWrap: { flex: 1 },
+  composerInput: {
+    fontSize: 17,
+    lineHeight: 26,
+    minHeight: 80,
+  },
+  errorText: { marginTop: 6, fontSize: 13 },
+
+  // ── Voice / Photo panel ──
+  modePanel: { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
+  photoNoteInput: {
+    marginTop: 14,
+    minHeight: 80,
+    fontSize: 16,
+    lineHeight: 24,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    textAlignVertical: 'top',
+  },
+
+  // ── Clipboard banner ──
+  clipBanner: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 8,
+  },
+  clipBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  clipIcon: { fontSize: 18 },
+  clipTitle: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
+  clipUrl: { fontSize: 13, marginTop: 2 },
+  clipActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  clipSaveBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
+  clipSaveText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  clipUseBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
+  clipUseText: { fontSize: 12, fontWeight: '600' },
+  clipDismiss: { fontSize: 16, paddingLeft: 4 },
+
+  // ── Success overlay ──
   successOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -713,177 +840,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  successIcon: {
-    fontSize: 36,
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  successText: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  headerButton: {
-    minWidth: 70,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    fontSize: 16,
-  },
-  saveButton: {
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'right',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  input: {
-    flex: 1,
-    fontSize: 17,
-    lineHeight: 26,
-  },
-  inputSingleLine: {
-    flex: 0,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  photoNoteInput: {
-    marginTop: 14,
-    minHeight: 80,
-    fontSize: 16,
-    lineHeight: 24,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    textAlignVertical: 'top',
-  },
-  voiceContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 60,
-  },
-  recordButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  micIcon: {
-    fontSize: 40,
-  },
-  stopIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
-  },
-  recordingStatus: {
-    marginTop: 24,
-    fontSize: 17,
-    fontWeight: '500',
-  },
-  recordingHint: {
-    marginTop: 8,
-    fontSize: 14,
-  },
-  transcriptionBox: {
-    marginTop: 24,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    maxWidth: '100%',
-  },
-  transcriptionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  transcriptionText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  errorText: {
-    marginTop: 6,
-    fontSize: 13,
-  },
-  /* ── Clipboard Banner ── */
-  clipBanner: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    gap: 10,
-  },
-  clipBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  clipIcon: {
-    fontSize: 20,
-  },
-  clipTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  clipUrl: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  clipActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  clipSaveBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  clipSaveText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  clipUseBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  clipUseText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  clipDismiss: {
-    fontSize: 18,
-    paddingLeft: 4,
-  },
+  successIcon: { fontSize: 36, color: '#FFF', fontWeight: '700' },
+  successText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
 });

@@ -196,26 +196,32 @@ async def stream_search_summary(
                 {
                     "role": "system",
                     "content": (
-                        "You are a personal memory assistant. "
-                        "When a user searches their saved memories, provide a brief "
-                        "1-2 sentence insight that synthesizes the key themes, "
-                        "patterns, or connections across the results. "
-                        "Be warm, personal, and concise. "
-                        "Do not list items — give a flowing narrative observation."
+                        "You are a precise personal knowledge analyst. "
+                        "Your role is to synthesize a user's saved memories into a focused, "
+                        "informative summary that directly addresses their search intent. "
+                        "Rules: "
+                        "1. Open with the most relevant finding — tie it explicitly to the query. "
+                        "2. Surface concrete details: specific dates, names, quantities, decisions, or action items present in the memories. "
+                        "3. Identify meaningful patterns, recurring topics, or notable gaps relevant to the query. "
+                        "4. Keep the tone formal and direct — no filler phrases, no flattery. "
+                        "5. Do not list raw memory contents — synthesize and interpret. "
+                        "6. Limit the response to 3-4 focused sentences. "
+                        "7. Formatting: use **bold** for concrete facts (names, dates, quantities, decisions, action items); "
+                        "use *italic* for patterns, themes, or interpretive observations. Apply selectively — only the most significant terms."
                         + lang_note
                     ),
                 },
                 {
                     "role": "user",
                     "content": (
-                        f'The user searched for: "{query}"\n\n'
-                        f"Relevant memories found:\n{snippets_text}\n\n"
-                        "Provide a brief insight about what these memories reveal."
+                        f'Search query: "{query}"\n\n'
+                        f"Matched memories ({len(memory_snippets)} results):\n{snippets_text}\n\n"
+                        "Provide a formal, information-dense synthesis that directly answers what the query is looking for, citing specific details from the memories above. Use **bold** for key facts and *italic* for patterns."
                     ),
                 },
             ],
-            max_tokens=120,
-            temperature=0.45,
+            max_tokens=500,
+            temperature=0.3,
             stream=True,
         )
         async for chunk in stream:
@@ -255,26 +261,28 @@ async def summarize_search_results(
                 {
                     "role": "system",
                     "content": (
-                        "You are a personal memory assistant. "
-                        "When a user searches their saved memories, provide a brief "
-                        "1-2 sentence insight that synthesizes the key themes, "
-                        "patterns, or connections across the results. "
-                        "Be warm, personal, and concise. "
-                        "Do not list items — give a flowing narrative observation."
+                        "You are a precise personal knowledge analyst. "
+                        "Given a search query and a set of matched memories, write exactly 1-2 sentences "
+                        "that directly address the query's intent. "
+                        "Cite the most relevant concrete detail (date, name, decision, action item, or quantity) "
+                        "found in the memories. Be formal, factual, and information-dense. "
+                        "Do not use filler phrases such as 'These memories show' or 'It appears'. "
+                        "Formatting: use **bold** for concrete facts (names, dates, quantities, decisions); "
+                        "use *italic* for patterns or interpretive observations. Apply sparingly."
                         + lang_note
                     ),
                 },
                 {
                     "role": "user",
                     "content": (
-                        f'The user searched for: "{query}"\n\n'
-                        f"Relevant memories found:\n{snippets_text}\n\n"
-                        "Provide a brief insight about what these memories reveal."
+                        f'Search query: "{query}"\n\n'
+                        f"Matched memories ({len(memory_snippets)} results):\n{snippets_text}\n\n"
+                        "Summarize what these results reveal about the query in 1-2 formal, specific sentences. Use **bold** for key facts and *italic* for patterns."
                     ),
                 },
             ],
             max_tokens=120,
-            temperature=0.45,
+            temperature=0.3,
         )
         result = response.choices[0].message.content or ""
         return result.strip() or None

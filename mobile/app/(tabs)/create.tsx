@@ -1,10 +1,7 @@
 // Placeholder screen – the tab button is overridden in _layout.tsx to push /capture instead.
-import { useEffect } from 'react';
-import { router } from 'expo-router';
+// This tab screen is never directly navigated to; the CreateTabButton handles all presses.
+import { View } from 'react-native';
 
 export default function CreateTab() {
-  useEffect(() => {
-    router.replace('/capture');
-  }, []);
-  return null;
+  return <View />;
 }

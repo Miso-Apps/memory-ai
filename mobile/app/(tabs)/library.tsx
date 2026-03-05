@@ -18,6 +18,7 @@ import { useTranslation } from 'react-i18next';
 import { memoriesApi, categoriesApi, Memory as ApiMemory, Category } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
+import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 
 type FilterType = 'all' | 'text' | 'voice' | 'link' | 'photo';
 
@@ -447,9 +448,13 @@ export default function LibraryScreen() {
                 <ActivityIndicator size="small" color={colors.accent} style={{ marginLeft: 6 }} />
               )}
             </View>
-            <Text style={[styles.insightText, { color: colors.textPrimary }]}>
-              {searchSummary ?? ''}
-            </Text>
+            <SimpleMarkdown
+              content={searchSummary ?? ''}
+              textColor={colors.textPrimary}
+              colors={colors}
+              fontSize={14}
+              lineHeight={21}
+            />
           </View>
         </View>
       )}

@@ -429,39 +429,41 @@ export default function MemoryDetailScreen() {
           </View>
         )}
 
-        {/* Original content */}
-        <View style={styles.contentSection}>
-          {memory.aiSummary && (
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.original')}</Text>
-          )}
-          {memory.type === 'link' ? (
-            <TouchableOpacity
-              onPress={() => WebBrowser.openBrowserAsync(memory.content, {
-                dismissButtonStyle: 'close',
-                presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-                controlsColor: '#6366F1',
-              }).catch(() => { })}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.linkCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-                <View style={styles.linkCardLeft}>
-                  <Text style={styles.linkIcon}>🔗</Text>
-                  <Text style={[styles.linkUrl, { color: colors.accent }]} numberOfLines={2}>{memory.content}</Text>
+        {/* Original content — skip for voice (transcription section below covers it) */}
+        {memory.type !== 'voice' && (
+          <View style={styles.contentSection}>
+            {memory.aiSummary && (
+              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.original')}</Text>
+            )}
+            {memory.type === 'link' ? (
+              <TouchableOpacity
+                onPress={() => WebBrowser.openBrowserAsync(memory.content, {
+                  dismissButtonStyle: 'close',
+                  presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+                  controlsColor: '#6366F1',
+                }).catch(() => { })}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.linkCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                  <View style={styles.linkCardLeft}>
+                    <Text style={styles.linkIcon}>🔗</Text>
+                    <Text style={[styles.linkUrl, { color: colors.accent }]} numberOfLines={2}>{memory.content}</Text>
+                  </View>
+                  <View style={[styles.linkOpenBadge, { backgroundColor: colors.accentLight }]}>
+                    <Text style={[styles.linkOpenText, { color: colors.accent }]}>{t('memory.openLink')}</Text>
+                  </View>
                 </View>
-                <View style={[styles.linkOpenBadge, { backgroundColor: colors.accentLight }]}>
-                  <Text style={[styles.linkOpenText, { color: colors.accent }]}>{t('memory.openLink')}</Text>
-                </View>
+              </TouchableOpacity>
+            ) : memory.type === 'photo' ? (
+              <View style={[styles.photoDescriptionBox, { backgroundColor: colors.accentLight, borderColor: colors.accentMid }]}>
+                <Text style={[styles.photoDescriptionLabel, { color: colors.accent }]}>🤖 {t('memory.aiDescription')}</Text>
+                <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
               </View>
-            </TouchableOpacity>
-          ) : memory.type === 'photo' ? (
-            <View style={[styles.photoDescriptionBox, { backgroundColor: colors.accentLight, borderColor: colors.accentMid }]}>
-              <Text style={[styles.photoDescriptionLabel, { color: colors.accent }]}>🤖 {t('memory.aiDescription')}</Text>
+            ) : (
               <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
-            </View>
-          ) : (
-            <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
-          )}
-        </View>
+            )}
+          </View>
+        )}
 
         {/* Audio player */}
         {memory.type === 'voice' && (
@@ -493,7 +495,7 @@ export default function MemoryDetailScreen() {
           <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.edit')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={handleShare} activeOpacity={0.7}>
-          <Text style={styles.bottomActionIcon}>↗</Text>
+          <Text style={[styles.bottomActionIcon, { color: colors.textPrimary }]}>↗</Text>
           <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.share')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.bottomAction]} onPress={handleDelete} activeOpacity={0.7}>
