@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n, { SupportedLanguage } from '../i18n';
-import { preferencesApi, UserPreferences } from '../services/api';
+import { preferencesApi, UserPreferences, setApiLanguage } from '../services/api';
 
 const LANGUAGE_KEY = 'app_language';
 const PREFERENCES_CACHE_KEY = 'user_preferences';
@@ -32,6 +32,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
   setLanguage: async (lang: SupportedLanguage) => {
     await AsyncStorage.setItem(LANGUAGE_KEY, lang);
+    setApiLanguage(lang);
     i18n.changeLanguage(lang);
     set({ language: lang });
     // Sync to server preferences (best-effort, non-blocking)
@@ -51,9 +52,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const lang = storedLang as SupportedLanguage;
 
       if (lang && (lang === 'en' || lang === 'vi')) {
+        setApiLanguage(lang);
         i18n.changeLanguage(lang);
         set({ language: lang, isLoaded: true });
       } else {
+        setApiLanguage('en');
         set({ isLoaded: true });
       }
     } catch {

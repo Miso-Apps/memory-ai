@@ -35,7 +35,7 @@ interface DisplayMessage {
 
 // ─── Chat Bubble ──────────────────────────────────────────────────────────────
 
-function ChatBubble({
+const ChatBubble = React.memo(function ChatBubble({
   message,
   colors,
   t,
@@ -91,11 +91,11 @@ function ChatBubble({
       </View>
     </View>
   );
-}
+});
 
 // ─── Suggestion Chip ──────────────────────────────────────────────────────────
 
-function SuggestionChip({
+const SuggestionChip = React.memo(function SuggestionChip({
   text,
   onPress,
   colors,
@@ -113,7 +113,7 @@ function SuggestionChip({
       <Text style={[styles.suggestionText, { color: colors.accent }]}>{text}</Text>
     </TouchableOpacity>
   );
-}
+});
 
 // ─── Typing Indicator ─────────────────────────────────────────────────────────
 
@@ -151,23 +151,7 @@ export default function ChatScreen() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
-  // Load suggestions on first focus
-  useFocusEffect(
-    useCallback(() => {
-      if (suggestions.length === 0 && messages.length === 0) {
-        loadSuggestions();
-      }
-    }, [])
-  );
-
-  // Reload suggestions when language changes (so they show in the right language)
-  useEffect(() => {
-    if (messages.length === 0) {
-      loadSuggestions();
-    }
-  }, [language]);
-
-  const loadSuggestions = async () => {
+  const loadSuggestions = useCallback(async () => {
     try {
       setSuggestionsLoading(true);
       const data = await chatApi.getSuggestions();
@@ -182,7 +166,23 @@ export default function ChatScreen() {
     } finally {
       setSuggestionsLoading(false);
     }
-  };
+  }, [t]);
+
+  // Load suggestions on first focus
+  useFocusEffect(
+    useCallback(() => {
+      if (suggestions.length === 0 && messages.length === 0) {
+        loadSuggestions();
+      }
+    }, [loadSuggestions, messages.length, suggestions.length])
+  );
+
+  // Reload suggestions when language changes (so they show in the right language)
+  useEffect(() => {
+    if (messages.length === 0) {
+      loadSuggestions();
+    }
+  }, [language, loadSuggestions, messages.length]);
 
   const scrollToBottom = () => {
     setTimeout(() => {

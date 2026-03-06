@@ -9,7 +9,20 @@ import { useSettingsStore } from '../store/settingsStore';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
 import '../i18n'; // initialize i18n
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+      retry: 1,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loadStoredAuth } = useAuthStore();

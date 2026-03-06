@@ -19,6 +19,7 @@ import { memoriesApi, categoriesApi, Memory as ApiMemory, Category } from '../..
 import { useTheme } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
+import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
 
 type FilterType = 'all' | 'text' | 'voice' | 'link' | 'photo';
 
@@ -155,6 +156,7 @@ export default function LibraryScreen() {
   const [searching, setSearching] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const categoryEffectInitialized = useRef(false);
   // Tracks whether a streaming search is still in-flight so we can cancel on re-search
   const streamAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
 
@@ -207,9 +209,12 @@ export default function LibraryScreen() {
 
   // Also reload when selectedCategory changes while screen is already focused
   useEffect(() => {
+    if (!categoryEffectInitialized.current) {
+      categoryEffectInitialized.current = true;
+      return;
+    }
     loadMemories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCategory]);
+  }, [selectedCategory, loadMemories]);
 
   // performSearch — called on Enter press or when category changes while a query is active
   const performSearch = useCallback(async (query: string, catId: string | null) => {
@@ -317,18 +322,11 @@ export default function LibraryScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCategory]);
 
-  const counts = useMemo(() => ({
-    all: allMemories.length,
-    text: allMemories.filter((m) => m.type === 'text').length,
-    voice: allMemories.filter((m) => m.type === 'voice').length,
-    link: allMemories.filter((m) => m.type === 'link').length,
-    photo: allMemories.filter((m) => m.type === 'photo').length,
-  }), [allMemories]);
+  const counts = useMemo(() => buildMemoryTypeCounts(allMemories), [allMemories]);
 
   const memories = useMemo(() => {
     const source = searchResults ?? allMemories;
-    if (filter === 'all') return source;
-    return source.filter((m) => m.type === filter);
+    return filterMemoriesByType(source, filter);
   }, [allMemories, searchResults, filter]);
 
   const onRefresh = async () => {

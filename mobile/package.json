@@ -8,7 +8,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "bench:memory": "node ./scripts/benchmark-memory-ops.mjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
@@ -26,6 +29,7 @@
     "expo-document-picker": "~12.0.2",
     "expo-file-system": "~17.0.1",
     "expo-haptics": "~13.0.1",
+    "expo-image-manipulator": "~12.0.5",
     "expo-image-picker": "~15.1.0",
     "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.1",
@@ -47,14 +51,27 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@types/jest": "^29.5.14",
     "@types/react": "~18.2.45",
     "ajv": "^8.18.0",
     "ajv-keywords": "^5.1.0",
     "eslint": "^8.57.0",
     "eslint-config-expo": "^7.1.2",
+    "jest": "^29.7.0",
+    "jest-expo": "^51.0.4",
     "metro": "^0.80.12",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.3.3"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "testMatch": [
+      "**/?(*.)+(spec|test).[tj]s?(x)"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.expo/"
+    ]
+  }
 }

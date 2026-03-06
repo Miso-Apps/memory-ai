@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authApi } from '../services/api';
+import { authApi, setApiAccessToken } from '../services/api';
 
 interface User {
   id: string;
@@ -40,6 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         ['refreshToken', response.refresh_token],
         ['user', JSON.stringify(response.user)],
       ]);
+      setApiAccessToken(response.access_token);
 
       set({
         user: response.user,
@@ -64,6 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         ['refreshToken', response.refresh_token],
         ['user', JSON.stringify(response.user)],
       ]);
+      setApiAccessToken(response.access_token);
 
       set({
         user: response.user,
@@ -88,6 +90,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         ['refreshToken', response.refresh_token],
         ['user', JSON.stringify(response.user)],
       ]);
+      setApiAccessToken(response.access_token);
 
       set({
         user: response.user,
@@ -109,6 +112,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error('Logout error:', error);
     } finally {
       await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+      setApiAccessToken(null);
       set({
         user: null,
         accessToken: null,
@@ -157,6 +161,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         refreshToken: refresh,
         isAuthenticated: true,
       });
+      setApiAccessToken(token);
     } catch (error) {
       console.error('Load stored auth error:', error);
     }

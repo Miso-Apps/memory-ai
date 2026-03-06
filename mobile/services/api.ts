@@ -9,9 +9,40 @@ import Constants from 'expo-constants';
 WebBrowser.maybeCompleteAuthSession();
 
 // Configure API base URL based on environment
-const API_BASE_URL = __DEV__ 
+const API_BASE_URL = __DEV__
   ? 'http://localhost:8000'  // Local development
   : 'https://api.memoryai.app';  // Production
+
+let cachedAccessToken: string | null = null;
+let accessTokenHydrated = false;
+let cachedLanguage: string | null = null;
+let languageHydrated = false;
+
+export function setApiAccessToken(token: string | null) {
+  cachedAccessToken = token;
+  accessTokenHydrated = true;
+}
+
+export function setApiLanguage(language: string | null) {
+  cachedLanguage = language;
+  languageHydrated = true;
+}
+
+async function getAccessTokenCached() {
+  if (!accessTokenHydrated) {
+    cachedAccessToken = await AsyncStorage.getItem('accessToken');
+    accessTokenHydrated = true;
+  }
+  return cachedAccessToken;
+}
+
+async function getLanguageCached() {
+  if (!languageHydrated) {
+    cachedLanguage = await AsyncStorage.getItem('app_language');
+    languageHydrated = true;
+  }
+  return cachedLanguage;
+}
 
 // Create axios instance
 const api = axios.create({
@@ -25,14 +56,14 @@ const api = axios.create({
 // Request interceptor to add auth token and language header
 api.interceptors.request.use(
   async (config: any) => {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await getAccessTokenCached();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     // Always send the user's current language so the backend can
     // generate AI content in the correct language, even if the
     // preference DB update hasn't been saved yet.
-    const lang = await AsyncStorage.getItem('app_language');
+    const lang = await getLanguageCached();
     if (lang) {
       config.headers['Accept-Language'] = lang;
     }
@@ -64,14 +95,16 @@ api.interceptors.response.use(
 
         const { access_token } = response.data;
         await AsyncStorage.setItem('accessToken', access_token);
+        setApiAccessToken(access_token);
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh token existed but is invalid/expired — force logout.
         await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+        setApiAccessToken(null);
         const { useAuthStore } = require('../store/authStore');
-        useAuthStore.getState().logout().catch(() => {});
+        useAuthStore.getState().logout().catch(() => { });
         return Promise.reject(refreshError);
       }
     }
@@ -259,8 +292,8 @@ export const memoriesApi = {
     onDone: () => void,
     onError: (err: string) => void,
   ): Promise<void> => {
-    const token = await AsyncStorage.getItem('accessToken');
-    const lang = await AsyncStorage.getItem('app_language');
+    const token = await getAccessTokenCached();
+    const lang = await getLanguageCached();
 
     const params = new URLSearchParams({ q: query, stream: 'true' });
     if (options?.category_id) params.set('category_id', options.category_id);
@@ -676,9 +709,11 @@ export const storageApi = {
 
     const response = await api.post<{
       image_url: string | null;
+      thumbnail_url: string | null;
       description: string | null;  // AI-generated text description of the image
       filename: string;
       size_bytes: number;
+      original_size_bytes: number;
     }>('/storage/image', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

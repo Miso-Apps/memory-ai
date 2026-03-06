@@ -2,6 +2,8 @@
 Storage API — audio upload with real MinIO + optional Whisper transcription.
 """
 
+import logging
+
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
@@ -11,6 +13,9 @@ from app.api.deps import get_current_user
 from app.models.user import User
 from app.api.preferences import get_or_create_preferences
 from app.services import ai_service, storage_service
+from app.services.media_optimizer import optimize_image as optimize_image_bytes, generate_thumbnail
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -132,20 +137,44 @@ async def upload_image(
 
     filename = file.filename or "photo.jpg"
 
-    # Upload to MinIO (falls back to None gracefully)
-    image_url = await storage_service.upload_image(file_bytes, filename)
+    # ── Server-side optimization ──────────────────────────────────────────
+    # 1. Resize to max 1920px, convert to WebP, strip EXIF/metadata
+    original_size = len(file_bytes)
+    try:
+        optimized_bytes, optimized_content_type = optimize_image_bytes(file_bytes)
+        # Use the optimized bytes for upload and AI analysis
+        upload_bytes = optimized_bytes
+        upload_filename = filename.rsplit(".", 1)[0] + ".webp"
+    except Exception as exc:
+        log.warning("Image optimization failed, uploading original: %s", exc)
+        upload_bytes = file_bytes
+        upload_filename = filename
+
+    # 2. Generate a small thumbnail (400px) for list views
+    thumbnail_url = None
+    try:
+        thumb_bytes, _ = generate_thumbnail(file_bytes)
+        thumb_filename = "thumb_" + filename.rsplit(".", 1)[0] + ".webp"
+        thumbnail_url = await storage_service.upload_image(thumb_bytes, thumb_filename)
+    except Exception as exc:
+        log.warning("Thumbnail generation failed: %s", exc)
+
+    # Upload optimized image to MinIO (falls back to None gracefully)
+    image_url = await storage_service.upload_image(upload_bytes, upload_filename)
 
     # Use Accept-Language header or DB preference for AI description
     user_language = await _get_user_language(request, db, current_user.id)
 
     # Describe with GPT-4o Vision (falls back to None gracefully)
-    description = await ai_service.describe_image(file_bytes, filename, user_language)
+    description = await ai_service.describe_image(upload_bytes, upload_filename, user_language)
 
     return {
         "image_url": image_url,
+        "thumbnail_url": thumbnail_url,
         "description": description,
-        "filename": filename,
-        "size_bytes": len(file_bytes),
+        "filename": upload_filename,
+        "size_bytes": len(upload_bytes),
+        "original_size_bytes": original_size,
     }
 
 

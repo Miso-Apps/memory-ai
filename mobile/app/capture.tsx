@@ -24,6 +24,7 @@ import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
 import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
+import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
 
 type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
 
@@ -40,9 +41,9 @@ function getInitials(name?: string, email?: string): string {
 
 // ── Bottom mode bar (LinkedIn-style) ──────────────────────────────────────
 const MODE_DEFINITIONS: { key: CaptureMode; emoji: string; labelKey: string }[] = [
-  { key: 'text',  emoji: '📝', labelKey: 'capture.modeText' },
+  { key: 'text', emoji: '📝', labelKey: 'capture.modeText' },
   { key: 'voice', emoji: '🎤', labelKey: 'capture.modeVoice' },
-  { key: 'link',  emoji: '🔗', labelKey: 'capture.modeLink' },
+  { key: 'link', emoji: '🔗', labelKey: 'capture.modeLink' },
   { key: 'photo', emoji: '📷', labelKey: 'capture.modePhoto' },
 ];
 
@@ -159,7 +160,7 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
         return;
       }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      const { recording } = await Audio.Recording.createAsync(OPTIMIZED_RECORDING_OPTIONS);
       recordingRef.current = recording;
       setIsRecording(true);
       setStatus('recording');
@@ -300,19 +301,29 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
-      quality: 0.85,
+      quality: 1, // full quality — we compress via optimizeImage below
     });
 
     if (result.canceled || !result.assets?.[0]) return;
 
     const asset = result.assets[0];
-    setPickedUri(asset.uri);
+
+    // ── Compress & resize before upload ──────────────────────────────────
+    let optimizedUri = asset.uri;
+    try {
+      const optimized = await optimizeImage(asset.uri);
+      optimizedUri = optimized.uri;
+    } catch (err) {
+      console.warn('Image optimization failed, uploading original:', err);
+    }
+
+    setPickedUri(optimizedUri);
     setDescription(null);
     setIsUploading(true);
     onImageData({ imageUrl: null, description: null, picked: false, isUploading: true });
 
     try {
-      const uploadResult = await storageApi.uploadImage(asset.uri);
+      const uploadResult = await storageApi.uploadImage(optimizedUri);
       const desc = uploadResult.description ?? null;
       setDescription(desc);
       setIsUploading(false);
@@ -600,8 +611,8 @@ export default function CaptureScreen() {
   const isImageReady = imageData.picked && !imageData.isUploading;
   const canSave =
     mode === 'voice' ? isVoiceReady :
-    mode === 'photo' ? isImageReady :
-    content.trim().length > 0;
+      mode === 'photo' ? isImageReady :
+        content.trim().length > 0;
 
   const initials = getInitials(user?.name, user?.email);
 
