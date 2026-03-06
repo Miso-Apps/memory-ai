@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory AI — Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 3-1.5 5.5-4 7v2H9v-2c-2.5-1.5-4-4-4-7a7 7 0 0 1 7-7z"/><line x1="9" y1="22" x2="15" y2="22"/></svg></div>
+        <span>Memory AI Settings</span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Server Configuration -->
+      <section class="card">
+        <h2 class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1"/><circle cx="6" cy="18" r="1"/></svg> Server</h2>
+        <div class="field">
+          <label for="api-url">API URL</label>
+          <div class="input-group">
+            <input type="url" id="api-url" placeholder="http://localhost:8000">
+            <button class="btn btn-outline" id="test-connection">Test</button>
+          </div>
+          <p class="hint">Default: <code>http://localhost:8000</code></p>
+        </div>
+        <div id="connection-status" class="status" hidden></div>
+      </section>
+
+      <!-- Language -->
+      <section class="card">
+        <h2 class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Language</h2>
+        <div class="field">
+          <label for="language">Interface language</label>
+          <select id="language">
+            <option value="en">English</option>
+            <option value="vi">Tiếng Việt</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Keyboard Shortcuts -->
+      <section class="card">
+        <h2 class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10"/></svg> Keyboard Shortcuts</h2>
+        <div class="shortcuts-list">
+          <div class="shortcut-row">
+            <span class="shortcut-label">Quick Capture popup</span>
+            <kbd>⌘M</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-label">Save selected text</span>
+            <kbd>⌘⇧S</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-label">Save current page link</span>
+            <kbd>⌘⇧L</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-label">Omnibox (address bar)</span>
+            <kbd>mem</kbd> <span class="shortcut-note">type in address bar</span>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-label">Save memory (in popup)</span>
+            <kbd>⌘↵</kbd>
+          </div>
+          <div class="shortcut-row">
+            <span class="shortcut-label">Switch tabs (in popup)</span>
+            <kbd>⌥1</kbd> <kbd>⌥2</kbd> <kbd>⌥3</kbd>
+          </div>
+        </div>
+        <p class="hint">You can change shortcuts at <a href="#" id="chrome-shortcuts-link">chrome://extensions/shortcuts</a></p>
+      </section>
+
+      <!-- Offline Queue -->
+      <section class="card" id="queue-section">
+        <h2 class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Offline Queue</h2>
+        <div id="queue-status" class="queue-status">
+          <span id="queue-count">No memories queued</span>
+          <button class="btn btn-sm btn-accent" id="queue-flush" hidden>Sync Now</button>
+        </div>
+        <div id="queue-items" class="queue-items"></div>
+      </section>
+
+      <!-- Account -->
+      <section class="card" id="account-section" hidden>
+        <h2 class="card-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Account</h2>
+        <div class="account-info">
+          <div class="account-avatar" id="opts-avatar">U</div>
+          <div>
+            <div class="account-name" id="opts-name">User</div>
+            <div class="account-email" id="opts-email">user@example.com</div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-danger" id="opts-logout">Sign Out</button>
+      </section>
+
+      <!-- About -->
+      <section class="card about">
+        <p>Memory AI Extension v1.0.0</p>
+        <p>Save thoughts, links, and text snippets instantly.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>

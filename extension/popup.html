@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory AI — Quick Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ═══ LOGIN ═══ -->
+  <div id="screen-login" class="screen" hidden>
+    <div class="header">
+      <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 3-1.5 5.5-4 7v2H9v-2c-2.5-1.5-4-4-4-7a7 7 0 0 1 7-7z"/><line x1="9" y1="22" x2="15" y2="22"/></svg></div>
+      <h1>Memory AI</h1>
+      <p class="subtitle">Sign in to save memories</p>
+    </div>
+    <form id="login-form" class="form">
+      <div class="field"><label for="login-email">Email</label><input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email"></div>
+      <div class="field"><label for="login-password">Password</label><input type="password" id="login-password" placeholder="Your password" required autocomplete="current-password"></div>
+      <div id="login-error" class="error" hidden></div>
+      <button type="submit" class="btn btn-primary" id="login-btn"><span class="btn-text">Sign In</span><span class="btn-loading" hidden><svg class="spinner" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="8"/></svg></span></button>
+    </form>
+    <button class="link-btn" id="open-settings-login"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg> Settings</button>
+  </div>
+
+  <!-- ═══ CAPTURE ═══ -->
+  <div id="screen-capture" class="screen" hidden>
+
+    <!-- Header bar -->
+    <div class="capture-header">
+      <div class="user-info">
+        <div class="avatar" id="user-avatar">U</div>
+        <span class="user-name" id="user-name">User</span>
+        <span class="badge-count" id="today-count" hidden title="Saved today">0</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="open-settings" title="Settings"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></button>
+        <button class="icon-btn" id="logout-btn" title="Sign out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </div>
+    </div>
+
+    <!-- Smart Clipboard Banner -->
+    <div id="clipboard-banner" class="clipboard-banner" hidden>
+      <div class="clipboard-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      </div>
+      <div class="clipboard-text">
+        <span class="clipboard-label" id="clipboard-label">URL in clipboard</span>
+        <span class="clipboard-preview" id="clipboard-preview"></span>
+      </div>
+      <button class="btn btn-sm btn-accent" id="clipboard-save">Save</button>
+      <button class="icon-btn-sm" id="clipboard-dismiss" title="Dismiss">&times;</button>
+    </div>
+
+    <!-- Offline Queue Banner -->
+    <div id="offline-banner" class="offline-banner" hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span id="offline-text">2 memories queued</span>
+      <button class="btn btn-sm" id="offline-sync">Sync now</button>
+    </div>
+
+    <!-- Type Tabs -->
+    <div class="type-tabs">
+      <button class="type-tab active" data-type="text" title="Text note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        <span>Text</span>
+      </button>
+      <button class="type-tab" data-type="link" title="Save link">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Link</span>
+      </button>
+      <button class="type-tab" data-type="selection" title="Save selected text">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 12h10M7 17h6"/></svg>
+        <span>Selection</span>
+      </button>
+    </div>
+
+    <!-- TEXT pane -->
+    <div id="pane-text" class="pane active">
+      <textarea id="text-input" placeholder="What's on your mind? Jot down a thought, idea, or note..." rows="4" autofocus></textarea>
+      <div class="char-count"><span id="char-count">0</span> chars</div>
+    </div>
+
+    <!-- LINK pane -->
+    <div id="pane-link" class="pane">
+      <div class="link-field">
+        <input type="url" id="link-input" placeholder="Paste a URL...">
+        <button class="icon-btn" id="use-current-url" title="Use current page URL"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+      </div>
+      <div id="link-preview" class="link-preview" hidden>
+        <img id="link-favicon" class="link-favicon" width="16" height="16" alt="">
+        <div class="link-meta">
+          <div class="link-title" id="link-preview-title"></div>
+          <div class="link-desc" id="link-preview-desc"></div>
+          <div class="link-url" id="link-preview-url"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SELECTION pane -->
+    <div id="pane-selection" class="pane">
+      <div id="selection-content" class="selection-content">
+        <p class="empty-hint">Select text on a page, then press <kbd>⌘+Shift+S</kbd> or right-click → "Save to Memory AI"</p>
+      </div>
+      <div id="selection-source" class="selection-source" hidden>
+        From: <a id="selection-source-url" href="#" target="_blank"></a>
+      </div>
+    </div>
+
+    <!-- Recent Memories -->
+    <div id="recent-section" class="recent-section" hidden>
+      <div class="recent-header">
+        <span class="recent-label">Recent</span>
+      </div>
+      <div id="recent-list" class="recent-list"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="capture-footer">
+      <button class="btn btn-primary btn-save" id="save-btn" disabled>
+        <span class="btn-text"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Save Memory</span>
+        <span class="btn-loading" hidden><svg class="spinner" width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="8"/></svg> Saving...</span>
+      </button>
+      <div class="shortcut-hint"><kbd>⌘+Enter</kbd> to save · <kbd>⌘+Shift+L</kbd> save page link</div>
+    </div>
+  </div>
+
+  <!-- ═══ SUCCESS ═══ -->
+  <div id="screen-success" class="screen" hidden>
+    <div class="success-content">
+      <div class="success-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      <h2>Saved!</h2>
+      <p class="success-type" id="success-type">Memory saved successfully</p>
+      <p class="success-count" id="success-count"></p>
+    </div>
+  </div>
+
+  <!-- ═══ TOAST ═══ -->
+  <div id="toast" class="toast" hidden>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    <span id="toast-msg">Something went wrong</span>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
