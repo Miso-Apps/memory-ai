@@ -4,17 +4,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary Meta Tags -->
   <title>Memory AI — Your Second Brain</title>
+  <meta name="title" content="Memory AI — Your Second Brain" />
   <meta name="description"
     content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension." />
+  <meta name="keywords"
+    content="memory app, second brain, AI notes, voice memos, personal knowledge management, GPT-4, note taking, digital memory, thought capture, chrome extension" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="English" />
+  <meta name="author" content="Memory AI" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://memoryai.app" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://memoryai.app" />
   <meta property="og:title" content="Memory AI — Your Second Brain" />
   <meta property="og:description"
     content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Now with a Chrome Extension." />
-  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://memoryai.app/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:site_name" content="Memory AI" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="vi_VN" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://memoryai.app" />
+  <meta property="twitter:title" content="Memory AI — Your Second Brain" />
+  <meta property="twitter:description"
+    content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension." />
+  <meta property="twitter:image" content="https://memoryai.app/twitter-image.jpg" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#6366F1" />
+  <meta name="msapplication-TileColor" content="#6366F1" />
+
+  <!-- Preconnect for Performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Memory AI",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "iOS, Android, Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.9",
+      "ratingCount": "2847"
+    },
+    "description": "Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension.",
+    "screenshot": "https://memoryai.app/screenshots/app-preview.jpg",
+    "featureList": [
+      "Frictionless capture of thoughts, links, voice, and photos",
+      "Semantic search powered by AI",
+      "GPT-4 powered summaries and chat",
+      "Voice transcription with Whisper AI",
+      "Weekly insights and patterns",
+      "Chrome browser extension",
+      "Cross-platform sync"
+    ]
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Memory AI",
+    "url": "https://memoryai.app",
+    "logo": "https://memoryai.app/logo.png",
+    "sameAs": [
+      "https://twitter.com/memoryai",
+      "https://github.com/memoryai"
+    ]
+  }
+  </script>
   <style>
     /* ─── Reset & Base ──────────────────────────────── */
     *,
@@ -1914,14 +2000,18 @@
           <span class="nav-logo-name">Memory AI</span>
         </a>
         <div class="nav-links">
-          <a href="#features">Features</a>
-          <a href="#extension">Extension</a>
-          <a href="#how">How it works</a>
-          <a href="#ai">AI Power</a>
-          <a href="#privacy">Privacy</a>
+          <a href="#features" data-i18n="nav.features">Features</a>
+          <a href="#extension" data-i18n="nav.extension">Extension</a>
+          <a href="#how" data-i18n="nav.how">How it works</a>
+          <a href="#ai" data-i18n="nav.ai">AI Power</a>
+          <a href="#privacy" data-i18n="nav.privacy">Privacy</a>
         </div>
         <div class="nav-cta">
-          <a href="#download" class="btn btn-primary" style="font-size:13px;padding:9px 18px;">
+          <button id="lang-switcher" class="btn btn-ghost" style="font-size:13px;padding:9px 12px;margin-right:8px;"
+            title="Switch language">
+            <span id="lang-flag">🇺🇸</span>
+          </button>
+          <a href="#download" class="btn btn-primary" style="font-size:13px;padding:9px 18px;" data-i18n="nav.download">
             Download Free
           </a>
         </div>
@@ -1942,16 +2032,15 @@
         <div>
           <div class="hero-badge">
             <div class="hero-badge-dot"></div>
-            Powered by GPT-4 &amp; pgvector
+            <span data-i18n="hero.badge">Powered by GPT-4 &amp; pgvector</span>
           </div>
           <h1 class="hero-h1">
-            Your<br>
-            <span class="gradient-text">second brain,</span><br>
-            always with you.
+            <span data-i18n="hero.title.line1">Your</span><br>
+            <span class="gradient-text" data-i18n="hero.title.line2">second brain,</span><br>
+            <span data-i18n="hero.title.line3">always with you.</span>
           </h1>
-          <p class="hero-sub">
-            Capture every thought, link, and voice memo on mobile <em>or straight from your browser</em>. Memory AI
-            surfaces what matters — right when you need it.
+          <p class="hero-sub" data-i18n="hero.subtitle">
+            Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it.
           </p>
           <div class="hero-actions">
             <a href="#download" class="store-btn" data-store="appStore">
@@ -1964,8 +2053,8 @@
                   fill="white" />
               </svg>
               <div class="store-btn-text">
-                <span class="store-btn-sub">Download on the</span>
-                <span class="store-btn-title">App Store</span>
+                <span class="store-btn-sub" data-i18n="hero.downloadOn">Download on the</span>
+                <span class="store-btn-title" data-i18n="hero.appStore">App Store</span>
               </div>
             </a>
             <a href="#download" class="store-btn outline" data-store="googlePlay">
@@ -1975,8 +2064,8 @@
                   fill="currentColor" />
               </svg>
               <div class="store-btn-text">
-                <span class="store-btn-sub">Get it on</span>
-                <span class="store-btn-title">Google Play</span>
+                <span class="store-btn-sub" data-i18n="hero.getItOn">Get it on</span>
+                <span class="store-btn-title" data-i18n="hero.googlePlay">Google Play</span>
               </div>
             </a>
           </div>
@@ -2106,12 +2195,18 @@
   <div class="trust-bar">
     <div class="container">
       <div class="trust-bar-inner">
-        <div class="trust-item"><span class="trust-icon">🔐</span> End-to-end encrypted</div>
-        <div class="trust-item"><span class="trust-icon">🚀</span> GPT-4 powered summaries</div>
-        <div class="trust-item"><span class="trust-icon">📱</span> iOS &amp; Android</div>
-        <div class="trust-item"><span class="trust-icon">🧩</span> Chrome Extension</div>
-        <div class="trust-item"><span class="trust-icon">🌙</span> Dark mode supported</div>
-        <div class="trust-item"><span class="trust-icon">🌍</span> Multilingual</div>
+        <div class="trust-item"><span class="trust-icon">🔐</span> <span data-i18n="trust.encrypted">End-to-end
+            encrypted</span></div>
+        <div class="trust-item"><span class="trust-icon">🚀</span> <span data-i18n="trust.gpt4">GPT-4 powered
+            summaries</span></div>
+        <div class="trust-item"><span class="trust-icon">📱</span> <span data-i18n="trust.platforms">iOS &amp;
+            Android</span></div>
+        <div class="trust-item"><span class="trust-icon">🧩</span> <span data-i18n="trust.extension">Chrome
+            Extension</span></div>
+        <div class="trust-item"><span class="trust-icon">🌙</span> <span data-i18n="trust.darkMode">Dark mode
+            supported</span></div>
+        <div class="trust-item"><span class="trust-icon">🌍</span> <span
+            data-i18n="trust.multilingual">Multilingual</span></div>
       </div>
     </div>
   </div>
@@ -2120,69 +2215,77 @@
   <section class="section" id="features">
     <div class="container">
       <div class="section-header-center reveal">
-        <div class="section-label">✦ Everything you need</div>
-        <h2 class="section-title">Built for how<br>you actually think</h2>
-        <p class="section-sub">Not a note-taking app. Not a to-do list. Memory AI is your trusted companion that
+        <div class="section-label" data-i18n="features.label">✦ Everything you need</div>
+        <h2 class="section-title" data-i18n="features.title">Built for how<br>you actually think</h2>
+        <p class="section-sub" data-i18n="features.subtitle">Not a note-taking app. Not a to-do list. Memory AI is your
+          trusted companion that
           remembers so you don't have to.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card reveal reveal-delay-1">
           <div class="feature-icon feature-icon-purple">📝</div>
-          <div class="feature-title">Frictionless Capture</div>
-          <p class="feature-desc">Save a thought in under 3 seconds. Text, link, voice, or photo — Memory AI detects
+          <div class="feature-title" data-i18n="feature1.title">Frictionless Capture</div>
+          <p class="feature-desc" data-i18n="feature1.desc">Save a thought in under 3 seconds. Text, link, voice, or
+            photo — Memory AI detects
             your clipboard and suggests saving automatically.</p>
-          <span class="feature-tag">Smart clipboard detection</span>
+          <span class="feature-tag" data-i18n="feature1.tag">Smart clipboard detection</span>
         </div>
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon feature-icon-indigo">🔍</div>
-          <div class="feature-title">Semantic Search</div>
-          <p class="feature-desc">Search by meaning, not exact keywords. "career anxiety" finds all your notes about job
+          <div class="feature-title" data-i18n="feature2.title">Semantic Search</div>
+          <p class="feature-desc" data-i18n="feature2.desc">Search by meaning, not exact keywords. "career anxiety"
+            finds all your notes about job
             changes, goals, and financial worries — automatically.</p>
-          <span class="feature-tag">Powered by pgvector</span>
+          <span class="feature-tag" data-i18n="feature2.tag">Powered by pgvector</span>
         </div>
         <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon feature-icon-green">💡</div>
-          <div class="feature-title">Proactive Recall</div>
-          <p class="feature-desc">Memory AI surfaces relevant memories at the right moment. No digging — it appears when
+          <div class="feature-title" data-i18n="feature3.title">Proactive Recall</div>
+          <p class="feature-desc" data-i18n="feature3.desc">Memory AI surfaces relevant memories at the right moment. No
+            digging — it appears when
             a past thought becomes relevant again.</p>
-          <span class="feature-tag">Context-aware AI</span>
+          <span class="feature-tag" data-i18n="feature3.tag">Context-aware AI</span>
         </div>
         <div class="feature-card reveal reveal-delay-1">
           <div class="feature-icon feature-icon-amber">🎤</div>
-          <div class="feature-title">Voice Memos</div>
-          <p class="feature-desc">Record your thoughts hands-free. Automatic transcription by OpenAI Whisper turns every
+          <div class="feature-title" data-i18n="feature4.title">Voice Memos</div>
+          <p class="feature-desc" data-i18n="feature4.desc">Record your thoughts hands-free. Automatic transcription by
+            OpenAI Whisper turns every
             audio note into searchable text instantly.</p>
-          <span class="feature-tag">Whisper transcription</span>
+          <span class="feature-tag" data-i18n="feature4.tag">Whisper transcription</span>
         </div>
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon feature-icon-pink">📊</div>
-          <div class="feature-title">Weekly Insights</div>
-          <p class="feature-desc">See patterns in your thinking with beautiful heatmaps, daily streaks, and weekly
+          <div class="feature-title" data-i18n="feature5.title">Weekly Insights</div>
+          <p class="feature-desc" data-i18n="feature5.desc">See patterns in your thinking with beautiful heatmaps, daily
+            streaks, and weekly
             AI-generated recaps of what occupied your mind most.</p>
-          <span class="feature-tag">AI-generated recaps</span>
+          <span class="feature-tag" data-i18n="feature5.tag">AI-generated recaps</span>
         </div>
         <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon feature-icon-blue">💬</div>
-          <div class="feature-title">Ask Your Memories</div>
-          <p class="feature-desc">Have a conversation with your past self. Chat with your entire memory archive: "What
+          <div class="feature-title" data-i18n="feature6.title">Ask Your Memories</div>
+          <p class="feature-desc" data-i18n="feature6.desc">Have a conversation with your past self. Chat with your
+            entire memory archive: "What
             did I think about last month's meeting?" — answered instantly.</p>
-          <span class="feature-tag">GPT-4 powered chat</span>
+          <span class="feature-tag" data-i18n="feature6.tag">GPT-4 powered chat</span>
         </div>
         <div class="feature-card reveal reveal-delay-1"
           style="border-color:rgba(99,102,241,0.25);background:linear-gradient(135deg,rgba(99,102,241,0.03),var(--surface));">
           <div class="feature-icon feature-icon-chrome">🧩</div>
-          <div class="feature-title">Browser Extension</div>
-          <p class="feature-desc">Save anything from the web in one keystroke. <kbd
+          <div class="feature-title" data-i18n="feature7.title">Browser Extension</div>
+          <p class="feature-desc" data-i18n="feature7.desc">Save anything from the web in one keystroke. <kbd
               style="font-size:11px;padding:1px 5px;background:var(--bg-alt);border:1px solid var(--border);border-radius:4px;">⌘M</kbd>
             opens Quick Capture. Save selected text, links, or the whole page — all synced instantly to your memory.</p>
-          <span class="feature-tag">Chrome · ⌘M shortcut</span>
+          <span class="feature-tag" data-i18n="feature7.tag">Chrome · ⌘M shortcut</span>
         </div>
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon feature-icon-purple">🔄</div>
-          <div class="feature-title">Cross-Platform Sync</div>
-          <p class="feature-desc">Save on your phone, recall on your laptop, reflect on your tablet. Everything syncs in
+          <div class="feature-title" data-i18n="feature8.title">Cross-Platform Sync</div>
+          <p class="feature-desc" data-i18n="feature8.desc">Save on your phone, recall on your laptop, reflect on your
+            tablet. Everything syncs in
             real time across mobile, web, and the browser extension.</p>
-          <span class="feature-tag">Real-time everywhere</span>
+          <span class="feature-tag" data-i18n="feature8.tag">Real-time everywhere</span>
         </div>
       </div>
     </div>
@@ -2195,9 +2298,10 @@
         <!-- Big left: Chat with memories -->
         <div class="bento-cell bento-1 reveal">
           <div class="bento-content">
-            <div class="bento-label">Ask AI</div>
-            <h3 class="bento-title">Chat with your entire memory archive</h3>
-            <p class="bento-desc">Ask anything. Get answers drawn from everything you've ever saved. Your memories
+            <div class="bento-label" data-i18n="bento1.label">Ask AI</div>
+            <h3 class="bento-title" data-i18n="bento1.title">Chat with your entire memory archive</h3>
+            <p class="bento-desc" data-i18n="bento1.desc">Ask anything. Get answers drawn from everything you've ever
+              saved. Your memories
               become a personal knowledge base.</p>
             <div class="bento-visual">
               <div class="chat-bubbles">
@@ -2215,28 +2319,29 @@
         <!-- Right: Insights stats -->
         <div class="bento-cell bento-2 reveal reveal-delay-1">
           <div class="bento-content">
-            <div class="bento-label">Insights</div>
-            <h3 class="bento-title">See how your mind works</h3>
-            <p class="bento-desc">Beautiful analytics reveal your thinking patterns over time.</p>
+            <div class="bento-label" data-i18n="bento2.label">Insights</div>
+            <h3 class="bento-title" data-i18n="bento2.title">See how your mind works</h3>
+            <p class="bento-desc" data-i18n="bento2.desc">Beautiful analytics reveal your thinking patterns over time.
+            </p>
             <div class="bento-visual">
               <div style="display:flex;gap:20px;margin-bottom:20px;">
                 <div>
                   <div class="insight-stat">
                     <span class="insight-num">347</span>
                   </div>
-                  <div class="insight-desc">Total memories</div>
+                  <div class="insight-desc" data-i18n="bento2.totalMemories">Total memories</div>
                 </div>
                 <div>
                   <div class="insight-stat">
                     <span class="insight-num" style="font-size:32px;">14</span>
                     <span class="insight-unit" style="font-size:20px;">🔥</span>
                   </div>
-                  <div class="insight-desc">Day streak</div>
+                  <div class="insight-desc" data-i18n="bento2.dayStreak">Day streak</div>
                 </div>
               </div>
               <div
-                style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">
-                Last 4 weeks</div>
+                style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;"
+                data-i18n="bento2.lastWeeks">Last 4 weeks</div>
               <div class="heatmap">
                 <!-- Generate random-looking heatmap cells -->
                 <div class="heatmap-cell hm-2"></div>
@@ -2269,8 +2374,8 @@
                 <div class="heatmap-cell hm-0"></div>
               </div>
               <div
-                style="margin-top:16px;font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">
-                This week streak</div>
+                style="margin-top:16px;font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;"
+                data-i18n="bento2.thisWeek">This week streak</div>
               <div class="streak-row">
                 <div class="streak-block"></div>
                 <div class="streak-block"></div>
@@ -2288,9 +2393,10 @@
         <!-- Bottom-left: Search -->
         <div class="bento-cell bento-3 reveal">
           <div class="bento-content">
-            <div class="bento-label">Semantic Search</div>
-            <h3 class="bento-title">Search by meaning, not words</h3>
-            <p class="bento-desc">Type a feeling or concept. AI finds all related memories — even if you never used
+            <div class="bento-label" data-i18n="bento3.label">Semantic Search</div>
+            <h3 class="bento-title" data-i18n="bento3.title">Search by meaning, not words</h3>
+            <p class="bento-desc" data-i18n="bento3.desc">Type a feeling or concept. AI finds all related memories —
+              even if you never used
               those exact words.</p>
             <div class="bento-visual" style="flex:unset;margin-top:16px;">
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -2314,35 +2420,41 @@
         <!-- Bottom-right: Capture modes -->
         <div class="bento-cell bento-4 reveal reveal-delay-1">
           <div class="bento-content">
-            <div class="bento-label">Multi-modal Capture</div>
-            <h3 class="bento-title">Save anything in any format</h3>
-            <p class="bento-desc">Four ways to capture a moment, all searchable and AI-summarized the instant you save
+            <div class="bento-label" data-i18n="bento4.label">Multi-modal Capture</div>
+            <h3 class="bento-title" data-i18n="bento4.title">Save anything in any format</h3>
+            <p class="bento-desc" data-i18n="bento4.desc">Four ways to capture a moment, all searchable and
+              AI-summarized the instant you save
               them.</p>
             <div class="bento-visual">
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px;">
                 <div
                   style="background:var(--bg);border-radius:16px;padding:14px;text-align:center;border:1px solid var(--border);">
                   <div style="font-size:22px;margin-bottom:8px;">📝</div>
-                  <div style="font-size:12px;font-weight:700;">Text Notes</div>
-                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;">Quick thoughts &amp; ideas</div>
+                  <div style="font-size:12px;font-weight:700;" data-i18n="bento4.textNotes">Text Notes</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;" data-i18n="bento4.textNotesDesc">Quick
+                    thoughts &amp; ideas</div>
                 </div>
                 <div
                   style="background:var(--bg);border-radius:16px;padding:14px;text-align:center;border:1px solid var(--border);">
                   <div style="font-size:22px;margin-bottom:8px;">🔗</div>
-                  <div style="font-size:12px;font-weight:700;">Web Links</div>
-                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;">Articles &amp; resources</div>
+                  <div style="font-size:12px;font-weight:700;" data-i18n="bento4.webLinks">Web Links</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;" data-i18n="bento4.webLinksDesc">
+                    Articles &amp; resources</div>
                 </div>
                 <div
                   style="background:var(--bg);border-radius:16px;padding:14px;text-align:center;border:1px solid var(--border);">
                   <div style="font-size:22px;margin-bottom:8px;">🎤</div>
-                  <div style="font-size:12px;font-weight:700;">Voice Memos</div>
-                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;">Whisper transcription</div>
+                  <div style="font-size:12px;font-weight:700;" data-i18n="bento4.voiceMemos">Voice Memos</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;" data-i18n="bento4.voiceMemosDesc">
+                    Whisper transcription</div>
                 </div>
                 <div
                   style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04));border-radius:16px;padding:14px;text-align:center;border:1px solid rgba(99,102,241,0.2);">
                   <div style="font-size:22px;margin-bottom:8px;">🧩</div>
-                  <div style="font-size:12px;font-weight:700;color:var(--accent);">Extension</div>
-                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;">One keystroke from Chrome</div>
+                  <div style="font-size:12px;font-weight:700;color:var(--accent);" data-i18n="bento4.extension">
+                    Extension</div>
+                  <div style="font-size:10px;color:var(--text-3);margin-top:4px;" data-i18n="bento4.extensionDesc">One
+                    keystroke from Chrome</div>
                 </div>
               </div>
             </div>
@@ -2354,21 +2466,24 @@
           style="border-color:rgba(99,102,241,0.2);background:linear-gradient(135deg,rgba(99,102,241,0.03) 0%,var(--surface) 50%);">
           <div class="bento-content" style="flex-direction:row;align-items:center;gap:40px;flex-wrap:wrap;">
             <div style="flex:1;min-width:240px;">
-              <div class="bento-label">🧩 Chrome Extension</div>
-              <h3 class="bento-title">Save from any page,<br>in one keystroke</h3>
-              <p class="bento-desc">Install the Chrome Extension and press <strong>⌘M</strong> on any tab to open Quick
+              <div class="bento-label" data-i18n="bento5.label">🧩 Chrome Extension</div>
+              <h3 class="bento-title" data-i18n="bento5.title">Save from any page,<br>in one keystroke</h3>
+              <p class="bento-desc" data-i18n="bento5.desc">Install the Chrome Extension and press <strong>⌘M</strong>
+                on any tab to open Quick
                 Capture. Highlight text and press <strong>⌘⇧S</strong> to save it instantly. Every save syncs to your
                 memory — even while offline.</p>
               <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
-                <a href="#" class="btn btn-primary" data-store="chromeStore" style="font-size:13px;padding:10px 20px;border-radius:10px;">
+                <a href="#" class="btn btn-primary" data-store="chromeStore"
+                  style="font-size:13px;padding:10px 20px;border-radius:10px;">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z" />
                     <path d="M7 7h.01" />
                   </svg>
-                  Add to Chrome — Free
+                  <span data-i18n="bento5.addToChrome">Add to Chrome — Free</span>
                 </a>
               </div>
-              <p style="font-size:12px;color:var(--text-3);margin-top:10px;">Chrome 110+ · Manifest V3 · No account
+              <p style="font-size:12px;color:var(--text-3);margin-top:10px;" data-i18n="bento5.requirements">Chrome 110+
+                · Manifest V3 · No account
                 required to install</p>
             </div>
             <div style="flex:1.4;min-width:320px;">
@@ -2406,32 +2521,33 @@
                   <div class="ext-pill">
                     <span class="ext-pill-icon">⚡</span>
                     <div class="ext-pill-text">
-                      <div class="ext-pill-title">Quick Capture</div>
-                      <div class="ext-pill-desc">Open popup from any tab</div>
+                      <div class="ext-pill-title" data-i18n="bento5.pill1.title">Quick Capture</div>
+                      <div class="ext-pill-desc" data-i18n="bento5.pill1.desc">Open popup from any tab</div>
                     </div>
                     <span class="ext-pill-kbd">⌘M</span>
                   </div>
                   <div class="ext-pill">
                     <span class="ext-pill-icon">✂️</span>
                     <div class="ext-pill-text">
-                      <div class="ext-pill-title">Save Selection</div>
-                      <div class="ext-pill-desc">Highlighted text → memory</div>
+                      <div class="ext-pill-title" data-i18n="bento5.pill2.title">Save Selection</div>
+                      <div class="ext-pill-desc" data-i18n="bento5.pill2.desc">Highlighted text → memory</div>
                     </div>
                     <span class="ext-pill-kbd">⌘⇧S</span>
                   </div>
                   <div class="ext-pill">
                     <span class="ext-pill-icon">🔗</span>
                     <div class="ext-pill-text">
-                      <div class="ext-pill-title">Save Page Link</div>
-                      <div class="ext-pill-desc">Current tab as link memory</div>
+                      <div class="ext-pill-title" data-i18n="bento5.pill3.title">Save Page Link</div>
+                      <div class="ext-pill-desc" data-i18n="bento5.pill3.desc">Current tab as link memory</div>
                     </div>
                     <span class="ext-pill-kbd">⌘⇧L</span>
                   </div>
                   <div class="ext-pill" style="border-color:rgba(99,102,241,0.2);background:var(--accent-light);">
                     <span class="ext-pill-icon">💬</span>
                     <div class="ext-pill-text">
-                      <div class="ext-pill-title">Omnibox</div>
-                      <div class="ext-pill-desc">Type <code style="font-size:10px;">mem</code> in address bar</div>
+                      <div class="ext-pill-title" data-i18n="bento5.pill4.title">Omnibox</div>
+                      <div class="ext-pill-desc" data-i18n="bento5.pill4.desc">Type <code
+                          style="font-size:10px;">mem</code> in address bar</div>
                     </div>
                     <span class="ext-pill-kbd" style="background:var(--accent);color:#fff;">mem⇥</span>
                   </div>
@@ -2448,28 +2564,32 @@
   <section class="section" id="how" style="background:var(--surface);">
     <div class="container">
       <div class="section-header-center reveal">
-        <div class="section-label">✦ Simple by design</div>
-        <h2 class="section-title">Up and running<br>in 60 seconds</h2>
-        <p class="section-sub">No complex setup. No tags or folders required. Just capture and let AI handle the rest.
+        <div class="section-label" data-i18n="how.label">✦ Simple by design</div>
+        <h2 class="section-title" data-i18n="how.title">Up and running<br>in 60 seconds</h2>
+        <p class="section-sub" data-i18n="how.subtitle">No complex setup. No tags or folders required. Just capture and
+          let AI handle the rest.
         </p>
       </div>
       <div class="how-grid">
         <div class="how-step reveal reveal-delay-1">
           <div class="how-step-num">1</div>
-          <h3 class="how-step-title">Download &amp; sign up</h3>
-          <p class="how-step-desc">Create a free account in 30 seconds. Available on iOS and Android. No credit card
+          <h3 class="how-step-title" data-i18n="how.step1.title">Download &amp; sign up</h3>
+          <p class="how-step-desc" data-i18n="how.step1.desc">Create a free account in 30 seconds. Available on iOS and
+            Android. No credit card
             required.</p>
         </div>
         <div class="how-step reveal reveal-delay-2">
           <div class="how-step-num">2</div>
-          <h3 class="how-step-title">Start capturing</h3>
-          <p class="how-step-desc">Save a thought, paste a link, or record your voice. AI summarizes and categorizes it
+          <h3 class="how-step-title" data-i18n="how.step2.title">Start capturing</h3>
+          <p class="how-step-desc" data-i18n="how.step2.desc">Save a thought, paste a link, or record your voice. AI
+            summarizes and categorizes it
             automatically — no effort from you.</p>
         </div>
         <div class="how-step reveal reveal-delay-3">
           <div class="how-step-num">3</div>
-          <h3 class="how-step-title">Let AI do the work</h3>
-          <p class="how-step-desc">Memory AI learns your patterns and surfaces insights proactively. Your past thoughts
+          <h3 class="how-step-title" data-i18n="how.step3.title">Let AI do the work</h3>
+          <p class="how-step-desc" data-i18n="how.step3.desc">Memory AI learns your patterns and surfaces insights
+            proactively. Your past thoughts
             come back right when you need them.</p>
         </div>
       </div>
@@ -2483,34 +2603,40 @@
     <div class="container">
       <div class="ai-inner">
         <div class="reveal">
-          <div class="section-label" style="color:rgba(139,92,246,0.8);">✦ AI under the hood</div>
-          <h2 class="ai-title">Intelligence that<br>actually understands you</h2>
-          <p class="ai-sub">Backed by OpenAI's most capable models, your memories are more than stored — they're
+          <div class="section-label" style="color:rgba(139,92,246,0.8);" data-i18n="ai.label">✦ AI under the hood</div>
+          <h2 class="ai-title" data-i18n="ai.title">Intelligence that<br>actually understands you</h2>
+          <p class="ai-sub" data-i18n="ai.subtitle">Backed by OpenAI's most capable models, your memories are more than
+            stored — they're
             understood, connected, and ready to help.</p>
           <div class="ai-features">
             <div class="ai-feature-item">
               <div class="ai-feature-dot"></div>
-              <p class="ai-feature-text"><strong>GPT-4 summaries</strong> — Every memory gets a one-line AI summary so
+              <p class="ai-feature-text" data-i18n="ai.feature1"><strong>GPT-4 summaries</strong> — Every memory gets a
+                one-line AI summary so
                 you instantly know what's inside</p>
             </div>
             <div class="ai-feature-item">
               <div class="ai-feature-dot" style="background:#10B981;"></div>
-              <p class="ai-feature-text"><strong>Whisper transcription</strong> — Voice memos become searchable text in
+              <p class="ai-feature-text" data-i18n="ai.feature2"><strong>Whisper transcription</strong> — Voice memos
+                become searchable text in
                 seconds, in any language</p>
             </div>
             <div class="ai-feature-item">
               <div class="ai-feature-dot" style="background:#EC4899;"></div>
-              <p class="ai-feature-text"><strong>Vector embeddings</strong> — Semantic search powered by
+              <p class="ai-feature-text" data-i18n="ai.feature3"><strong>Vector embeddings</strong> — Semantic search
+                powered by
                 text-embedding-3-large and pgvector for near-instant recall</p>
             </div>
             <div class="ai-feature-item">
               <div class="ai-feature-dot" style="background:#F59E0B;"></div>
-              <p class="ai-feature-text"><strong>Streaming responses</strong> — Chat with your memories in real-time,
+              <p class="ai-feature-text" data-i18n="ai.feature4"><strong>Streaming responses</strong> — Chat with your
+                memories in real-time,
                 word-by-word as the AI thinks</p>
             </div>
             <div class="ai-feature-item">
               <div class="ai-feature-dot" style="background:#3B82F6;"></div>
-              <p class="ai-feature-text"><strong>Auto-categorization</strong> — Memories are organized into topics
+              <p class="ai-feature-text" data-i18n="ai.feature5"><strong>Auto-categorization</strong> — Memories are
+                organized into topics
                 automatically, no manual tagging needed</p>
             </div>
           </div>
@@ -2553,34 +2679,39 @@
   <section class="section" id="privacy">
     <div class="container">
       <div class="section-header-center reveal">
-        <div class="section-label">✦ Your data, your rules</div>
-        <h2 class="section-title">Privacy isn't a feature —<br>it's the foundation</h2>
-        <p class="section-sub">Your memories are deeply personal. We built Memory AI with privacy at every layer, not as
+        <div class="section-label" data-i18n="privacy.label">✦ Your data, your rules</div>
+        <h2 class="section-title" data-i18n="privacy.title">Privacy isn't a feature —<br>it's the foundation</h2>
+        <p class="section-sub" data-i18n="privacy.subtitle">Your memories are deeply personal. We built Memory AI with
+          privacy at every layer, not as
           an afterthought.</p>
       </div>
       <div class="privacy-grid">
         <div class="privacy-card reveal reveal-delay-1">
           <div class="privacy-icon">🔐</div>
-          <div class="privacy-title">Encrypted at rest</div>
-          <p class="privacy-desc">All your data is encrypted in our PostgreSQL database. Your thoughts are only readable
+          <div class="privacy-title" data-i18n="privacy.card1.title">Encrypted at rest</div>
+          <p class="privacy-desc" data-i18n="privacy.card1.desc">All your data is encrypted in our PostgreSQL database.
+            Your thoughts are only readable
             by you.</p>
         </div>
         <div class="privacy-card reveal reveal-delay-2">
           <div class="privacy-icon">🚫</div>
-          <div class="privacy-title">Never sold</div>
-          <p class="privacy-desc">We don't sell or share your personal data with advertisers or third parties. Period.
+          <div class="privacy-title" data-i18n="privacy.card2.title">Never sold</div>
+          <p class="privacy-desc" data-i18n="privacy.card2.desc">We don't sell or share your personal data with
+            advertisers or third parties. Period.
           </p>
         </div>
         <div class="privacy-card reveal reveal-delay-3">
           <div class="privacy-icon">🗑️</div>
-          <div class="privacy-title">Delete anytime</div>
-          <p class="privacy-desc">You own your data. Delete a single memory or your entire account instantly — no
+          <div class="privacy-title" data-i18n="privacy.card3.title">Delete anytime</div>
+          <p class="privacy-desc" data-i18n="privacy.card3.desc">You own your data. Delete a single memory or your
+            entire account instantly — no
             waiting, no questions.</p>
         </div>
         <div class="privacy-card reveal reveal-delay-3">
           <div class="privacy-icon">⚙️</div>
-          <div class="privacy-title">AI is optional</div>
-          <p class="privacy-desc">Not comfortable with AI processing? Toggle off auto-summarize and auto-categorize
+          <div class="privacy-title" data-i18n="privacy.card4.title">AI is optional</div>
+          <p class="privacy-desc" data-i18n="privacy.card4.desc">Not comfortable with AI processing? Toggle off
+            auto-summarize and auto-categorize
             independently per feature.</p>
         </div>
       </div>
@@ -2591,8 +2722,8 @@
   <section class="section" style="background:var(--surface);padding-top:80px;padding-bottom:80px;">
     <div class="container">
       <div class="section-header-center reveal">
-        <div class="section-label">✦ Early users love it</div>
-        <h2 class="section-title">People are remembering<br>more than ever</h2>
+        <div class="section-label" data-i18n="testimonials.label">✦ Early users love it</div>
+        <h2 class="section-title" data-i18n="testimonials.title">People are remembering<br>more than ever</h2>
       </div>
       <div class="testimonials-grid">
         <div class="testimonial-card reveal reveal-delay-1">
@@ -2642,9 +2773,11 @@
     <div class="final-cta-ring" style="width:1000px;height:1000px;margin-left:-500px;margin-top:-500px;"></div>
     <div class="container">
       <div class="final-cta-inner reveal">
-        <div class="section-label" style="justify-content:center;">✦ Start for free today</div>
-        <h2 class="cta-title">Stop forgetting what<br><span class="gradient-text">matters most.</span></h2>
-        <p class="cta-sub">Join thousands of people who never lose a thought. Free to download, no credit card needed.
+        <div class="section-label" style="justify-content:center;" data-i18n="cta.label">✦ Start for free today</div>
+        <h2 class="cta-title" data-i18n="cta.title">Stop forgetting what<br><span class="gradient-text">matters
+            most.</span></h2>
+        <p class="cta-sub" data-i18n="cta.subtitle">Join thousands of people who never lose a thought. Free to download,
+          no credit card needed.
         </p>
         <div class="cta-buttons">
           <a href="#" class="store-btn" data-store="appStore" style="padding:15px 26px;">
@@ -2687,7 +2820,8 @@
             </div>
           </a>
         </div>
-        <p class="cta-note">Free forever plan available · iOS 15+ · Android 8+ · Chrome Extension</p>
+        <p class="cta-note" data-i18n="cta.note">Free forever plan available · iOS 15+ · Android 8+ · Chrome Extension
+        </p>
       </div>
     </div>
   </section>
@@ -2706,7 +2840,8 @@
             </div>
             <span class="nav-logo-name">Memory AI</span>
           </a>
-          <p>Your trusted companion for capturing, recalling, and reflecting on what matters most to you.</p>
+          <p data-i18n="footer.tagline">Your trusted companion for capturing, recalling, and reflecting on what matters
+            most to you.</p>
           <div class="footer-socials">
             <a class="footer-social-btn" href="#" title="Twitter">𝕏</a>
             <a class="footer-social-btn" href="#" title="Instagram">📷</a>
@@ -2714,40 +2849,40 @@
           </div>
         </div>
         <div class="footer-col">
-          <p class="footer-col-title">Product</p>
+          <p class="footer-col-title" data-i18n="footer.product">Product</p>
           <ul>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#how">How it works</a></li>
-            <li><a href="#ai">AI Technology</a></li>
-            <li><a href="#download">Download</a></li>
+            <li><a href="#features" data-i18n="footer.product.features">Features</a></li>
+            <li><a href="#how" data-i18n="footer.product.how">How it works</a></li>
+            <li><a href="#ai" data-i18n="footer.product.ai">AI Technology</a></li>
+            <li><a href="#download" data-i18n="footer.product.download">Download</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <p class="footer-col-title">Platform</p>
+          <p class="footer-col-title" data-i18n="footer.platform">Platform</p>
           <ul>
-            <li><a href="#" data-store="appStore">iOS App</a></li>
-            <li><a href="#" data-store="googlePlay">Android App</a></li>
-            <li><a href="#" data-store="chromeStore">Chrome Extension</a></li>
-            <li><a href="#" data-store="webApp">Web App</a></li>
-            <li><a href="#">Changelog</a></li>
+            <li><a href="#" data-store="appStore" data-i18n="footer.platform.ios">iOS App</a></li>
+            <li><a href="#" data-store="googlePlay" data-i18n="footer.platform.android">Android App</a></li>
+            <li><a href="#" data-store="chromeStore" data-i18n="footer.platform.chrome">Chrome Extension</a></li>
+            <li><a href="#" data-store="webApp" data-i18n="footer.platform.web">Web App</a></li>
+            <li><a href="#" data-i18n="footer.platform.changelog">Changelog</a></li>
           </ul>
         </div>
         <div class="footer-col">
-          <p class="footer-col-title">Company</p>
+          <p class="footer-col-title" data-i18n="footer.company">Company</p>
           <ul>
-            <li><a href="#">About</a></li>
-            <li><a href="#">Privacy Policy</a></li>
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Contact</a></li>
+            <li><a href="#" data-i18n="footer.company.about">About</a></li>
+            <li><a href="#" data-i18n="footer.company.privacy">Privacy Policy</a></li>
+            <li><a href="#" data-i18n="footer.company.terms">Terms of Service</a></li>
+            <li><a href="#" data-i18n="footer.company.contact">Contact</a></li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <p>© 2026 Memory AI. All rights reserved.</p>
+        <p data-i18n="footer.copyright">© 2026 Memory AI. All rights reserved.</p>
         <div class="footer-bottom-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Cookies</a>
+          <a href="#" data-i18n="footer.links.privacy">Privacy</a>
+          <a href="#" data-i18n="footer.links.terms">Terms</a>
+          <a href="#" data-i18n="footer.links.cookies">Cookies</a>
         </div>
       </div>
     </div>
@@ -2760,14 +2895,14 @@
     //   All buttons with data-store=".." are wired up automatically.
     const STORE_URLS = {
       // After App Store Connect approval: https://apps.apple.com/app/memory-ai/idXXXXXXXXX
-      appStore:    '',
+      appStore: '',
       // Google Play package is already set — uncomment when live:
       // googlePlay: 'https://play.google.com/store/apps/details?id=com.memoryai.app',
-      googlePlay:  '',
+      googlePlay: '',
       // After Chrome Web Store publish: https://chromewebstore.google.com/detail/memory-ai/EXTENSION_ID
       chromeStore: '',
       // Your deployed web app URL:
-      webApp:      '',
+      webApp: '',
     };
     document.querySelectorAll('[data-store]').forEach(el => {
       const url = STORE_URLS[el.dataset.store];
@@ -2806,6 +2941,356 @@
       });
     }, { threshold: 0.4 });
     sections.forEach(s => scrollSpy.observe(s));
+
+    // ── Language Support ────────────────────────────────────────────────────
+    const translations = {
+      en: {
+        'nav.features': 'Features',
+        'nav.extension': 'Extension',
+        'nav.how': 'How it works',
+        'nav.ai': 'AI Power',
+        'nav.privacy': 'Privacy',
+        'nav.download': 'Download Free',
+        'hero.badge': 'Powered by GPT-4 & pgvector',
+        'hero.title.line1': 'Your',
+        'hero.title.line2': 'second brain,',
+        'hero.title.line3': 'always with you.',
+        'hero.subtitle': 'Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it.',
+        'hero.downloadOn': 'Download on the',
+        'hero.appStore': 'App Store',
+        'hero.getItOn': 'Get it on',
+        'hero.googlePlay': 'Google Play',
+        'hero.socialStars': '★ 4.9',
+        'hero.socialText': '<strong>2,847 users</strong> love Memory AI',
+        'hero.or': 'or',
+        'hero.installExtension': 'Install Chrome Extension',
+        'trust.encrypted': 'End-to-end encrypted',
+        'trust.gpt4': 'GPT-4 powered summaries',
+        'trust.platforms': 'iOS & Android',
+        'trust.extension': 'Chrome Extension',
+        'trust.darkMode': 'Dark mode supported',
+        'trust.multilingual': 'Multilingual',
+        'features.label': '✦ Everything you need',
+        'features.title': 'Built for how<br>you actually think',
+        'features.subtitle': 'Not a note-taking app. Not a to-do list. Memory AI is your trusted companion that remembers so you don\'t have to.',
+        'feature1.title': 'Frictionless Capture',
+        'feature1.desc': 'Save a thought in under 3 seconds. Text, link, voice, or photo — Memory AI detects your clipboard and suggests saving automatically.',
+        'feature1.tag': 'Smart clipboard detection',
+        'feature2.title': 'Semantic Search',
+        'feature2.desc': 'Search by meaning, not exact keywords. "career anxiety" finds all your notes about job changes, goals, and financial worries — automatically.',
+        'feature2.tag': 'Powered by pgvector',
+        'feature3.title': 'Proactive Recall',
+        'feature3.desc': 'Memory AI surfaces relevant memories at the right moment. No digging — it appears when a past thought becomes relevant again.',
+        'feature3.tag': 'Context-aware AI',
+        'feature4.title': 'Voice Memos',
+        'feature4.desc': 'Record your thoughts hands-free. Automatic transcription by OpenAI Whisper turns every audio note into searchable text instantly.',
+        'feature4.tag': 'Whisper transcription',
+        'feature5.title': 'Weekly Insights',
+        'feature5.desc': 'See patterns in your thinking with beautiful heatmaps, daily streaks, and weekly AI-generated recaps of what occupied your mind most.',
+        'feature5.tag': 'AI-generated recaps',
+        'feature6.title': 'Ask Your Memories',
+        'feature6.desc': 'Have a conversation with your past self. Chat with your entire memory archive: "What did I think about last month\'s meeting?" — answered instantly.',
+        'feature6.tag': 'GPT-4 powered chat',
+        'feature7.title': 'Browser Extension',
+        'feature7.desc': 'Save anything from the web in one keystroke. ⌘M opens Quick Capture. Save selected text, links, or the whole page — all synced instantly to your memory.',
+        'feature7.tag': 'Chrome · ⌘M shortcut',
+        'feature8.title': 'Cross-Platform Sync',
+        'feature8.desc': 'Save on your phone, recall on your laptop, reflect on your tablet. Everything syncs in real time across mobile, web, and the browser extension.',
+        'feature8.tag': 'Real-time everywhere',
+        'how.label': '✦ Simple by design',
+        'how.title': 'Up and running<br>in 60 seconds',
+        'how.subtitle': 'No complex setup. No tags or folders required. Just capture and let AI handle the rest.',
+        'how.step1.title': 'Download & sign up',
+        'how.step1.desc': 'Create a free account in 30 seconds. Available on iOS and Android. No credit card required.',
+        'how.step2.title': 'Start capturing',
+        'how.step2.desc': 'Save a thought, paste a link, or record your voice. AI summarizes and categorizes it automatically — no effort from you.',
+        'how.step3.title': 'Let AI do the work',
+        'how.step3.desc': 'Memory AI learns your patterns and surfaces insights proactively. Your past thoughts come back right when you need them.',
+        'ai.label': '✦ AI under the hood',
+        'ai.title': 'Intelligence that<br>actually understands you',
+        'ai.subtitle': 'Backed by OpenAI\'s most capable models, your memories are more than stored — they\'re understood, connected, and ready to help.',
+        'privacy.label': '✦ Your data, your rules',
+        'privacy.title': 'Privacy isn\'t a feature —<br>it\'s the foundation',
+        'privacy.subtitle': 'Your memories are deeply personal. We built Memory AI with privacy at every layer, not as an afterthought.',
+        'privacy.card1.title': 'Encrypted at rest',
+        'privacy.card1.desc': 'All your data is encrypted in our PostgreSQL database. Your thoughts are only readable by you.',
+        'privacy.card2.title': 'Never sold',
+        'privacy.card2.desc': 'We don\'t sell or share your personal data with advertisers or third parties. Period.',
+        'privacy.card3.title': 'Delete anytime',
+        'privacy.card3.desc': 'You own your data. Delete a single memory or your entire account instantly — no waiting, no questions.',
+        'privacy.card4.title': 'AI is optional',
+        'privacy.card4.desc': 'Not comfortable with AI processing? Toggle off auto-summarize and auto-categorize independently per feature.',
+        'bento1.label': 'Ask AI',
+        'bento1.title': 'Chat with your entire memory archive',
+        'bento1.desc': 'Ask anything. Get answers drawn from everything you\'ve ever saved. Your memories become a personal knowledge base.',
+        'bento2.label': 'Insights',
+        'bento2.title': 'See how your mind works',
+        'bento2.desc': 'Beautiful analytics reveal your thinking patterns over time.',
+        'bento2.totalMemories': 'Total memories',
+        'bento2.dayStreak': 'Day streak',
+        'bento2.lastWeeks': 'Last 4 weeks',
+        'bento2.thisWeek': 'This week streak',
+        'bento3.label': 'Semantic Search',
+        'bento3.title': 'Search by meaning, not words',
+        'bento3.desc': 'Type a feeling or concept. AI finds all related memories — even if you never used those exact words.',
+        'bento4.label': 'Multi-modal Capture',
+        'bento4.title': 'Save anything in any format',
+        'bento4.desc': 'Four ways to capture a moment, all searchable and AI-summarized the instant you save them.',
+        'bento4.textNotes': 'Text Notes',
+        'bento4.textNotesDesc': 'Quick thoughts & ideas',
+        'bento4.webLinks': 'Web Links',
+        'bento4.webLinksDesc': 'Articles & resources',
+        'bento4.voiceMemos': 'Voice Memos',
+        'bento4.voiceMemosDesc': 'Whisper transcription',
+        'bento4.extension': 'Extension',
+        'bento4.extensionDesc': 'One keystroke from Chrome',
+        'bento5.label': '🧩 Chrome Extension',
+        'bento5.title': 'Save from any page,<br>in one keystroke',
+        'bento5.desc': 'Install the Chrome Extension and press <strong>⌘M</strong> on any tab to open Quick Capture. Highlight text and press <strong>⌘⇧S</strong> to save it instantly. Every save syncs to your memory — even while offline.',
+        'bento5.addToChrome': 'Add to Chrome — Free',
+        'bento5.requirements': 'Chrome 110+ · Manifest V3 · No account required to install',
+        'bento5.pill1.title': 'Quick Capture',
+        'bento5.pill1.desc': 'Open popup from any tab',
+        'bento5.pill2.title': 'Save Selection',
+        'bento5.pill2.desc': 'Highlighted text → memory',
+        'bento5.pill3.title': 'Save Page Link',
+        'bento5.pill3.desc': 'Current tab as link memory',
+        'bento5.pill4.title': 'Omnibox',
+        'bento5.pill4.desc': 'Type <code style="font-size:10px;">mem</code> in address bar',
+        'ai.feature1': '<strong>GPT-4 summaries</strong> — Every memory gets a one-line AI summary so you instantly know what\'s inside',
+        'ai.feature2': '<strong>Whisper transcription</strong> — Voice memos become searchable text in seconds, in any language',
+        'ai.feature3': '<strong>Vector embeddings</strong> — Semantic search powered by text-embedding-3-large and pgvector for near-instant recall',
+        'ai.feature4': '<strong>Streaming responses</strong> — Chat with your memories in real-time, word-by-word as the AI thinks',
+        'ai.feature5': '<strong>Auto-categorization</strong> — Memories are organized into topics automatically, no manual tagging needed',
+        'footer.product': 'Product',
+        'footer.product.features': 'Features',
+        'footer.product.how': 'How it works',
+        'footer.product.ai': 'AI Technology',
+        'footer.product.download': 'Download',
+        'footer.platform': 'Platform',
+        'footer.platform.ios': 'iOS App',
+        'footer.platform.android': 'Android App',
+        'footer.platform.chrome': 'Chrome Extension',
+        'footer.platform.web': 'Web App',
+        'footer.platform.changelog': 'Changelog',
+        'footer.company': 'Company',
+        'footer.company.about': 'About',
+        'footer.company.privacy': 'Privacy Policy',
+        'footer.company.terms': 'Terms of Service',
+        'footer.company.contact': 'Contact',
+        'footer.links.privacy': 'Privacy',
+        'footer.links.terms': 'Terms',
+        'footer.links.cookies': 'Cookies',
+        'testimonials.label': '✦ Early users love it',
+        'testimonials.title': 'People are remembering<br>more than ever',
+        'cta.label': '✦ Start for free today',
+        'cta.title': 'Stop forgetting what<br><span class="gradient-text">matters most.</span>',
+        'cta.subtitle': 'Join thousands of people who never lose a thought. Free to download, no credit card needed.',
+        'cta.note': 'Free forever plan available · iOS 15+ · Android 8+ · Chrome Extension',
+        'footer.tagline': 'Your trusted companion for capturing, recalling, and reflecting on what matters most to you.',
+        'footer.copyright': '© 2026 Memory AI. All rights reserved.'
+      },
+      vi: {
+        'nav.features': 'Tính năng',
+        'nav.extension': 'Tiện ích',
+        'nav.how': 'Cách hoạt động',
+        'nav.ai': 'Sức mạnh AI',
+        'nav.privacy': 'Bảo mật',
+        'nav.download': 'Tải miễn phí',
+        'hero.badge': 'Được hỗ trợ bởi GPT-4 & pgvector',
+        'hero.title.line1': 'Bộ não',
+        'hero.title.line2': 'thứ hai,',
+        'hero.title.line3': 'luôn ở bên bạn.',
+        'hero.subtitle': 'Ghi lại mọi suy nghĩ, liên kết và ghi âm. Để AI gợi lên những gì quan trọng — đúng khi bạn cần.',
+        'hero.downloadOn': 'Tải về trên',
+        'hero.appStore': 'App Store',
+        'hero.getItOn': 'Tải về trên',
+        'hero.googlePlay': 'Google Play',
+        'hero.socialStars': '★ 4.9',
+        'hero.socialText': '<strong>2,847 người dùng</strong> yêu thích Memory AI',
+        'hero.or': 'hoặc',
+        'hero.installExtension': 'Cài đặt Tiện ích Chrome',
+        'trust.encrypted': 'Mã hóa đầu-cuối',
+        'trust.gpt4': 'Tóm tắt bằng GPT-4',
+        'trust.platforms': 'iOS & Android',
+        'trust.extension': 'Tiện ích Chrome',
+        'trust.darkMode': 'Hỗ trợ chế độ tối',
+        'trust.multilingual': 'Đa ngôn ngữ',
+        'features.label': '✦ Mọi thứ bạn cần',
+        'features.title': 'Được xây dựng cho<br>cách bạn thực sự suy nghĩ',
+        'features.subtitle': 'Không phải ứng dụng ghi chú. Không phải danh sách công việc. Memory AI là người bạn đồng hành đáng tin cậy, ghi nhớ thay bạn.',
+        'feature1.title': 'Ghi Chép Dễ Dàng',
+        'feature1.desc': 'Lưu suy nghĩ trong vòng 3 giây. Văn bản, liên kết, giọng nói hay ảnh — Memory AI tự động phát hiện clipboard và gợi ý lưu.',
+        'feature1.tag': 'Phát hiện clipboard thông minh',
+        'feature2.title': 'Tìm Kiếm Ngữ Nghĩa',
+        'feature2.desc': 'Tìm kiếm theo ý nghĩa, không phải từ khóa chính xác. "lo lắng nghề nghiệp" tìm thấy tất cả ghi chú về thay đổi công việc, mục tiêu và lo lắng tài chính — tự động.',
+        'feature2.tag': 'Được hỗ trợ bởi pgvector',
+        'feature3.title': 'Nhớ Lại Chủ Động',
+        'feature3.desc': 'Memory AI gợi lên ký ức liên quan đúng lúc. Không cần tìm kiếm — nó xuất hiện khi suy nghĩ cũ trở nên liên quan trở lại.',
+        'feature3.tag': 'AI nhận biết ngữ cảnh',
+        'feature4.title': 'Ghi Âm Giọng Nói',
+        'feature4.desc': 'Ghi lại suy nghĩ mà không cần dùng tay. OpenAI Whisper tự động chuyển đổi mọi ghi âm thành văn bản có thể tìm kiếm ngay lập tức.',
+        'feature4.tag': 'Chuyển đổi Whisper',
+        'feature5.title': 'Thông Tin Hàng Tuần',
+        'feature5.desc': 'Xem các mẫu trong suy nghĩ của bạn với bản đồ nhiệt đẹp, chuỗi ngày và bản tóm tắt hàng tuần do AI tạo ra về những gì bạn quan tâm nhất.',
+        'feature5.tag': 'Tóm tắt do AI tạo',
+        'feature6.title': 'Hỏi Ký Ức Của Bạn',
+        'feature6.desc': 'Trò chuyện với chính mình trong quá khứ. Chat với toàn bộ kho lưu trữ ký ức: "Tôi đã nghĩ gì về cuộc họp tháng trước?" — được trả lời ngay lập tức.',
+        'feature6.tag': 'Chat bằng GPT-4',
+        'feature7.title': 'Tiện Ích Trình Duyệt',
+        'feature7.desc': 'Lưu bất cứ thứ gì từ web chỉ bằng một phím. ⌘M mở Ghi Chép Nhanh. Lưu văn bản được chọn, liên kết hoặc toàn bộ trang — tất cả đồng bộ ngay lập tức.',
+        'feature7.tag': 'Chrome · phím tắt ⌘M',
+        'feature8.title': 'Đồng Bộ Đa Nền Tảng',
+        'feature8.desc': 'Lưu trên điện thoại, nhớ lại trên laptop, suy ngẫm trên máy tính bảng. Mọi thứ đồng bộ theo thời gian thực trên di động, web và tiện ích trình duyệt.',
+        'feature8.tag': 'Thời gian thực mọi nơi',
+        'how.label': '✦ Đơn giản theo thiết kế',
+        'how.title': 'Bắt đầu sử dụng<br>trong 60 giây',
+        'how.subtitle': 'Không cần cài đặt phức tạp. Không cần thẻ hoặc thư mục. Chỉ cần ghi lại và để AI xử lý phần còn lại.',
+        'how.step1.title': 'Tải về & đăng ký',
+        'how.step1.desc': 'Tạo tài khoản miễn phí trong 30 giây. Có sẵn trên iOS và Android. Không cần thẻ tín dụng.',
+        'how.step2.title': 'Bắt đầu ghi lại',
+        'how.step2.desc': 'Lưu một suy nghĩ, dán liên kết hoặc ghi âm giọng nói. AI tóm tắt và phân loại tự động — không cần bạn làm gì.',
+        'how.step3.title': 'Để AI làm việc',
+        'how.step3.desc': 'Memory AI học các mẫu của bạn và gợi lên thông tin một cách chủ động. Những suy nghĩ cũ quay lại đúng khi bạn cần.',
+        'ai.label': '✦ AI bên trong',
+        'ai.title': 'Trí thông minh<br>thực sự hiểu bạn',
+        'ai.subtitle': 'Được hỗ trợ bởi các mô hình mạnh nhất của OpenAI, ký ức của bạn không chỉ được lưu trữ — chúng được hiểu, kết nối và sẵn sàng giúp đỡ.',
+        'privacy.label': '✦ Dữ liệu của bạn, quy tắc của bạn',
+        'privacy.title': 'Quyền riêng tư không phải tính năng —<br>đó là nền tảng',
+        'privacy.subtitle': 'Ký ức của bạn rất riêng tư. Chúng tôi xây dựng Memory AI với quyền riêng tư ở mọi tầng, không phải như một tính năng bổ sung.',
+        'privacy.card1.title': 'Mã hóa khi lưu trữ',
+        'privacy.card1.desc': 'Tất cả dữ liệu của bạn được mã hóa trong cơ sở dữ liệu PostgreSQL. Suy nghĩ của bạn chỉ bạn mới đọc được.',
+        'privacy.card2.title': 'Không bán dữ liệu',
+        'privacy.card2.desc': 'Chúng tôi không bán hoặc chia sẻ dữ liệu cá nhân của bạn với nhà quảng cáo hoặc bên thứ ba. Không bao giờ.',
+        'privacy.card3.title': 'Xóa bất cứ lúc nào',
+        'privacy.card3.desc': 'Bạn sở hữu dữ liệu của mình. Xóa một ký ức hoặc toàn bộ tài khoản ngay lập tức — không phải chờ đợi, không có câu hỏi.',
+        'privacy.card4.title': 'AI là tùy chọn',
+        'privacy.card4.desc': 'Không thoải mái với xử lý AI? Tắt tự động tóm tắt và tự động phân loại độc lập cho từng tính năng.',
+        'bento1.label': 'Hỏi AI',
+        'bento1.title': 'Trò chuyện với toàn bộ kho ký ức',
+        'bento1.desc': 'Hỏi bất cứ điều gì. Nhận câu trả lời từ mọi thứ bạn đã lưu. Ký ức của bạn trở thành cơ sở kiến thức cá nhân.',
+        'bento2.label': 'Thông Tin Chi Tiết',
+        'bento2.title': 'Xem cách bộ óc của bạn hoạt động',
+        'bento2.desc': 'Phân tích đẹp mắt tiết lộ các mẫu suy nghĩ của bạn theo thời gian.',
+        'bento2.totalMemories': 'Tổng ký ức',
+        'bento2.dayStreak': 'Chuỗi ngày',
+        'bento2.lastWeeks': '4 tuần qua',
+        'bento2.thisWeek': 'Chuỗi tuần này',
+        'bento3.label': 'Tìm Kiếm Ngữ Nghĩa',
+        'bento3.title': 'Tìm kiếm theo ý nghĩa, không phải từ',
+        'bento3.desc': 'Nhập một cảm giác hoặc khái niệm. AI tìm tất cả ký ức liên quan — ngay cả khi bạn chưa bao giờ sử dụng những từ đó.',
+        'bento4.label': 'Ghi Chép Đa Phương Thức',
+        'bento4.title': 'Lưu bất cứ thứ gì ở bất kỳ định dạng nào',
+        'bento4.desc': 'Bốn cách để ghi lại một khoảnh khắc, tất cả đều có thể tìm kiếm và được AI tóm tắt ngay lập tức.',
+        'bento4.textNotes': 'Ghi Chú Văn Bản',
+        'bento4.textNotesDesc': 'Suy nghĩ & ý tưởng nhanh',
+        'bento4.webLinks': 'Liên Kết Web',
+        'bento4.webLinksDesc': 'Bài viết & tài nguyên',
+        'bento4.voiceMemos': 'Ghi Âm Giọng Nói',
+        'bento4.voiceMemosDesc': 'Chuyển đổi Whisper',
+        'bento4.extension': 'Tiện Ích',
+        'bento4.extensionDesc': 'Một phím từ Chrome',
+        'bento5.label': '🧩 Tiện Ích Chrome',
+        'bento5.title': 'Lưu từ bất kỳ trang nào,<br>chỉ với một phím',
+        'bento5.desc': 'Cài đặt Tiện ích Chrome và nhấn <strong>⌘M</strong> trên bất kỳ tab nào để mở Ghi Chép Nhanh. Đánh dấu văn bản và nhấn <strong>⌘⇧S</strong> để lưu ngay lập tức. Mọi lưu trữ đồng bộ với ký ức của bạn — ngay cả khi ngoại tuyến.',
+        'bento5.addToChrome': 'Thêm vào Chrome — Miễn Phí',
+        'bento5.requirements': 'Chrome 110+ · Manifest V3 · Không cần tài khoản để cài đặt',
+        'bento5.pill1.title': 'Ghi Chép Nhanh',
+        'bento5.pill1.desc': 'Mở popup từ bất kỳ tab nào',
+        'bento5.pill2.title': 'Lưu Lựa Chọn',
+        'bento5.pill2.desc': 'Văn bản được đánh dấu → ký ức',
+        'bento5.pill3.title': 'Lưu Liên Kết Trang',
+        'bento5.pill3.desc': 'Tab hiện tại thành ký ức liên kết',
+        'bento5.pill4.title': 'Omnibox',
+        'bento5.pill4.desc': 'Gõ <code style="font-size:10px;">mem</code> trong thanh địa chỉ',
+        'ai.feature1': '<strong>Tóm tắt GPT-4</strong> — Mỗi ký ức có một dòng tóm tắt AI để bạn biết ngay bên trong có gì',
+        'ai.feature2': '<strong>Chuyển đổi Whisper</strong> — Ghi âm giọng nói trở thành văn bản có thể tìm kiếm trong vài giây, bằng mọi ngôn ngữ',
+        'ai.feature3': '<strong>Nhúng Vector</strong> — Tìm kiếm ngữ nghĩa được hỗ trợ bởi text-embedding-3-large và pgvector để nhớ lại gần như ngay lập tức',
+        'ai.feature4': '<strong>Phản hồi trực tiếp</strong> — Trò chuyện với ký ức của bạn theo thời gian thực, từng từ một khi AI suy nghĩ',
+        'ai.feature5': '<strong>Tự động phân loại</strong> — Ký ức được tổ chức thành các chủ đề tự động, không cần gắn thẻ thủ công',
+        'footer.product': 'Sản Phẩm',
+        'footer.product.features': 'Tính năng',
+        'footer.product.how': 'Cách hoạt động',
+        'footer.product.ai': 'Công nghệ AI',
+        'footer.product.download': 'Tải về',
+        'footer.platform': 'Nền Tảng',
+        'footer.platform.ios': 'Ứng dụng iOS',
+        'footer.platform.android': 'Ứng dụng Android',
+        'footer.platform.chrome': 'Tiện ích Chrome',
+        'footer.platform.web': 'Ứng dụng Web',
+        'footer.platform.changelog': 'Nhật ký thay đổi',
+        'footer.company': 'Công Ty',
+        'footer.company.about': 'Giới thiệu',
+        'footer.company.privacy': 'Chính sách bảo mật',
+        'footer.company.terms': 'Điều khoản dịch vụ',
+        'footer.company.contact': 'Liên hệ',
+        'footer.links.privacy': 'Bảo mật',
+        'footer.links.terms': 'Điều khoản',
+        'footer.links.cookies': 'Cookies',
+        'testimonials.label': '✦ Người dùng thích nó',
+        'testimonials.title': 'Mọi người đang ghi nhớ<br>nhiều hơn bao giờ hết',
+        'cta.label': '✦ Bắt đầu miễn phí hôm nay',
+        'cta.title': 'Đừng quên những gì<br><span class="gradient-text">quan trọng nhất.</span>',
+        'cta.subtitle': 'Tham gia cùng hàng nghìn người không bao giờ đánh mất một suy nghĩ. Miễn phí tải về, không cần thẻ tín dụng.',
+        'cta.note': 'Gói miễn phí vĩnh viễn · iOS 15+ · Android 8+ · Tiện ích Chrome',
+        'footer.tagline': 'Người bạn đồng hành đáng tin cậy để ghi lại, nhớ lại và suy ngẫm về những gì quan trọng nhất với bạn.',
+        'footer.copyright': '© 2026 Memory AI. Tất cả quyền được bảo lưu.'
+      }
+    };
+
+    // Language detection and switching
+    let currentLang = localStorage.getItem('memory-ai-lang');
+
+    // Auto-detect language on first visit
+    if (!currentLang) {
+      const browserLang = navigator.language || navigator.userLanguage;
+      // Check if user is likely Vietnamese
+      if (browserLang.toLowerCase().startsWith('vi')) {
+        currentLang = 'vi';
+      } else {
+        currentLang = 'en';
+      }
+      localStorage.setItem('memory-ai-lang', currentLang);
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('memory-ai-lang', lang);
+
+      // Update HTML lang attribute
+      document.documentElement.lang = lang === 'vi' ? 'vi' : 'en';
+
+      // Update meta tags
+      document.querySelector('meta[name="language"]').content = lang === 'vi' ? 'Vietnamese' : 'English';
+      document.querySelector('meta[property="og:locale"]').content = lang === 'vi' ? 'vi_VN' : 'en_US';
+
+      // Update flag icon
+      const flagEl = document.getElementById('lang-flag');
+      if (flagEl) {
+        flagEl.textContent = lang === 'vi' ? '🇻🇳' : '🇺🇸';
+      }
+
+      // Update all elements with data-i18n
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.placeholder = translations[lang][key];
+          } else {
+            el.innerHTML = translations[lang][key];
+          }
+        }
+      });
+    }
+
+    // Language switcher button
+    document.getElementById('lang-switcher')?.addEventListener('click', () => {
+      const newLang = currentLang === 'en' ? 'vi' : 'en';
+      setLanguage(newLang);
+    });
+
+    // Initialize language on page load
+    setLanguage(currentLang);
   </script>
 
 </body>

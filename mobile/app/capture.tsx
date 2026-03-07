@@ -40,6 +40,7 @@ function getInitials(name?: string, email?: string): string {
 }
 
 // ── Bottom mode bar (LinkedIn-style) ──────────────────────────────────────
+// Enhanced with better spacing, elevation, and active states
 const MODE_DEFINITIONS: { key: CaptureMode; emoji: string; labelKey: string }[] = [
   { key: 'text', emoji: '📝', labelKey: 'capture.modeText' },
   { key: 'voice', emoji: '🎤', labelKey: 'capture.modeVoice' },
@@ -66,14 +67,33 @@ function BottomModeBar({
             style={[
               modeBarStyles.chip,
               active
-                ? { backgroundColor: colors.accentLight, borderColor: colors.accent }
-                : { backgroundColor: colors.inputBg, borderColor: 'transparent' },
+                ? { 
+                    backgroundColor: colors.accent, 
+                    borderColor: colors.accent,
+                    ...Platform.select({
+                      ios: {
+                        shadowColor: colors.accent,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                      },
+                      android: { elevation: 4 },
+                    }),
+                  }
+                : { 
+                    backgroundColor: colors.inputBg, 
+                    borderColor: colors.border,
+                  },
             ]}
             onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
-            activeOpacity={0.7}
+            activeOpacity={0.8}
           >
-            <Text style={modeBarStyles.chipEmoji}>{emoji}</Text>
-            <Text style={[modeBarStyles.chipLabel, { color: active ? colors.accent : colors.textMuted }]}>
+            <Text style={[modeBarStyles.chipEmoji, active && modeBarStyles.chipEmojiActive]}>{emoji}</Text>
+            <Text style={[
+              modeBarStyles.chipLabel, 
+              { color: active ? '#FFFFFF' : colors.textMuted },
+              active && modeBarStyles.chipLabelActive
+            ]}>
               {t(labelKey)}
             </Text>
           </TouchableOpacity>
@@ -86,23 +106,38 @@ function BottomModeBar({
 const modeBarStyles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    gap: 10,
   },
   chip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 5,
-    borderWidth: 1.5,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 24,
+    gap: 6,
+    borderWidth: 1,
+    minHeight: 44,
   },
-  chipEmoji: { fontSize: 14 },
-  chipLabel: { fontSize: 12, fontWeight: '600' },
+  chipEmoji: { 
+    fontSize: 16,
+    opacity: 0.9,
+  },
+  chipEmojiActive: {
+    opacity: 1,
+  },
+  chipLabel: { 
+    fontSize: 13, 
+    fontWeight: '600', 
+    letterSpacing: 0.2,
+  },
+  chipLabelActive: {
+    fontWeight: '700',
+  },
 });
 
 interface VoiceData {
