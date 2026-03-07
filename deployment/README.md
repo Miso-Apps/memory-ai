@@ -24,14 +24,14 @@ Client (iOS / Android / Chrome Extension / Web)
 ```
 
 **Stack versions**
-| Service    | Image                    | Notes                            |
-|------------|--------------------------|----------------------------------|
-| FastAPI    | python:3.11-slim         | uvicorn + uvloop + httptools     |
-| Nginx      | nginx:1.25-alpine        | SSL termination, rate limiting   |
-| PostgreSQL | pgvector/pgvector:pg16   | pgvector extension pre-installed |
-| Redis      | redis:7-alpine           | LRU cache, 256 MB limit          |
-| MinIO      | minio/minio:latest       | S3-compatible object storage     |
-| Certbot    | certbot/certbot:latest   | Let's Encrypt, auto-renews       |
+| Service    | Image                  | Notes                            |
+| ---------- | ---------------------- | -------------------------------- |
+| FastAPI    | python:3.11-slim       | uvicorn + uvloop + httptools     |
+| Nginx      | nginx:1.25-alpine      | SSL termination, rate limiting   |
+| PostgreSQL | pgvector/pgvector:pg16 | pgvector extension pre-installed |
+| Redis      | redis:7-alpine         | LRU cache, 256 MB limit          |
+| MinIO      | minio/minio:latest     | S3-compatible object storage     |
+| Certbot    | certbot/certbot:latest | Let's Encrypt, auto-renews       |
 
 ---
 
@@ -106,14 +106,14 @@ nano .env
 ```
 
 **Required values to set in `.env`:**
-| Variable            | How to get it                            |
-|---------------------|------------------------------------------|
-| `DOMAIN`            | Your API subdomain (`api.dukiai.com`) |
-| `SECRET_KEY`        | `openssl rand -hex 32`                   |
-| `POSTGRES_PASSWORD` | Choose a strong password                 |
-| `REDIS_PASSWORD`    | Choose a strong password                 |
-| `MINIO_ROOT_PASSWORD`| Choose a strong password               |
-| `OPENAI_API_KEY`    | [platform.openai.com](https://platform.openai.com/) |
+| Variable              | How to get it                                       |
+| --------------------- | --------------------------------------------------- |
+| `DOMAIN`              | Your API subdomain (`api.dukiai.com`)               |
+| `SECRET_KEY`          | `openssl rand -hex 32`                              |
+| `POSTGRES_PASSWORD`   | Choose a strong password                            |
+| `REDIS_PASSWORD`      | Choose a strong password                            |
+| `MINIO_ROOT_PASSWORD` | Choose a strong password                            |
+| `OPENAI_API_KEY`      | [platform.openai.com](https://platform.openai.com/) |
 
 ---
 
@@ -151,6 +151,11 @@ The script will:
 4. Run database migrations (`migrate.py`)
 5. Start MinIO and create the `memories` bucket
 6. Bring up the full stack (`docker compose up -d`)
+
+> **⚠️ SSL Bootstrap Issue** — If Nginx crashes on first run with
+> `cannot load certificate … fullchain.pem: No such file or directory`,
+> the cert doesn't exist yet and Nginx can't start to serve the ACME challenge.
+> Fix with the standalone method (see **Troubleshooting → SSL cert not found** below).
 
 Verify everything is running:
 ```bash
@@ -237,12 +242,12 @@ The mobile app is built with **Expo SDK 51** (React Native 0.74). Releases go th
 
 ### Prerequisites
 
-| Requirement | Details |
-|---|---|
+| Requirement             | Details                                                        |
+| ----------------------- | -------------------------------------------------------------- |
 | Apple Developer account | [developer.apple.com](https://developer.apple.com/) — $99/year |
-| Xcode 15+ | Mac only — install from the Mac App Store |
-| EAS CLI | `npm install -g eas-cli` |
-| Expo account | Free — [expo.dev](https://expo.dev/) |
+| Xcode 15+               | Mac only — install from the Mac App Store                      |
+| EAS CLI                 | `npm install -g eas-cli`                                       |
+| Expo account            | Free — [expo.dev](https://expo.dev/)                           |
 
 ### 11a. One-time setup
 
@@ -499,14 +504,14 @@ zip -r ../memory-ai-extension-v1.0.1.zip extension/ --exclude "*.py" --exclude "
 
 ## Scaling Options
 
-| Need                         | Solution                                                  |
-|------------------------------|-----------------------------------------------------------|
-| More API throughput          | Increase `--workers` in Dockerfile CMD (max = 2×CPU + 1) |
-| Bigger DB                    | Migrate to DO Managed PostgreSQL (pgvector supported)     |
-| Object storage reliability   | Switch MinIO → DigitalOcean Spaces (S3-compatible)        |
-| Zero-downtime deploys        | Add a second Droplet behind a DO Load Balancer            |
-| Background tasks             | Add Celery worker service + beat scheduler                |
-| CDN for landing page / assets| DO CDN + Spaces, or Cloudflare free tier                  |
+| Need                          | Solution                                                 |
+| ----------------------------- | -------------------------------------------------------- |
+| More API throughput           | Increase `--workers` in Dockerfile CMD (max = 2×CPU + 1) |
+| Bigger DB                     | Migrate to DO Managed PostgreSQL (pgvector supported)    |
+| Object storage reliability    | Switch MinIO → DigitalOcean Spaces (S3-compatible)       |
+| Zero-downtime deploys         | Add a second Droplet behind a DO Load Balancer           |
+| Background tasks              | Add Celery worker service + beat scheduler               |
+| CDN for landing page / assets | DO CDN + Spaces, or Cloudflare free tier                 |
 
 ---
 
@@ -518,12 +523,66 @@ docker compose logs api   # Check for startup errors
 docker compose restart api
 ```
 
-**SSL cert not found**
+**SSL cert not found / `fullchain.pem: No such file or directory`**
+
+This happens on first deploy because Nginx tries to load the SSL cert before it exists.
+Use Certbot in standalone mode (it runs its own temporary HTTP server on port 80):
 ```bash
-# Ensure DOMAIN A record points to Droplet IP
-dig +short $DOMAIN
-# Re-run certbot manually
-./deploy.sh --init
+cd /opt/memory-ai/deployment
+
+# 1. Stop nginx so port 80 is free
+docker compose -f docker-compose.prod.yml stop nginx
+
+# 2. Find the certbot volume names
+docker volume ls | grep certbot
+# Example output:
+#   deployment_certbot_conf
+#   deployment_certbot_www
+
+# 3. Run certbot standalone to obtain the cert
+docker run --rm \
+  -v deployment_certbot_conf:/etc/letsencrypt \
+  -v deployment_certbot_www:/var/www/certbot \
+  -p 80:80 \
+  certbot/certbot certonly \
+  --standalone \
+  -d api.dukiai.com \
+  --email admin@dukiai.com \
+  --agree-tos --no-eff-email
+
+# 4. Start nginx — the cert now exists, it will start cleanly
+docker compose -f docker-compose.prod.yml up -d nginx
+
+# 5. Verify
+docker compose -f docker-compose.prod.yml logs --tail=10 nginx
+curl https://api.dukiai.com/health
+```
+
+> Replace `deployment_certbot_conf` / `deployment_certbot_www` with the actual
+> volume names returned by `docker volume ls` if they differ.
+
+**`unknown "domain" variable` in Nginx logs**
+
+Nginx does not expand shell environment variables. The `nginx.conf` must use
+the literal domain name, not `${DOMAIN}`. This was fixed by hardcoding
+`api.dukiai.com` directly in `deployment/nginx/nginx.conf`. If you see this
+error after pulling an older version:
+```bash
+# Confirm the fix is in place
+grep 'server_name' deployment/nginx/nginx.conf
+# Should show: server_name api.dukiai.com;
+```
+
+**`"listen ... http2" directive is deprecated` warning**
+
+Nginx 1.25+ removed the `listen 443 ssl http2` syntax. The correct form is:
+```nginx
+listen 443 ssl;
+http2 on;
+```
+This is already fixed in `deployment/nginx/nginx.conf`. Restart nginx to apply:
+```bash
+docker compose -f docker-compose.prod.yml up -d --no-deps --force-recreate nginx
 ```
 
 **Database connection refused**
