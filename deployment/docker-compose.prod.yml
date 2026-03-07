@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ─────────────────────────────────────────────────────────────
 #  Memory AI — Production Docker Compose
 #  DigitalOcean Droplet: Ubuntu 22.04, 4 GB RAM, 2 vCPU
