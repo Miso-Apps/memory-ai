@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Dark gradient background -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F0F23"/>
+      <stop offset="60%" stop-color="#1A0A2E"/>
+      <stop offset="100%" stop-color="#0A0A1A"/>
+    </linearGradient>
+    <!-- Icon background gradient -->
+    <linearGradient id="icon-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <!-- Icon sheen -->
+    <linearGradient id="icon-sheen" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+    <!-- Accent gradient for text highlight -->
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+    <clipPath id="icon-clip">
+      <rect width="200" height="200" rx="40"/>
+    </clipPath>
+    <!-- Dot grid pattern -->
+    <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(99,102,241,0.18)"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-grad)"/>
+  <!-- Dot grid overlay -->
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <!-- Center glow -->
+  <ellipse cx="600" cy="315" rx="520" ry="380" fill="rgba(99,102,241,0.06)"/>
+
+  <!--
+    App icon — 200×200, positioned left-center (x=100, y=215)
+    Scales the 128×128 design by 200/128 = 1.5625
+  -->
+  <g transform="translate(100, 215)">
+    <rect width="200" height="200" rx="40" fill="url(#icon-bg)"/>
+    <rect width="200" height="106" fill="url(#icon-sheen)" clip-path="url(#icon-clip)"/>
+    <!-- Brain outline (128 coords × 1.5625) -->
+    <path d="
+      M 100 131.25
+      C 90.625 140.625 78.125 137.5 75 134.375
+      C 46.875 128.125 28.125 109.375 28.125 87.5
+      C 28.125 62.5 46.875 43.75 71.875 43.75
+      C 78.125 40.625 84.375 40.625 90.625 43.75
+      C 93.75 37.5 96.875 34.375 100 34.375
+      C 103.125 34.375 106.25 37.5 109.375 43.75
+      C 115.625 40.625 121.875 40.625 128.125 43.75
+      C 153.125 43.75 171.875 62.5 171.875 87.5
+      C 171.875 109.375 153.125 128.125 125 134.375
+      C 121.875 137.5 109.375 140.625 100 131.25
+      Z"
+      fill="none" stroke="white" stroke-width="8.6"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Center dashed line -->
+    <line x1="100" y1="34.375" x2="100" y2="131.25"
+      stroke="rgba(255,255,255,0.28)" stroke-width="3.125"
+      stroke-dasharray="7.8 6.25" stroke-linecap="round"/>
+    <!-- Connections -->
+    <line x1="65.625" y1="81.25" x2="134.375" y2="81.25"
+      stroke="rgba(255,255,255,0.45)" stroke-width="3.9" stroke-linecap="round"/>
+    <line x1="65.625" y1="81.25" x2="100" y2="109.375"
+      stroke="rgba(255,255,255,0.45)" stroke-width="3.9" stroke-linecap="round"/>
+    <line x1="134.375" y1="81.25" x2="100" y2="109.375"
+      stroke="rgba(255,255,255,0.45)" stroke-width="3.9" stroke-linecap="round"/>
+    <!-- Neural nodes -->
+    <circle cx="65.625" cy="81.25" r="8.6" fill="white"/>
+    <circle cx="134.375" cy="81.25" r="8.6" fill="white"/>
+    <circle cx="100" cy="109.375" r="8.6" fill="white"/>
+  </g>
+
+  <!-- App name -->
+  <text x="380" y="280"
+    font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+    font-size="84" font-weight="800" fill="white"
+    letter-spacing="-3">Memory AI</text>
+
+  <!-- Tagline -->
+  <text x="380" y="350"
+    font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+    font-size="30" fill="rgba(255,255,255,0.6)" letter-spacing="-0.5">
+    Your second brain, always with you.
+  </text>
+
+  <!-- Feature pills -->
+  <rect x="380" y="392" width="196" height="46" rx="23" fill="rgba(99,102,241,0.22)"/>
+  <text x="478" y="421" text-anchor="middle"
+    font-family="system-ui, sans-serif" font-size="18"
+    fill="#A5B4FC" font-weight="600">GPT-4 Powered</text>
+
+  <rect x="592" y="392" width="168" height="46" rx="23" fill="rgba(99,102,241,0.22)"/>
+  <text x="676" y="421" text-anchor="middle"
+    font-family="system-ui, sans-serif" font-size="18"
+    fill="#A5B4FC" font-weight="600">iOS &amp; Android</text>
+
+  <rect x="776" y="392" width="204" height="46" rx="23" fill="rgba(99,102,241,0.22)"/>
+  <text x="878" y="421" text-anchor="middle"
+    font-family="system-ui, sans-serif" font-size="18"
+    fill="#A5B4FC" font-weight="600">Chrome Extension</text>
+
+  <!-- Domain watermark -->
+  <text x="600" y="578" text-anchor="middle"
+    font-family="system-ui, sans-serif" font-size="24"
+    fill="rgba(255,255,255,0.28)">dukiai.com</text>
+</svg>
