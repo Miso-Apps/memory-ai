@@ -671,6 +671,72 @@
       opacity: 0.75;
     }
 
+    /* Mobile: Swipeable phone carousel */
+    @media (max-width: 768px) {
+      .hero-phones {
+        height: 520px;
+        overflow: hidden;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .hero-phones-track {
+        display: flex;
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+        position: relative;
+        height: 100%;
+      }
+
+      .phone {
+        position: relative !important;
+        flex-shrink: 0;
+        width: 240px !important;
+        height: 480px !important;
+        margin: 0 !important;
+        transform: none !important;
+        opacity: 1 !important;
+        bottom: auto !important;
+      }
+
+      .phone-main,
+      .phone-back,
+      .phone-back-left {
+        width: 240px !important;
+        height: 480px !important;
+      }
+    }
+
+    /* Swipe indicators (dots) */
+    .swipe-indicators {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .swipe-indicators {
+        display: flex;
+      }
+    }
+
+    .swipe-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .swipe-dot.active {
+      width: 24px;
+      border-radius: 4px;
+      background: var(--accent);
+    }
+
     /* Phone screens content */
     .screen-home {
       background: linear-gradient(180deg, #FAFAF9 0%, #F5F5F4 100%);
@@ -1715,6 +1781,10 @@
     }
 
     /* ─── TESTIMONIALS ──────────────────────────────── */
+    .testimonials-container {
+      position: relative;
+    }
+
     .testimonials-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1725,12 +1795,31 @@
     @media (max-width: 900px) {
       .testimonials-grid {
         grid-template-columns: 1fr;
+        overflow: hidden;
+        display: flex;
+        transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        will-change: transform;
+        gap: 0;
+        touch-action: pan-y;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .testimonial-card {
+        flex-shrink: 0;
+        width: 85%;
+        margin: 0 7.5%;
       }
     }
 
     @media (min-width: 600px) and (max-width: 900px) {
       .testimonials-grid {
         grid-template-columns: repeat(2, 1fr);
+        display: grid;
+      }
+
+      .testimonial-card {
+        width: auto;
+        margin: 0;
       }
     }
 
@@ -2081,110 +2170,120 @@
 
         <!-- Right: phones -->
         <div class="hero-phones">
-          <!-- Back-left phone: Search -->
-          <div class="phone phone-back-left">
-            <div class="phone-screen screen-search">
-              <div style="font-size:15px;font-weight:700;color:#1C1917;margin-bottom:12px;">Find Again</div>
-              <div class="pscreen-search-bar">
-                <span class="pscreen-search-icon">🔍</span>
-                <span class="pscreen-search-text">job change thoughts...</span>
-              </div>
-              <div class="pscreen-ai-insight">
-                <div class="pscreen-ai-insight-title">✨ AI Pattern Found</div>
-                <div class="pscreen-ai-insight-text">You've saved 4 items about career decisions over 3 weeks</div>
-              </div>
-              <div class="pscreen-result" style="margin-top:10px;">
-                <div class="pscreen-result-content">Thinking about switching jobs for passion vs stability...</div>
-                <div class="pscreen-result-meta">📝 Note · 3 weeks ago</div>
-              </div>
-              <div class="pscreen-result">
-                <div class="pscreen-result-content">How to balance passion and financial security</div>
-                <div class="pscreen-result-meta">🔗 Link · 3 weeks ago</div>
+          <div class="hero-phones-track">
+            <!-- Back-left phone: Search -->
+            <div class="phone phone-back-left">
+              <div class="phone-screen screen-search">
+                <div style="font-size:15px;font-weight:700;color:#1C1917;margin-bottom:12px;">Find Again</div>
+                <div class="pscreen-search-bar">
+                  <span class="pscreen-search-icon">🔍</span>
+                  <span class="pscreen-search-text">job change thoughts...</span>
+                </div>
+                <div class="pscreen-ai-insight">
+                  <div class="pscreen-ai-insight-title">✨ AI Pattern Found</div>
+                  <div class="pscreen-ai-insight-text">You've saved 4 items about career decisions over 3 weeks</div>
+                </div>
+                <div class="pscreen-result" style="margin-top:10px;">
+                  <div class="pscreen-result-content">Thinking about switching jobs for passion vs stability...</div>
+                  <div class="pscreen-result-meta">📝 Note · 3 weeks ago</div>
+                </div>
+                <div class="pscreen-result">
+                  <div class="pscreen-result-content">How to balance passion and financial security</div>
+                  <div class="pscreen-result-meta">🔗 Link · 3 weeks ago</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Main center phone: Home -->
-          <div class="phone phone-main">
-            <div class="phone-screen screen-home">
-              <div class="pscreen-header">
-                <div class="pscreen-greeting">Good morning ☀️</div>
-                <div class="pscreen-title">What's on your mind?</div>
-              </div>
-              <div class="pscreen-stats">
-                <div class="pscreen-stat">
-                  <div class="pscreen-stat-num">347</div>
-                  <div class="pscreen-stat-label">Total memories</div>
+            <!-- Main center phone: Home -->
+            <div class="phone phone-main">
+              <div class="phone-screen screen-home">
+                <div class="pscreen-header">
+                  <div class="pscreen-greeting">Good morning ☀️</div>
+                  <div class="pscreen-title">What's on your mind?</div>
                 </div>
-                <div class="pscreen-stat">
-                  <div class="pscreen-stat-num">12</div>
-                  <div class="pscreen-stat-label">This week</div>
-                </div>
-                <div class="pscreen-stat">
-                  <div class="pscreen-stat-num">🔥 14</div>
-                  <div class="pscreen-stat-label">Day streak</div>
-                </div>
-              </div>
-              <div
-                style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
-                Today's Recall</div>
-              <div class="pscreen-memory">
-                <div class="pscreen-memory-row">
-                  <div class="pscreen-type-badge type-text">📝</div>
-                  <div>
-                    <div class="pscreen-memory-content">Thinking about switching jobs for passion vs stability...</div>
-                    <div class="pscreen-memory-time">3 weeks ago</div>
-                    <div class="pscreen-ai-badge">✨ AI: Career decision theme</div>
+                <div class="pscreen-stats">
+                  <div class="pscreen-stat">
+                    <div class="pscreen-stat-num">347</div>
+                    <div class="pscreen-stat-label">Total memories</div>
+                  </div>
+                  <div class="pscreen-stat">
+                    <div class="pscreen-stat-num">12</div>
+                    <div class="pscreen-stat-label">This week</div>
+                  </div>
+                  <div class="pscreen-stat">
+                    <div class="pscreen-stat-num">🔥 14</div>
+                    <div class="pscreen-stat-label">Day streak</div>
                   </div>
                 </div>
-              </div>
-              <div class="pscreen-memory">
-                <div class="pscreen-memory-row">
-                  <div class="pscreen-type-badge type-voice">🎤</div>
-                  <div>
-                    <div class="pscreen-memory-content">Voice memo about morning routine ideas</div>
-                    <div class="pscreen-memory-time">1 week ago · 2:34</div>
+                <div
+                  style="font-size:10px;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+                  Today's Recall</div>
+                <div class="pscreen-memory">
+                  <div class="pscreen-memory-row">
+                    <div class="pscreen-type-badge type-text">📝</div>
+                    <div>
+                      <div class="pscreen-memory-content">Thinking about switching jobs for passion vs stability...
+                      </div>
+                      <div class="pscreen-memory-time">3 weeks ago</div>
+                      <div class="pscreen-ai-badge">✨ AI: Career decision theme</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div class="pscreen-memory">
-                <div class="pscreen-memory-row">
-                  <div class="pscreen-type-badge type-link">🔗</div>
-                  <div>
-                    <div class="pscreen-memory-content">The science of habit formation — James Clear</div>
-                    <div class="pscreen-memory-time">2 days ago</div>
+                <div class="pscreen-memory">
+                  <div class="pscreen-memory-row">
+                    <div class="pscreen-type-badge type-voice">🎤</div>
+                    <div>
+                      <div class="pscreen-memory-content">Voice memo about morning routine ideas</div>
+                      <div class="pscreen-memory-time">1 week ago · 2:34</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pscreen-memory">
+                  <div class="pscreen-memory-row">
+                    <div class="pscreen-type-badge type-link">🔗</div>
+                    <div>
+                      <div class="pscreen-memory-content">The science of habit formation — James Clear</div>
+                      <div class="pscreen-memory-time">2 days ago</div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Back-right phone: Capture -->
-          <div class="phone phone-back">
-            <div class="phone-screen screen-capture">
-              <div class="pscreen-capture-title">Quick Capture</div>
-              <div class="pscreen-capture-sub">Ideas disappear in seconds. Save them now.</div>
-              <div class="pscreen-input">
-                <div class="pscreen-input-text">
-                  The compound effect of small daily habits is underrated. Start with just 2 minutes...<span
-                    class="pscreen-input-cursor"></span>
+            <!-- Back-right phone: Capture -->
+            <div class="phone phone-back">
+              <div class="phone-screen screen-capture">
+                <div class="pscreen-capture-title">Quick Capture</div>
+                <div class="pscreen-capture-sub">Ideas disappear in seconds. Save them now.</div>
+                <div class="pscreen-input">
+                  <div class="pscreen-input-text">
+                    The compound effect of small daily habits is underrated. Start with just 2 minutes...<span
+                      class="pscreen-input-cursor"></span>
+                  </div>
                 </div>
-              </div>
-              <div class="pscreen-type-buttons">
-                <div class="pscreen-type-btn active">
-                  <span class="pscreen-type-btn-icon">📝</span>
-                  <span class="pscreen-type-btn-label" style="color:rgba(255,255,255,.8)">Text</span>
-                </div>
-                <div class="pscreen-type-btn">
-                  <span class="pscreen-type-btn-icon">🔗</span>
-                  <span class="pscreen-type-btn-label">Link</span>
-                </div>
-                <div class="pscreen-type-btn">
-                  <span class="pscreen-type-btn-icon">🎤</span>
-                  <span class="pscreen-type-btn-label">Voice</span>
+                <div class="pscreen-type-buttons">
+                  <div class="pscreen-type-btn active">
+                    <span class="pscreen-type-btn-icon">📝</span>
+                    <span class="pscreen-type-btn-label" style="color:rgba(255,255,255,.8)">Text</span>
+                  </div>
+                  <div class="pscreen-type-btn">
+                    <span class="pscreen-type-btn-icon">🔗</span>
+                    <span class="pscreen-type-btn-label">Link</span>
+                  </div>
+                  <div class="pscreen-type-btn">
+                    <span class="pscreen-type-btn-icon">🎤</span>
+                    <span class="pscreen-type-btn-label">Voice</span>
+                  </div>
                 </div>
               </div>
             </div>
+          </div><!-- .hero-phones-track -->
+
+          <!-- Swipe indicators for mobile -->
+          <div class="swipe-indicators" id="phone-indicators">
+            <div class="swipe-dot active" data-index="0"></div>
+            <div class="swipe-dot" data-index="1"></div>
+            <div class="swipe-dot" data-index="2"></div>
           </div>
         </div>
       </div>
@@ -2725,44 +2824,53 @@
         <div class="section-label" data-i18n="testimonials.label">✦ Early users love it</div>
         <h2 class="section-title" data-i18n="testimonials.title">People are remembering<br>more than ever</h2>
       </div>
-      <div class="testimonials-grid">
-        <div class="testimonial-card reveal reveal-delay-1">
-          <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
-          <p class="testimonial-quote">I've tried Notion, Apple Notes, Obsidian — nothing has come close to how
-            naturally Memory AI fits into my day. The proactive recall feature is like magic.</p>
-          <div class="testimonial-author">
-            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);">A</div>
-            <div>
-              <div class="testimonial-name">Alex Kim</div>
-              <div class="testimonial-handle">Product Designer, SF</div>
+      <div class="testimonials-container">
+        <div class="testimonials-grid">
+          <div class="testimonial-card reveal reveal-delay-1">
+            <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
+            <p class="testimonial-quote">I've tried Notion, Apple Notes, Obsidian — nothing has come close to how
+              naturally Memory AI fits into my day. The proactive recall feature is like magic.</p>
+            <div class="testimonial-author">
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);">A</div>
+              <div>
+                <div class="testimonial-name">Alex Kim</div>
+                <div class="testimonial-handle">Product Designer, SF</div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card reveal reveal-delay-2">
+            <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
+            <p class="testimonial-quote">I record 2-3 voice memos a day driving to work. Knowing Whisper automatically
+              transcribes and makes them searchable completely changed how I capture ideas.</p>
+            <div class="testimonial-author">
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#EC4899,#F43F5E);">M</div>
+              <div>
+                <div class="testimonial-name">Maya Patel</div>
+                <div class="testimonial-handle">Entrepreneur, London</div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-card reveal reveal-delay-3">
+            <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
+            <p class="testimonial-quote">The weekly insight recaps are surprisingly thoughtful. It told me I've been
+              obsessing over one topic for 6 weeks. That awareness alone was worth downloading the app.</p>
+            <div class="testimonial-author">
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#10B981,#059669);">T</div>
+              <div>
+                <div class="testimonial-name">Tran Minh Duc</div>
+                <div class="testimonial-handle">Software Engineer, Hanoi</div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="testimonial-card reveal reveal-delay-2">
-          <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
-          <p class="testimonial-quote">I record 2-3 voice memos a day driving to work. Knowing Whisper automatically
-            transcribes and makes them searchable completely changed how I capture ideas.</p>
-          <div class="testimonial-author">
-            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#EC4899,#F43F5E);">M</div>
-            <div>
-              <div class="testimonial-name">Maya Patel</div>
-              <div class="testimonial-handle">Entrepreneur, London</div>
-            </div>
-          </div>
+
+        <!-- Swipe indicators for mobile -->
+        <div class="swipe-indicators" id="testimonial-indicators">
+          <div class="swipe-dot active" data-index="0"></div>
+          <div class="swipe-dot" data-index="1"></div>
+          <div class="swipe-dot" data-index="2"></div>
         </div>
-        <div class="testimonial-card reveal reveal-delay-3">
-          <div class="testimonial-stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
-          <p class="testimonial-quote">The weekly insight recaps are surprisingly thoughtful. It told me I've been
-            obsessing over one topic for 6 weeks. That awareness alone was worth downloading the app.</p>
-          <div class="testimonial-author">
-            <div class="testimonial-avatar" style="background:linear-gradient(135deg,#10B981,#059669);">T</div>
-            <div>
-              <div class="testimonial-name">Tran Minh Duc</div>
-              <div class="testimonial-handle">Software Engineer, Hanoi</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </div><!-- .testimonials-container -->
     </div>
   </section>
 
@@ -3291,6 +3399,135 @@
 
     // Initialize language on page load
     setLanguage(currentLang);
+
+    // ── Mobile Swipe Functionality ──────────────────────────────────────────
+    // Detect if device is mobile/tablet
+    const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+    // Generic swipe handler
+    function initSwipeCarousel(containerSelector, indicatorsId) {
+      const container = document.querySelector(containerSelector);
+      const indicators = document.getElementById(indicatorsId);
+
+      if (!container || !indicators || !isMobile()) return;
+
+      let currentIndex = 0;
+      let startX = 0;
+      let currentX = 0;
+      let isDragging = false;
+      let startTime = 0;
+
+      const items = container.children;
+      const totalItems = items.length;
+
+      // Update indicators
+      function updateIndicators() {
+        const dots = indicators.querySelectorAll('.swipe-dot');
+        dots.forEach((dot, i) => {
+          dot.classList.toggle('active', i === currentIndex);
+        });
+      }
+
+      // Update position
+      function updatePosition(withTransition = true) {
+        container.style.transition = withTransition ? 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'none';
+        container.style.transform = `translateX(-${currentIndex * 100}%)`;
+        updateIndicators();
+      }
+
+      // Go to specific index
+      function goToIndex(index) {
+        currentIndex = Math.max(0, Math.min(index, totalItems - 1));
+        updatePosition();
+      }
+
+      // Touch start
+      function handleTouchStart(e) {
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        currentX = startX;
+        isDragging = true;
+        startTime = Date.now();
+        container.style.transition = 'none';
+      }
+
+      // Touch move
+      function handleTouchMove(e) {
+        if (!isDragging) return;
+
+        currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const deltaX = currentX - startX;
+        const movePercent = (deltaX / container.offsetWidth) * 100;
+
+        // Apply resistance at edges
+        let resistance = 1;
+        if ((currentIndex === 0 && deltaX > 0) || (currentIndex === totalItems - 1 && deltaX < 0)) {
+          resistance = 0.3;
+        }
+
+        const translateX = -currentIndex * 100 + movePercent * resistance;
+        container.style.transform = `translateX(${translateX}%)`;
+      }
+
+      // Touch end
+      function handleTouchEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const deltaX = currentX - startX;
+        const deltaTime = Date.now() - startTime;
+        const velocity = Math.abs(deltaX) / deltaTime;
+
+        // Swipe threshold: 50px or fast swipe (>0.5 px/ms)
+        if (Math.abs(deltaX) > 50 || velocity > 0.5) {
+          if (deltaX > 0 && currentIndex > 0) {
+            currentIndex--;
+          } else if (deltaX < 0 && currentIndex < totalItems - 1) {
+            currentIndex++;
+          }
+        }
+
+        updatePosition();
+      }
+
+      // Touch event listeners
+      container.addEventListener('touchstart', handleTouchStart, { passive: true });
+      container.addEventListener('touchmove', handleTouchMove, { passive: true });
+      container.addEventListener('touchend', handleTouchEnd);
+
+      // Mouse event listeners (for desktop testing)
+      container.addEventListener('mousedown', handleTouchStart);
+      container.addEventListener('mousemove', handleTouchMove);
+      container.addEventListener('mouseup', handleTouchEnd);
+      container.addEventListener('mouseleave', handleTouchEnd);
+
+      // Dot click handlers
+      indicators.querySelectorAll('.swipe-dot').forEach((dot, index) => {
+        dot.addEventListener('click', () => goToIndex(index));
+      });
+
+      // Handle window resize
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          if (!isMobile()) {
+            container.style.transform = '';
+            container.style.transition = '';
+          } else {
+            updatePosition(false);
+          }
+        }, 100);
+      });
+
+      // Initialize
+      updateIndicators();
+    }
+
+    // Initialize both carousels
+    if (isMobile()) {
+      initSwipeCarousel('.hero-phones-track', 'phone-indicators');
+      initSwipeCarousel('.testimonials-grid', 'testimonial-indicators');
+    }
   </script>
 
 </body>
