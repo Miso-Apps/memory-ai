@@ -11,7 +11,7 @@ WebBrowser.maybeCompleteAuthSession();
 // Configure API base URL based on environment
 const API_BASE_URL = __DEV__
   ? 'http://localhost:8000'  // Local development
-  : 'https://api.memoryai.app';  // Production
+  : 'https://api.dukiai.com';  // Production
 
 let cachedAccessToken: string | null = null;
 let accessTokenHydrated = false;

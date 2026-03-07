@@ -53,12 +53,12 @@ Client (iOS / Android / Chrome Extension / Web)
 Create a DNS **A record** with your registrar or DigitalOcean DNS:
 
 ```
-api.yourdomain.com  →  A  →  <Droplet IP>
+api.dukiai.com  →  A  →  <Droplet IP>
 ```
 
 Wait for propagation (~5 min), verify with:
 ```bash
-dig +short api.yourdomain.com
+dig +short api.dukiai.com
 ```
 
 ---
@@ -108,7 +108,7 @@ nano .env
 **Required values to set in `.env`:**
 | Variable            | How to get it                            |
 |---------------------|------------------------------------------|
-| `DOMAIN`            | Your API subdomain (`api.yourdomain.com`) |
+| `DOMAIN`            | Your API subdomain (`api.dukiai.com`) |
 | `SECRET_KEY`        | `openssl rand -hex 32`                   |
 | `POSTGRES_PASSWORD` | Choose a strong password                 |
 | `REDIS_PASSWORD`    | Choose a strong password                 |
@@ -155,7 +155,7 @@ The script will:
 Verify everything is running:
 ```bash
 docker compose -f docker-compose.prod.yml ps
-curl https://api.yourdomain.com/health
+curl https://api.dukiai.com/health
 ```
 
 ---
@@ -271,12 +271,12 @@ eas init --id YOUR_EXPO_PROJECT_ID
 
 **Create the app in App Store Connect** (if not done yet):
 1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com/) → **My Apps → +**.
-2. Bundle ID: `com.memoryai.app`, Name: **Memory AI**, Primary language.
+2. Bundle ID: `com.dukiai.app`, Name: **Memory AI**, Primary language.
 3. Save — note the **Apple ID** number (10 digits).
 
 **Set the API base URL** in `mobile/services/api.ts`:
 ```ts
-const BASE_URL = "https://api.yourdomain.com";   // your DO Droplet URL
+const BASE_URL = "https://api.dukiai.com";   // your DO Droplet URL
 ```
 
 ### 11b. Build for TestFlight (internal testing)
@@ -359,7 +359,7 @@ eas build --platform ios --profile production --auto-submit
 Sensitive values (API URL, keys) should be added as **EAS secrets**, not committed to git:
 
 ```bash
-eas secret:create --scope project --name API_BASE_URL --value https://api.yourdomain.com
+eas secret:create --scope project --name API_BASE_URL --value https://api.dukiai.com
 eas secret:create --scope project --name GOOGLE_CLIENT_ID --value 382213094350-...
 ```
 
@@ -410,7 +410,7 @@ free tier, global CDN, HTTPS, and auto-deploys on every `git push` — no server
 
 ### 12b. Custom domain
 
-1. In Netlify → **Domain settings → Add custom domain** → enter `yourdomain.com`.
+1. In Netlify → **Domain settings → Add custom domain** → enter `dukiai.com`.
 2. Point your DNS to Netlify's nameservers (or add a CNAME record).
 3. Netlify provisions an SSL cert via Let's Encrypt automatically.
 
@@ -422,9 +422,9 @@ Open `landing/index.html`, find the `STORE_URLS` object near the bottom, and fil
 ```js
 const STORE_URLS = {
   appStore:    'https://apps.apple.com/app/memory-ai/idXXXXXXXXX',   // App Store Connect → App → Apple ID
-  googlePlay:  'https://play.google.com/store/apps/details?id=com.memoryai.app',
+  googlePlay:  'https://play.google.com/store/apps/details?id=com.dukiai.app',
   chromeStore: 'https://chromewebstore.google.com/detail/memory-ai/EXTENSION_ID',
-  webApp:      'https://app.yourdomain.com',
+  webApp:      'https://app.dukiai.com',
 };
 ```
 
@@ -464,7 +464,7 @@ zip -r ../memory-ai-extension-v1.0.0.zip . \
    - **Detailed description**: (use the `extension/README.md` as a base)
    - **Category**: Productivity
    - **Screenshots**: at least 1 × 1280×800 or 640×400 image of the popup
-   - **Privacy policy URL**: `https://yourdomain.com/privacy`
+   - **Privacy policy URL**: `https://dukiai.com/privacy`
    - **Single purpose**: "Save web content to Memory AI"
 3. Under **Permissions**, justify each permission in the form:
    - `storage` — save user preferences and offline queue locally
