@@ -34,7 +34,7 @@
 # Keep the app subdomain routing clean if you later add a /app SPA
 [[redirects]]
   from   = "/app/*"
-  to     = "https://app.dukiai.com/:splat"   # TODO: replace with real web app URL
+  to     = "https://dukiai.com/:splat"   # TODO: replace with real web app URL
   status = 301
 
 # Legacy /download → scroll anchor on the landing page
