@@ -3,7 +3,7 @@
  * Auth, memory CRUD, offline queue, badge counter.
  */
 
-const DEFAULT_API_URL = 'http://localhost:8000';
+const DEFAULT_API_URL = 'https://api.dukiai.com';
 
 // ─── Config ──────────────────────────────────────────────
 

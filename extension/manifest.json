@@ -35,7 +35,6 @@
     "notifications"
   ],
   "host_permissions": [
-    "http://localhost:8000/*",
     "https://api.dukiai.com/*"
   ],
   "commands": {

@@ -12,7 +12,7 @@
   // ─── Load saved settings ──────────────────────────────
 
   const { apiUrl, language } = await chrome.storage.sync.get({
-    apiUrl: 'http://localhost:8000',
+    apiUrl: 'https://api.dukiai.com',
     language: 'en',
   });
 
@@ -25,7 +25,7 @@
   // ─── Save on change ────────────────────────────────────
 
   apiUrlInput?.addEventListener('change', () => {
-    const val = apiUrlInput.value.trim().replace(/\/+$/, '') || 'http://localhost:8000';
+    const val = apiUrlInput.value.trim().replace(/\/+$/, '') || 'https://api.dukiai.com';
     apiUrlInput.value = val;
     chrome.storage.sync.set({ apiUrl: val });
   });
