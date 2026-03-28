@@ -10,16 +10,15 @@ import {
   Platform,
   ActivityIndicator,
   Keyboard,
-  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { chatApi, ChatMessage, ChatSource } from '../../services/api';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
+import { ArrowUp, Brain, Sparkles } from 'lucide-react-native';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,22 +48,17 @@ const ChatBubble = React.memo(function ChatBubble({
   if (isUser) {
     return (
       <View style={[styles.bubbleRow, styles.bubbleRowUser]}>
-        <LinearGradient
-          colors={['#6366F1', '#818CF8']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.bubble, styles.bubbleUser]}
-        >
-          <Text style={styles.bubbleTextUser}>{message.content}</Text>
-        </LinearGradient>
+        <View style={[styles.bubble, styles.bubbleUser, { backgroundColor: colors.accent }]}> 
+          <Text style={[styles.bubbleTextUser, { color: colors.buttonText }]}>{message.content}</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={[styles.bubbleRow, styles.bubbleRowAssistant]}>
-      <View style={styles.assistantAvatar}>
-        <Text style={styles.avatarEmoji}>🧠</Text>
+      <View style={[styles.assistantAvatar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+        <Brain size={14} color={colors.textSecondary} strokeWidth={2.4} />
       </View>
       <View style={styles.assistantContent}>
         <View style={[styles.bubble, styles.bubbleAssistant, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
@@ -85,7 +79,7 @@ const ChatBubble = React.memo(function ChatBubble({
         {/* Lean source reference – just a subtle count, no list */}
         {message.sources && message.sources.length > 0 && (
           <Text style={[styles.sourcesFootnote, { color: colors.textMuted }]}>
-            📎 {message.sources.length} {message.sources.length === 1 ? 'memory' : 'memories'} referenced
+            📎 {t('chat.memoriesReferenced', { count: message.sources.length })}
           </Text>
         )}
       </View>
@@ -120,8 +114,8 @@ const SuggestionChip = React.memo(function SuggestionChip({
 function TypingIndicator({ colors }: { colors: ThemeColors }) {
   return (
     <View style={[styles.bubbleRow, styles.bubbleRowAssistant]}>
-      <View style={styles.assistantAvatar}>
-        <Text style={styles.avatarEmoji}>🧠</Text>
+      <View style={[styles.assistantAvatar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+        <Brain size={14} color={colors.textSecondary} strokeWidth={2.4} />
       </View>
       <View style={[styles.bubble, styles.bubbleAssistant, styles.typingBubble, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
         <View style={styles.typingDots}>
@@ -338,14 +332,9 @@ export default function ChatScreen() {
           {showWelcome && (
             <View style={styles.welcome}>
               <View style={styles.welcomeIconWrap}>
-                <LinearGradient
-                  colors={['#6366F1', '#818CF8', '#A78BFA']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.welcomeIconGradient}
-                >
-                  <Text style={styles.welcomeIcon}>🧠</Text>
-                </LinearGradient>
+                  <View style={[styles.welcomeIconGradient, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+                    <Sparkles size={30} color={colors.accent} strokeWidth={2.2} />
+                  </View>
               </View>
               <Text style={[styles.welcomeTitle, { color: colors.textPrimary }]}>
                 {t('chat.welcomeTitle')}
@@ -409,7 +398,7 @@ export default function ChatScreen() {
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.sendIcon}>↑</Text>
+                <ArrowUp size={16} color={colors.buttonText} strokeWidth={2.8} />
               )}
             </TouchableOpacity>
           </View>
@@ -433,14 +422,14 @@ const styles = StyleSheet.create({
   },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   headerTextWrap: { flex: 1 },
-  headerTitle: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
+  headerTitle: { fontSize: 26, fontWeight: '600', marginBottom: 4 },
+  headerSubtitle: { fontSize: 15 },
   clearBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
-  clearBtnText: { fontSize: 13, fontWeight: '500' },
+  clearBtnText: { fontSize: 13, fontWeight: '600' },
 
   // Keyboard avoid
   keyboardAvoid: { flex: 1 },
@@ -456,14 +445,14 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  welcomeIcon: { fontSize: 40 },
-  welcomeTitle: { fontSize: 22, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  welcomeTitle: { fontSize: 22, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
   welcomeSubtitle: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 21,
     textAlign: 'center',
     maxWidth: 300,
   },
@@ -475,40 +464,39 @@ const styles = StyleSheet.create({
 
   // Suggestion chips
   suggestionChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 11,
+    borderRadius: 999,
     borderWidth: 1,
   },
-  suggestionText: { fontSize: 14, fontWeight: '500' },
+  suggestionText: { fontSize: 13, fontWeight: '600' },
 
   // Bubble common
   bubbleRow: { marginBottom: 16 },
   bubbleRowUser: { alignItems: 'flex-end' },
   bubbleRowAssistant: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
-  bubble: { borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, maxWidth: '85%' },
+  bubble: { borderRadius: 18, paddingHorizontal: 15, paddingVertical: 11, maxWidth: '85%' },
 
   // User bubble
-  bubbleUser: { borderBottomRightRadius: 4 },
-  bubbleTextUser: { fontSize: 15, lineHeight: 22, color: '#FFFFFF', fontWeight: '400' },
+  bubbleUser: { borderBottomRightRadius: 6 },
+  bubbleTextUser: { fontSize: 15, lineHeight: 22, fontWeight: '500' },
 
   // Assistant bubble
   assistantAvatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#6366F120',
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
   },
-  avatarEmoji: { fontSize: 16 },
   assistantContent: { flex: 1, maxWidth: '85%' },
   bubbleAssistant: {
     borderBottomLeftRadius: 4,
     borderWidth: 1,
   },
-  bubbleTextAssistant: { fontSize: 15, lineHeight: 22 },
+  bubbleTextAssistant: { fontSize: 15, lineHeight: 22, fontWeight: '400' },
 
   // Sources (lean – just a footnote)
   sourcesFootnote: { fontSize: 11, marginTop: 6, marginLeft: 4, opacity: 0.7 },
@@ -557,5 +545,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 8,
   },
-  sendIcon: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
 });

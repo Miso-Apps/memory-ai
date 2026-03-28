@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   Switch,
   Modal,
   Animated,
@@ -143,6 +144,64 @@ function SectionDivider() {
   return <View style={[r.divider, { backgroundColor: colors.border }]} />;
 }
 
+function PreferenceToggleRow({
+  icon,
+  label,
+  description,
+  value,
+  onToggle,
+  showTopBorder = false,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  description: string;
+  value: boolean;
+  onToggle: (next: boolean) => void;
+  showTopBorder?: boolean;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+
+  return (
+    <View
+      style={[
+        s.recallRow,
+        showTopBorder && {
+          marginTop: 16,
+          paddingTop: 16,
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+        },
+      ]}
+    >
+      <View style={[s.recallIcon, { backgroundColor: colors.inputBg }]}>{icon}</View>
+      <Pressable
+        style={s.recallTextWrap}
+        onPress={() => onToggle(!value)}
+        accessibilityRole="switch"
+        accessibilityState={{ checked: value }}
+        accessibilityLabel={label}
+        accessibilityHint={description}
+      >
+        <Text style={[s.recallLabel, { color: colors.textPrimary }]}>{label}</Text>
+        <Text style={[s.recallDesc, { color: colors.textMuted }]}>{description}</Text>
+      </Pressable>
+      <View style={s.toggleControlWrap}>
+        <Switch
+          value={value}
+          onValueChange={onToggle}
+          trackColor={{ false: colors.switchTrackOff, true: colors.brandAccentLight }}
+          thumbColor={value ? colors.brandAccent : colors.cardBg}
+          ios_backgroundColor={colors.switchTrackOff}
+          style={s.toggleSwitch}
+          accessibilityLabel={label}
+          accessibilityHint={description}
+        />
+      </View>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -160,7 +219,7 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       memoriesApi.listDismissed({ limit: 100 })
-        .then((items) => setDismissedCount(items.length))
+        .then((response) => setDismissedCount(response.total ?? response.memories.length))
         .catch(() => { });
     }, [])
   );
@@ -209,78 +268,49 @@ export default function ProfileScreen() {
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
         {/* AI Features Card */}
         <View style={[s.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <View style={s.recallRow}>
-            <View style={[s.recallIcon, { backgroundColor: colors.accentSubtle }]}>
-              <Sparkles size={22} color={colors.accent} strokeWidth={2.5} />
-            </View>
-            <View style={s.recallTextWrap}>
-              <Text style={[s.recallLabel, { color: colors.textPrimary }]}>{t('profile.recall.label')}</Text>
-              <Text style={[s.recallDesc, { color: colors.textMuted }]}>{t('profile.recall.description')}</Text>
-            </View>
-            <Switch
-              value={preferences?.ai_recall_enabled ?? true}
-              onValueChange={(value) => updatePreferences({ ai_recall_enabled: value })}
-              trackColor={{ false: colors.switchTrackOff, true: '#818CF8' }}
-              thumbColor={preferences?.ai_recall_enabled ? colors.accent : colors.cardBg}
-            />
-          </View>
+          <PreferenceToggleRow
+            icon={<Sparkles size={22} color={colors.textSecondary} strokeWidth={2.5} />}
+            label={t('profile.recall.label')}
+            description={t('profile.recall.description')}
+            value={preferences?.ai_recall_enabled ?? true}
+            onToggle={(value) => updatePreferences({ ai_recall_enabled: value })}
+          />
           {preferences?.ai_recall_enabled && (
-            <View style={[s.infoBox, { backgroundColor: colors.accentSubtle }]}>
-              <Info size={14} color={colors.accent} style={{ marginTop: 2 }} />
+            <View style={[s.infoBox, { backgroundColor: colors.inputBg }]}>
+              <Info size={14} color={colors.textSecondary} style={{ marginTop: 2 }} />
               <Text style={[s.infoText, { color: colors.textTertiary }]}>{t('profile.recall.info')}</Text>
             </View>
           )}
 
           {/* Auto-categorization toggle */}
-          <View style={[s.recallRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
-            <View style={[s.recallIcon, { backgroundColor: 'rgba(16,185,129,0.1)' }]}>
-              <FolderOpen size={22} color="#10B981" strokeWidth={2.5} />
-            </View>
-            <View style={s.recallTextWrap}>
-              <Text style={[s.recallLabel, { color: colors.textPrimary }]}>{t('profile.autoCategory.label')}</Text>
-              <Text style={[s.recallDesc, { color: colors.textMuted }]}>{t('profile.autoCategory.description')}</Text>
-            </View>
-            <Switch
-              value={preferences?.auto_categorize ?? true}
-              onValueChange={(value) => updatePreferences({ auto_categorize: value })}
-              trackColor={{ false: colors.switchTrackOff, true: '#34D399' }}
-              thumbColor={preferences?.auto_categorize ? '#10B981' : colors.cardBg}
-            />
-          </View>
+          <PreferenceToggleRow
+            icon={<FolderOpen size={22} color={colors.textSecondary} strokeWidth={2.5} />}
+            label={t('profile.autoCategory.label')}
+            description={t('profile.autoCategory.description')}
+            value={preferences?.auto_categorize ?? true}
+            onToggle={(value) => updatePreferences({ auto_categorize: value })}
+            showTopBorder
+          />
 
           {/* Auto-summarize toggle */}
-          <View style={[s.recallRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
-            <View style={[s.recallIcon, { backgroundColor: 'rgba(245,158,11,0.1)' }]}>
-              <Zap size={22} color="#F59E0B" strokeWidth={2.5} />
-            </View>
-            <View style={s.recallTextWrap}>
-              <Text style={[s.recallLabel, { color: colors.textPrimary }]}>{t('profile.autoSummarize.label')}</Text>
-              <Text style={[s.recallDesc, { color: colors.textMuted }]}>{t('profile.autoSummarize.description')}</Text>
-            </View>
-            <Switch
-              value={preferences?.auto_summarize ?? true}
-              onValueChange={(value) => updatePreferences({ auto_summarize: value })}
-              trackColor={{ false: colors.switchTrackOff, true: '#FBBF24' }}
-              thumbColor={preferences?.auto_summarize ? '#F59E0B' : colors.cardBg}
-            />
-          </View>
+          <PreferenceToggleRow
+            icon={<Zap size={22} color={colors.textSecondary} strokeWidth={2.5} />}
+            label={t('profile.autoSummarize.label')}
+            description={t('profile.autoSummarize.description')}
+            value={preferences?.auto_summarize ?? true}
+            onToggle={(value) => updatePreferences({ auto_summarize: value })}
+            showTopBorder
+          />
 
           {/* Streaming responses toggle */}
-          <View style={[s.recallRow, { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
-            <View style={[s.recallIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
-              <Zap size={22} color="#6366F1" strokeWidth={2.5} />
-            </View>
-            <View style={s.recallTextWrap}>
-              <Text style={[s.recallLabel, { color: colors.textPrimary }]}>{t('profile.streamingResponses.label')}</Text>
-              <Text style={[s.recallDesc, { color: colors.textMuted }]}>{t('profile.streamingResponses.description')}</Text>
-            </View>
-            <Switch
-              value={preferences?.streaming_responses ?? true}
-              onValueChange={(value) => updatePreferences({ streaming_responses: value })}
-              trackColor={{ false: colors.switchTrackOff, true: '#818CF8' }}
-              thumbColor={preferences?.streaming_responses !== false ? colors.accent : colors.cardBg}
-            />
-          </View>
+          <PreferenceToggleRow
+            icon={<Zap size={22} color={colors.textSecondary} strokeWidth={2.5} />}
+            label={t('profile.streamingResponses.label')}
+            description={t('profile.streamingResponses.description')}
+            value={preferences?.streaming_responses ?? true}
+            onToggle={(value) => updatePreferences({ streaming_responses: value })}
+            showTopBorder
+          />
         </View>
 
         {/* Menu */}
@@ -489,8 +519,8 @@ export default function ProfileScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  title: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
-  subtitle: { fontSize: 14 },
+  title: { fontSize: 26, fontWeight: '600', marginBottom: 4 },
+  subtitle: { fontSize: 15 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
   card: {
@@ -504,21 +534,44 @@ const s = StyleSheet.create({
   recallRow: { flexDirection: 'row', alignItems: 'flex-start', padding: 20, gap: 14 },
   recallIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   recallTextWrap: { flex: 1 },
-  recallLabel: { fontSize: 15, fontWeight: '500', marginBottom: 2 },
+  recallLabel: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
   recallDesc: { fontSize: 13, lineHeight: 18 },
+  toggleControlWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  toggleStatePill: {
+    minHeight: 24,
+    minWidth: 42,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  toggleStateText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.35,
+  },
+  toggleSwitch: {
+    transform: [{ scaleX: 0.95 }, { scaleY: 0.95 }],
+  },
   infoBox: { flexDirection: 'row', borderRadius: 14, padding: 14, marginHorizontal: 16, marginBottom: 16, gap: 10 },
-  infoText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  infoText: { flex: 1, fontSize: 13, lineHeight: 19 },
   menuCard: {},
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   menuItemBorder: { borderBottomWidth: StyleSheet.hairlineWidth },
   menuText: { flex: 1 },
-  menuTitle: { fontSize: 15, fontWeight: '500', marginBottom: 2 },
-  menuSubtitle: { fontSize: 12 },
+  menuTitle: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
+  menuSubtitle: { fontSize: 13 },
   dismissedBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, borderWidth: 1, paddingVertical: 14, marginBottom: 12 },
-  dismissedText: { fontSize: 14 },
+  dismissedText: { fontSize: 14, fontWeight: '500' },
   dismissedBadge: { borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
   dismissedBadgeText: { fontSize: 11, fontWeight: '700' },
-  tagline: { textAlign: 'center', fontSize: 13, lineHeight: 20, paddingTop: 24, paddingBottom: 8 },
+  tagline: { textAlign: 'center', fontSize: 14, lineHeight: 21, paddingTop: 24, paddingBottom: 8 },
 });
 
 const sh = StyleSheet.create({
@@ -540,14 +593,14 @@ const sh = StyleSheet.create({
 const m = StyleSheet.create({
   section: { padding: 20 },
   centeredSection: { alignItems: 'center' },
-  sectionTitle: { fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
+  sectionTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 },
   warningBox: { borderRadius: 14, padding: 14, marginBottom: 12 },
-  warningText: { fontSize: 13, lineHeight: 18 },
+  warningText: { fontSize: 14, lineHeight: 20 },
   bulletCard: { borderRadius: 14, padding: 14, gap: 10 },
   appIcon: { width: 72, height: 72, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   appName: { fontSize: 20, fontWeight: '600', marginBottom: 4 },
-  appVersion: { fontSize: 13, marginBottom: 10 },
-  appDesc: { fontSize: 13, lineHeight: 20, textAlign: 'center', maxWidth: 280 },
+  appVersion: { fontSize: 12, marginBottom: 10 },
+  appDesc: { fontSize: 14, lineHeight: 21, textAlign: 'center', maxWidth: 280 },
   credits: { fontSize: 12, lineHeight: 18, textAlign: 'center' },
   bottomPad: { height: 40 },
   langOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 14, paddingHorizontal: 16, borderRadius: 14, marginBottom: 10, borderWidth: 1.5, borderColor: 'transparent' },
@@ -562,13 +615,13 @@ const r = StyleSheet.create({
   iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 12 },
-  rowValue: { fontSize: 15, fontWeight: '500' },
+  rowValue: { fontSize: 15, fontWeight: '600' },
   actionBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 13, borderRadius: 999 },
-  actionBtnText: { fontSize: 14, fontWeight: '500' },
+  actionBtnText: { fontSize: 14, fontWeight: '600' },
   externalBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 13, paddingHorizontal: 16, borderRadius: 999 },
-  externalBtnText: { fontSize: 14, fontWeight: '500' },
+  externalBtnText: { fontSize: 14, fontWeight: '600' },
   divider: { height: StyleSheet.hairlineWidth },
   bullet: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   bulletDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7 },
-  bulletText: { flex: 1, fontSize: 13, lineHeight: 19 },
+  bulletText: { flex: 1, fontSize: 14, lineHeight: 20 },
 });

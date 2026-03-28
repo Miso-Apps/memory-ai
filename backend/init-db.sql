@@ -86,6 +86,8 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     auto_categorize BOOLEAN DEFAULT TRUE,
     ai_recall_enabled BOOLEAN DEFAULT TRUE,
     ai_suggestions_enabled BOOLEAN DEFAULT TRUE,
+    recall_sensitivity VARCHAR(16) DEFAULT 'medium',
+    proactive_recall_opt_in BOOLEAN DEFAULT TRUE,
     save_location BOOLEAN DEFAULT FALSE,
     analytics_enabled BOOLEAN DEFAULT TRUE,
     daily_digest BOOLEAN DEFAULT TRUE,
@@ -99,6 +101,48 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_preferences' AND column_name = 'recall_sensitivity'
+    ) THEN
+        ALTER TABLE user_preferences
+        ADD COLUMN recall_sensitivity VARCHAR(16) DEFAULT 'medium';
+    END IF;
+END
+$$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'user_preferences' AND column_name = 'proactive_recall_opt_in'
+    ) THEN
+        ALTER TABLE user_preferences
+        ADD COLUMN proactive_recall_opt_in BOOLEAN DEFAULT TRUE;
+    END IF;
+END
+$$;
+
+-- ── Memory Radar events table ────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS radar_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    memory_id UUID NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+    event_type VARCHAR(32) NOT NULL,
+    reason_code VARCHAR(64),
+    confidence DOUBLE PRECISION,
+    context JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_radar_events_user_id ON radar_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_radar_events_memory_id ON radar_events(memory_id);
+CREATE INDEX IF NOT EXISTS idx_radar_events_event_type ON radar_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_radar_events_created_at ON radar_events(created_at);
 
 -- ── Add category columns to memories table ────────────────────────────────────
 

@@ -35,42 +35,88 @@ interface DismissedItem {
   deletedAt: Date;
 }
 
+const PAGE_SIZE = 40;
+
 export default function DismissedScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [items, setItems] = useState<DismissedItem[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const loadDismissedRef = React.useRef<(reset?: boolean) => Promise<void>>(async () => {});
 
-  const loadDismissed = useCallback(async () => {
+  const loadDismissed = useCallback(async (reset: boolean = true) => {
+    if (!reset && (loading || loadingMore || !hasMore)) return;
+
+    const nextOffset = reset ? 0 : offset;
+
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const response = await memoriesApi.listDismissed({ limit: 100 });
-      const mapped: DismissedItem[] = response.map((m: ApiMemory) => ({
+      const response = await memoriesApi.listDismissed({ limit: PAGE_SIZE, offset: nextOffset });
+      const mapped: DismissedItem[] = response.memories.map((m: ApiMemory) => ({
         id: m.id,
         type: m.type,
         content: m.ai_summary || m.content,
         aiSummary: m.ai_summary,
         deletedAt: new Date(m.updated_at),
       }));
-      setItems(mapped);
+
+      if (reset) {
+        setItems(mapped);
+      } else {
+        setItems((prev) => {
+          const dedup = new Map(prev.map((m) => [m.id, m]));
+          mapped.forEach((m) => dedup.set(m.id, m));
+          return Array.from(dedup.values());
+        });
+      }
+
+      setOffset(response.next_offset ?? (nextOffset + mapped.length));
+      setHasMore(response.has_more);
     } catch {
       // no-op
+      setHasMore(false);
     } finally {
-      setLoading(false);
+      if (reset) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
-  }, []);
+  }, [hasMore, loading, loadingMore, offset]);
+
+  React.useEffect(() => {
+    loadDismissedRef.current = loadDismissed;
+  }, [loadDismissed]);
 
   useFocusEffect(
     useCallback(() => {
-      loadDismissed();
-    }, [loadDismissed])
+      setOffset(0);
+      setHasMore(true);
+      loadDismissedRef.current(true);
+    }, [])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadDismissed();
+    setOffset(0);
+    setHasMore(true);
+    await loadDismissed(true);
     setRefreshing(false);
   };
+
+  const handleLoadMore = useCallback(() => {
+    if (loading || loadingMore || !hasMore) return;
+    loadDismissed(false);
+  }, [hasMore, loadDismissed, loading, loadingMore]);
 
   const handleRestore = (id: string) => {
     Alert.alert(t('dismissed.restoreTitle'), t('dismissed.restoreMessage'), [
@@ -166,10 +212,19 @@ export default function DismissedScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.35}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
           }
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.loadMoreWrap}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : null
+          }
         />
       )}
     </SafeAreaView>
@@ -196,6 +251,12 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 
   list: { padding: 16, gap: 12 },
+  loadMoreWrap: {
+    paddingTop: 6,
+    paddingBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   card: {
     borderRadius: 16,

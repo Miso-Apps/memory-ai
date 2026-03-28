@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../constants/ThemeContext';
+import { BrandMark } from '../components/BrandMark';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -72,7 +73,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Logo / Title */}
         <View style={styles.header}>
-          <Text style={styles.logo}>🧠</Text>
+          <BrandMark size={72} />
           <Text style={[styles.title, { color: colors.textPrimary }]}>{t('login.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('login.subtitle')}</Text>
         </View>
@@ -181,17 +182,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  logo: {
-    fontSize: 64,
-    marginBottom: 12,
-  },
   title: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '600',
+    marginTop: 14,
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     textAlign: 'center',
   },
   googleButton: {
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
     color: '#4285F4',
   },
   googleButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
   },
   divider: {
@@ -250,7 +248,7 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
+    fontSize: 15,
     borderWidth: 1,
   },
   submitButton: {
@@ -264,7 +262,7 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

@@ -53,6 +53,8 @@ class UserPreferences(Base):
     ai_recall_enabled = Column(Boolean, default=True, server_default="true")
     ai_suggestions_enabled = Column(Boolean, default=True, server_default="true")
     streaming_responses = Column(Boolean, default=True, server_default="true")
+    recall_sensitivity = Column(String(16), default="medium", server_default="medium")
+    proactive_recall_opt_in = Column(Boolean, default=True, server_default="true")
 
     # Privacy
     save_location = Column(Boolean, default=False, server_default="false")

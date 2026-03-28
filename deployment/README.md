@@ -163,6 +163,23 @@ docker compose -f docker-compose.prod.yml ps
 curl https://api.dukiai.com/health
 ```
 
+## 6.1 Radar schema updates (2026-03)
+
+The current migration flow now includes Memory Radar schema additions.
+
+Applied by `backend/migrate.py` during deploy:
+- `user_preferences.recall_sensitivity` (default: `medium`)
+- `user_preferences.proactive_recall_opt_in` (default: `true`)
+- `radar_events` table + indexes (`user_id`, `memory_id`, `event_type`, `created_at`)
+
+Fresh database bootstrap parity:
+- `backend/init-db.sql` also contains these columns/table so first-time DB init and upgrades stay aligned.
+
+Smoke-check after deploy:
+```bash
+curl -H "Authorization: Bearer <token>" "https://api.dukiai.com/ai/radar?limit=3"
+```
+
 ---
 
 ## 7. Subsequent deploys

@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, text, func
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime, timezone
 import uuid
 import json
 import logging
@@ -11,9 +12,11 @@ import logging
 from app.database import get_db
 from app.models.memory import Memory
 from app.models.category import Category
+from app.models.radar_event import RadarEvent
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.api.preferences import get_or_create_preferences
+from app.schemas import RadarEventCreate
 from app.services import ai_service
 
 router = APIRouter()
@@ -35,6 +38,88 @@ async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str
 
 class GroupRequest(BaseModel):
     memory_ids: List[str]
+
+
+def _memory_to_response_payload(m: Memory) -> dict:
+    """Build a MemoryResponse-compatible payload from a Memory ORM object."""
+    return {
+        "id": str(m.id),
+        "user_id": str(m.user_id),
+        "type": m.type.value if hasattr(m.type, "value") else str(m.type),
+        "content": m.content,
+        "transcription": m.transcription,
+        "audio_url": m.audio_url,
+        "audio_duration": m.audio_duration,
+        "image_url": m.image_url,
+        "ai_summary": m.ai_summary,
+        "metadata": m.extra_metadata,
+        "category_id": str(m.category_id) if m.category_id else None,
+        "category_name": None,
+        "category_icon": None,
+        "category_color": None,
+        "category_confidence": m.category_confidence,
+        "created_at": m.created_at.isoformat() if m.created_at else None,
+        "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+    }
+
+
+def _radar_threshold_by_sensitivity(sensitivity: str) -> int:
+    """Map user sensitivity setting to a minimum confidence threshold."""
+    if sensitivity == "high":
+        return 45
+    if sensitivity == "low":
+        return 70
+    return 55
+
+
+def _radar_reason(memory: Memory) -> tuple[str, str, str]:
+    """Generate reason, reason_code and action_hint for a radar candidate."""
+    mtype = memory.type.value if hasattr(memory.type, "value") else str(memory.type)
+    if memory.category_id:
+        return (
+            "Related to one of your active categories",
+            "category_match",
+            "Review this while planning your next steps",
+        )
+    if mtype == "voice":
+        return (
+            "Voice memory worth revisiting",
+            "voice_recap",
+            "Open this and extract one action",
+        )
+    if mtype == "link":
+        return (
+            "Saved link that may matter now",
+            "link_revisit",
+            "Re-open and bookmark key takeaway",
+        )
+    return (
+        "Recent memory likely relevant right now",
+        "recently_saved",
+        "Scan it and decide: keep, act, or dismiss",
+    )
+
+
+def _radar_confidence(memory: Memory) -> int:
+    """Compute a simple confidence score based on recency and metadata."""
+    now = datetime.now(timezone.utc)
+    if not memory.created_at:
+        return 50
+    created_at = memory.created_at
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    age_days = max(0.0, (now - created_at).total_seconds() / 86400)
+
+    # Recency baseline declines over ~2 weeks.
+    score = 80 - min(40, age_days * 3)
+    if memory.ai_summary:
+        score += 6
+    memory_type = (
+        memory.type.value if hasattr(memory.type, "value") else str(memory.type)
+    )
+    if memory_type == "voice":
+        score += 4
+    return int(max(0, min(100, round(score))))
 
 
 @router.get("/recall", response_model=dict)
@@ -67,6 +152,92 @@ async def get_recall(
             for m in memories
         ]
     }
+
+
+@router.get("/radar", response_model=dict)
+async def get_radar(
+    limit: int = Query(6, ge=1, le=12),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return a preference-aware proactive radar feed of recall cards."""
+    prefs = await get_or_create_preferences(db, current_user.id)
+    if not prefs.ai_recall_enabled or not prefs.proactive_recall_opt_in:
+        return {"items": [], "generated_at": datetime.now(timezone.utc).isoformat()}
+
+    min_confidence = _radar_threshold_by_sensitivity(
+        prefs.recall_sensitivity or "medium"
+    )
+
+    result = await db.execute(
+        select(Memory)
+        .where(and_(Memory.user_id == current_user.id, Memory.is_deleted == False))  # noqa: E712
+        .order_by(Memory.created_at.desc())
+        .limit(30)
+    )
+    memories = result.scalars().all()
+
+    items = []
+    for memory in memories:
+        confidence = _radar_confidence(memory)
+        if confidence < min_confidence:
+            continue
+        reason, reason_code, action_hint = _radar_reason(memory)
+        items.append(
+            {
+                "memory": _memory_to_response_payload(memory),
+                "reason": reason,
+                "reason_code": reason_code,
+                "confidence": confidence,
+                "action_hint": action_hint,
+            }
+        )
+        if len(items) >= limit:
+            break
+
+    return {
+        "items": items,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@router.post("/radar/events", response_model=dict)
+async def create_radar_event(
+    body: RadarEventCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Log user interaction events for radar cards."""
+    try:
+        memory_id = uuid.UUID(body.memory_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Invalid memory_id")
+
+    memory_result = await db.execute(
+        select(Memory).where(
+            and_(
+                Memory.id == memory_id,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+            )
+        )
+    )
+    memory = memory_result.scalar_one_or_none()
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    event = RadarEvent(
+        user_id=current_user.id,
+        memory_id=memory_id,
+        event_type=body.event_type,
+        reason_code=body.reason_code,
+        confidence=body.confidence,
+        context=body.context or {},
+    )
+    db.add(event)
+    await db.flush()
+
+    return {"status": "ok", "event_id": str(event.id)}
 
 
 @router.get("/search")
@@ -145,7 +316,6 @@ async def semantic_search(
             # pgvector cosine distance: <=> operator; lower = more similar
             # We use raw SQL for the ordering since SQLAlchemy ORM doesn't
             # natively support pgvector operators in ORDER BY.
-            embedding_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
             vec_conditions = [
                 Memory.user_id == current_user.id,
                 Memory.is_deleted == False,  # noqa: E712

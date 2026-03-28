@@ -49,10 +49,16 @@ async def test():
 
         # Test list memories (should start empty for new user)
         r = await client.get("/memories/", headers=headers)
-        print(f"GET /memories/ -> {r.status_code} type={type(r.json()).__name__} count={len(r.json())}")
+        payload = r.json()
+        print(
+            f"GET /memories/ -> {r.status_code} keys={list(payload.keys())} count={len(payload.get('memories', []))}"
+        )
         assert r.status_code == 200, f"list memories failed: {r.text}"
-        assert isinstance(r.json(), list), f"memories should be list, got {type(r.json())}"
-        assert len(r.json()) == 0, "new user should have 0 memories"
+        assert isinstance(payload, dict), f"memories should be object, got {type(payload)}"
+        assert "memories" in payload, "memories list key missing"
+        assert "total" in payload, "total key missing"
+        assert payload["total"] == 0, "new user should have 0 memories"
+        assert len(payload["memories"]) == 0, "new user should have 0 memories"
 
         # Test create memory
         r = await client.post(
@@ -68,8 +74,10 @@ async def test():
 
         # Test list now returns 1 memory
         r = await client.get("/memories/", headers=headers)
-        assert len(r.json()) == 1, f"should have 1 memory after create, got {len(r.json())}"
-        assert r.json()[0]["content"] == "Test memory from smoke test"
+        payload = r.json()
+        assert payload["total"] == 1, f"should have total=1 after create, got {payload.get('total')}"
+        assert len(payload["memories"]) == 1, f"should have 1 memory after create, got {len(payload['memories'])}"
+        assert payload["memories"][0]["content"] == "Test memory from smoke test"
         print(f"  ✓ Memory persisted and retrieved correctly")
 
         # Test get single memory
@@ -81,7 +89,9 @@ async def test():
         r = await client.delete(f"/memories/{memory_id}", headers=headers)
         assert r.status_code == 200, f"delete failed: {r.text}"
         r = await client.get("/memories/", headers=headers)
-        assert len(r.json()) == 0, "should have 0 memories after delete"
+        payload = r.json()
+        assert payload["total"] == 0, "should have total=0 memories after delete"
+        assert len(payload["memories"]) == 0, "should have 0 memories after delete"
         print(f"  ✓ Memory deleted (soft) and no longer listed")
 
         # Test recall
@@ -94,6 +104,63 @@ async def test():
         r = await client.get("/ai/search?q=test", headers=headers)
         print(f"GET /ai/search?q=test -> {r.status_code} keys={list(r.json().keys())}")
         assert r.status_code == 200, f"search failed: {r.text}"
+
+        # Create a memory for radar tests
+        r = await client.post(
+            "/memories/",
+            json={"type": "text", "content": "Radar test memory"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"create memory for radar failed: {r.text}"
+        radar_memory_id = r.json()["id"]
+
+        # Test radar feed endpoint
+        r = await client.get("/ai/radar?limit=6", headers=headers)
+        print(f"GET /ai/radar -> {r.status_code} keys={list(r.json().keys())}")
+        assert r.status_code == 200, f"radar feed failed: {r.text}"
+        assert "items" in r.json(), "radar missing items key"
+        assert "generated_at" in r.json(), "radar missing generated_at key"
+
+        # Test radar feed with preference sensitivity update
+        r = await client.put(
+            "/preferences/",
+            json={"recall_sensitivity": "low"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"preferences update failed: {r.text}"
+        assert r.json().get("recall_sensitivity") == "low"
+
+        r = await client.get("/ai/radar?limit=3", headers=headers)
+        assert r.status_code == 200, f"radar after sensitivity update failed: {r.text}"
+        assert isinstance(r.json().get("items"), list), "radar items should be a list"
+
+        # Test radar event logging
+        r = await client.post(
+            "/ai/radar/events",
+            json={
+                "memory_id": radar_memory_id,
+                "event_type": "opened",
+                "reason_code": "recently_saved",
+                "confidence": 78,
+                "context": {"screen": "recall"},
+            },
+            headers=headers,
+        )
+        print(f"POST /ai/radar/events -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"radar event logging failed: {r.text}"
+        assert r.json().get("status") == "ok"
+        assert "event_id" in r.json()
+
+        # Test invalid radar event type validation
+        r = await client.post(
+            "/ai/radar/events",
+            json={
+                "memory_id": radar_memory_id,
+                "event_type": "invalid",
+            },
+            headers=headers,
+        )
+        assert r.status_code == 422, f"invalid radar event should be 422, got {r.status_code}"
 
         print()
         print("=" * 40)

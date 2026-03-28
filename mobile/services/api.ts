@@ -137,6 +137,8 @@ export interface UserPreferences {
   auto_categorize: boolean;
   ai_recall_enabled: boolean;
   ai_suggestions_enabled: boolean;
+  recall_sensitivity: 'low' | 'medium' | 'high';
+  proactive_recall_opt_in: boolean;
   streaming_responses: boolean;
   save_location: boolean;
   analytics_enabled: boolean;
@@ -176,6 +178,51 @@ export interface Memory {
   updated_at: string;
 }
 
+export interface PaginatedMemoriesResponse {
+  memories: Memory[];
+  total: number;
+  limit: number;
+  offset: number;
+  has_more: boolean;
+  next_offset: number | null;
+}
+
+function normalizePaginatedMemories(
+  payload: Memory[] | PaginatedMemoriesResponse,
+  params?: { limit?: number; offset?: number }
+): PaginatedMemoriesResponse {
+  if (!Array.isArray(payload)) {
+    return payload;
+  }
+
+  const limit = params?.limit ?? payload.length;
+  const offset = params?.offset ?? 0;
+  const nextOffset = offset + payload.length;
+  const hasMore = params?.limit ? payload.length === params.limit : false;
+
+  return {
+    memories: payload,
+    total: nextOffset,
+    limit,
+    offset,
+    has_more: hasMore,
+    next_offset: hasMore ? nextOffset : null,
+  };
+}
+
+export interface RadarItem {
+  memory: Memory;
+  reason: string;
+  reason_code: string;
+  confidence: number;
+  action_hint: string;
+}
+
+export interface RadarResponse {
+  items: RadarItem[];
+  generated_at: string;
+}
+
 export interface CreateMemoryDto {
   type: 'text' | 'link' | 'voice' | 'photo';
   content: string;
@@ -198,8 +245,8 @@ export const memoriesApi = {
 
   // List memories with optional category filter
   list: async (params?: { type?: string; category_id?: string; search?: string; limit?: number; offset?: number }) => {
-    const response = await api.get<Memory[]>('/memories/', { params });
-    return response.data;
+    const response = await api.get<Memory[] | PaginatedMemoriesResponse>('/memories/', { params });
+    return normalizePaginatedMemories(response.data, params);
   },
 
   // Get single memory by ID
@@ -238,8 +285,8 @@ export const memoriesApi = {
 
   // List dismissed (soft-deleted) memories
   listDismissed: async (params?: { limit?: number; offset?: number }) => {
-    const response = await api.get<Memory[]>('/memories/dismissed', { params });
-    return response.data;
+    const response = await api.get<Memory[] | PaginatedMemoriesResponse>('/memories/dismissed', { params });
+    return normalizePaginatedMemories(response.data, params);
   },
 
   // Restore a dismissed memory
@@ -421,6 +468,24 @@ export const aiApi = {
     const response = await api.get<{ items: Array<{ memory: Memory; reason: string }> }>(
       '/ai/recall'
     );
+    return response.data;
+  },
+
+  // Get proactive Memory Radar cards
+  getRadar: async (limit: number = 6) => {
+    const response = await api.get<RadarResponse>('/ai/radar', { params: { limit } });
+    return response.data;
+  },
+
+  // Track user interactions with Radar cards
+  trackRadarEvent: async (payload: {
+    memory_id: string;
+    event_type: 'served' | 'opened' | 'dismissed' | 'acted';
+    reason_code?: string;
+    confidence?: number;
+    context?: Record<string, any>;
+  }) => {
+    const response = await api.post<{ status: string; event_id: string }>('/ai/radar/events', payload);
     return response.data;
   },
 

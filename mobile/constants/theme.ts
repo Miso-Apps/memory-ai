@@ -3,51 +3,62 @@ import { Platform, StyleSheet } from 'react-native';
 // ─── Colours ──────────────────────────────────────────────────────────────────
 export const Colors = {
   // Backgrounds
-  bg: '#F9FAFB',
+  bg: '#FFFFFF',
   cardBg: '#FFFFFF',
-  inputBg: '#F3F4F6',
-  subtleBg: '#F0F0F0',
+  inputBg: '#F4F4F5',
+  subtleBg: '#FAFAFA',
 
   // Text
-  textPrimary: '#111827',
-  textSecondary: '#374151',
-  textTertiary: '#6B7280',
-  textMuted: '#9CA3AF',
-  textPlaceholder: '#9CA3AF',
+  textPrimary: '#111111',
+  textSecondary: '#3F3F46',
+  textTertiary: '#52525B',
+  textMuted: '#71717A',
+  textPlaceholder: '#A1A1AA',
 
-  // Accent (indigo — consistent with profile)
-  accent: '#6366F1',
-  accentLight: 'rgba(99, 102, 241, 0.1)',
-  accentMid: 'rgba(99, 102, 241, 0.15)',
-  accentSubtle: 'rgba(99, 102, 241, 0.05)',
+  // Accent (Threads-like restrained neutral)
+  accent: '#111111',
+  accentLight: 'rgba(17, 17, 17, 0.14)',
+  accentMid: 'rgba(17, 17, 17, 0.22)',
+  accentSubtle: 'rgba(17, 17, 17, 0.06)',
+
+  // Flat neutral palette (kept for compatibility with existing API)
+  gradientPrimary: ['#111111', '#111111'],
+  gradientSoft: ['#27272A', '#27272A'],
 
   // Semantic
   error: '#EF4444',
   errorBg: 'rgba(239, 68, 68, 0.06)',
   errorText: '#B91C1C',
-  success: '#10B981',
-  warning: '#F59E0B',
+  success: '#111111',
+  successBg: 'rgba(17, 17, 17, 0.1)',
+  warning: '#111111',
+  warningBg: 'rgba(17, 17, 17, 0.1)',
 
   // Borders
-  border: '#F0F0F0',
-  borderMed: '#E5E7EB',
+  border: '#E4E4E7',
+  borderMed: '#D4D4D8',
 
-  // Type badges (light bg per memory type)
-  typeBgText: '#EEF2FF',
-  typeBgVoice: '#F0FDF4',
-  typeBgLink: '#FFF7ED',
+  // Type badges
+  typeBgText: 'transparent',
+  typeBgVoice: 'transparent',
+  typeBgLink: 'transparent',
+  typeBgPhoto: 'transparent',
+
+  // Glass-morphism
+  glassBg: 'rgba(255, 255, 255, 0.7)',
+  glassBlur: 'rgba(255, 255, 255, 0.5)',
 } as const;
 
 // ─── Typography ───────────────────────────────────────────────────────────────
 export const Typography = {
-  pageTitle: { fontSize: 26, fontWeight: '600' as const, color: Colors.textPrimary },
-  pageSubtitle: { fontSize: 13, color: Colors.textMuted },
+  pageTitle: { fontSize: 27, fontWeight: '600' as const, color: Colors.textPrimary },
+  pageSubtitle: { fontSize: 14, color: Colors.textMuted },
   sectionTitle: { fontSize: 13, fontWeight: '600' as const, color: Colors.textTertiary, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  bodyLarge: { fontSize: 17, lineHeight: 26, color: Colors.textPrimary },
+  bodyLarge: { fontSize: 16, lineHeight: 24, color: Colors.textPrimary },
   body: { fontSize: 15, lineHeight: 22, color: Colors.textPrimary },
-  bodySmall: { fontSize: 13, lineHeight: 18, color: Colors.textTertiary },
+  bodySmall: { fontSize: 14, lineHeight: 20, color: Colors.textTertiary },
   caption: { fontSize: 12, color: Colors.textMuted },
-  label: { fontSize: 14, fontWeight: '500' as const, color: Colors.textPrimary },
+  label: { fontSize: 14, fontWeight: '600' as const, color: Colors.textPrimary },
 } as const;
 
 // ─── Shadows ──────────────────────────────────────────────────────────────────

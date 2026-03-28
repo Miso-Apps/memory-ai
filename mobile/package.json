@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "i18n:check": "node ./scripts/check-i18n-parity.mjs",
     "test": "jest",
     "test:watch": "jest --watch",
     "bench:memory": "node ./scripts/benchmark-memory-ops.mjs"

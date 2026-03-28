@@ -35,7 +35,23 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """Initialize database - create pgvector extension and all tables"""
+    # Prevent cross-event-loop connection reuse (important for async test runs).
+    await engine.dispose()
     async with engine.begin() as conn:
         # Enable pgvector extension (idempotent)
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
+
+        # Lightweight compatibility migration for evolving preferences schema.
+        await conn.execute(
+            text(
+                "ALTER TABLE user_preferences "
+                "ADD COLUMN IF NOT EXISTS recall_sensitivity VARCHAR(16) DEFAULT 'medium'"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE user_preferences "
+                "ADD COLUMN IF NOT EXISTS proactive_recall_opt_in BOOLEAN DEFAULT TRUE"
+            )
+        )

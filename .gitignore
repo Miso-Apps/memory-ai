@@ -98,3 +98,6 @@ temp/
 
 # Documentation (keep source, ignore generated)
 docs/generated/
+
+# Github
+.github/

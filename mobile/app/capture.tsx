@@ -12,6 +12,7 @@ import {
   Animated,
   Image,
   ScrollView,
+  AccessibilityInfo,
 } from 'react-native';
 import * as ExpoClipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,6 +26,14 @@ import { useTheme } from '../constants/ThemeContext';
 import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
 import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
+import {
+  FileText,
+  Mic,
+  Link2,
+  Image as ImageIcon,
+} from 'lucide-react-native';
+
+const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 
 type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
 
@@ -39,13 +48,48 @@ function getInitials(name?: string, email?: string): string {
   return '?';
 }
 
-// ── Bottom mode bar (LinkedIn-style) ──────────────────────────────────────
-// Enhanced with better spacing, elevation, and active states
-const MODE_DEFINITIONS: { key: CaptureMode; emoji: string; labelKey: string }[] = [
-  { key: 'text', emoji: '📝', labelKey: 'capture.modeText' },
-  { key: 'voice', emoji: '🎤', labelKey: 'capture.modeVoice' },
-  { key: 'link', emoji: '🔗', labelKey: 'capture.modeLink' },
-  { key: 'photo', emoji: '📷', labelKey: 'capture.modePhoto' },
+const MODE_META: Record<CaptureMode, {
+  labelKey: string;
+  navLabelKey: string;
+  descKey: string;
+  hintKey: string;
+  icon: typeof FileText;
+}> = {
+  text: {
+    labelKey: 'capture.modeText',
+    navLabelKey: 'capture.modeTextNav',
+    descKey: 'capture.modeTextDesc',
+    hintKey: 'capture.smartHintText',
+    icon: FileText,
+  },
+  voice: {
+    labelKey: 'capture.modeVoice',
+    navLabelKey: 'capture.modeVoiceNav',
+    descKey: 'capture.modeVoiceDesc',
+    hintKey: 'capture.smartHintVoice',
+    icon: Mic,
+  },
+  link: {
+    labelKey: 'capture.modeLink',
+    navLabelKey: 'capture.modeLinkNav',
+    descKey: 'capture.modeLinkDesc',
+    hintKey: 'capture.smartHintLink',
+    icon: Link2,
+  },
+  photo: {
+    labelKey: 'capture.modePhoto',
+    navLabelKey: 'capture.modePhotoNav',
+    descKey: 'capture.modePhotoDesc',
+    hintKey: 'capture.smartHintPhoto',
+    icon: ImageIcon,
+  },
+};
+
+const MODE_DEFINITIONS: { key: CaptureMode }[] = [
+  { key: 'text' },
+  { key: 'voice' },
+  { key: 'link' },
+  { key: 'photo' },
 ];
 
 function BottomModeBar({
@@ -57,86 +101,79 @@ function BottomModeBar({
 }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+
   return (
-    <View style={[modeBarStyles.bar, { borderTopColor: colors.border, backgroundColor: colors.cardBg }]}>
-      {MODE_DEFINITIONS.map(({ key, emoji, labelKey }) => {
-        const active = key === mode;
-        return (
-          <TouchableOpacity
-            key={key}
-            style={[
-              modeBarStyles.chip,
-              active
-                ? { 
-                    backgroundColor: colors.accent, 
-                    borderColor: colors.accent,
-                    ...Platform.select({
-                      ios: {
-                        shadowColor: colors.accent,
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 4,
-                      },
-                      android: { elevation: 4 },
-                    }),
-                  }
-                : { 
-                    backgroundColor: colors.inputBg, 
-                    borderColor: colors.border,
-                  },
-            ]}
-            onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
-            activeOpacity={0.8}
-          >
-            <Text style={[modeBarStyles.chipEmoji, active && modeBarStyles.chipEmojiActive]}>{emoji}</Text>
-            <Text style={[
-              modeBarStyles.chipLabel, 
-              { color: active ? '#FFFFFF' : colors.textMuted },
-              active && modeBarStyles.chipLabelActive
-            ]}>
-              {t(labelKey)}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
+    <View style={[modeBarStyles.wrap, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
+      <View style={[modeBarStyles.barShell, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+        {MODE_DEFINITIONS.map(({ key }) => {
+          const modeMeta = MODE_META[key];
+          const Icon = modeMeta.icon;
+          const active = key === mode;
+
+          return (
+            <TouchableOpacity
+              key={key}
+              style={modeBarStyles.chipHitArea}
+              onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={t(modeMeta.labelKey)}
+            >
+              {active ? (
+                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: colors.border }]}> 
+                  <Icon size={17} color={colors.brandAccent} strokeWidth={2.5} />
+                </View>
+              ) : (
+                <View style={[modeBarStyles.chipInactive, { borderColor: 'transparent' }]}>
+                  <Icon size={17} color={colors.textMuted} strokeWidth={2.4} />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const modeBarStyles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
+  wrap: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    gap: 10,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  chip: {
+  barShell: {
+    flexDirection: 'row',
+    borderWidth: 0,
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+    gap: 10,
+    justifyContent: 'space-between',
+  },
+  chipHitArea: {
     flex: 1,
+    alignItems: 'center',
+  },
+  chipActive: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 24,
-    gap: 6,
     borderWidth: 1,
-    minHeight: 44,
   },
-  chipEmoji: { 
-    fontSize: 16,
-    opacity: 0.9,
-  },
-  chipEmojiActive: {
-    opacity: 1,
-  },
-  chipLabel: { 
-    fontSize: 13, 
-    fontWeight: '600', 
-    letterSpacing: 0.2,
-  },
-  chipLabelActive: {
-    fontWeight: '700',
+  chipInactive: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
@@ -252,7 +289,7 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
           ) : isRecording ? (
             <View style={voiceStyles.stopSquare} />
           ) : (
-            <Text style={voiceStyles.micEmoji}>🎤</Text>
+            <Mic size={38} color="#FFFFFF" strokeWidth={2.4} />
           )}
         </TouchableOpacity>
       </View>
@@ -310,6 +347,7 @@ const voiceStyles = StyleSheet.create({
 // ── Image Upload Component ─────────────────────────────────────────────────
 interface ImageUploadData {
   imageUrl: string | null;
+  thumbnailUrl: string | null;
   description: string | null;
   picked: boolean;
   isUploading: boolean;
@@ -355,7 +393,7 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
     setPickedUri(optimizedUri);
     setDescription(null);
     setIsUploading(true);
-    onImageData({ imageUrl: null, description: null, picked: false, isUploading: true });
+    onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: true });
 
     try {
       const uploadResult = await storageApi.uploadImage(optimizedUri);
@@ -364,6 +402,7 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
       setIsUploading(false);
       onImageData({
         imageUrl: uploadResult.image_url ?? null,
+        thumbnailUrl: uploadResult.thumbnail_url ?? null,
         description: desc,
         picked: true,
         isUploading: false,
@@ -371,14 +410,15 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
     } catch (err) {
       console.error('Image upload / analysis error:', err);
       setIsUploading(false);
-      onImageData({ imageUrl: null, description: null, picked: true, isUploading: false });
+      Alert.alert(t('capture.error'), t('capture.saveFailed'));
+      onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
     }
   };
 
   const handleClear = () => {
     setPickedUri(null);
     setDescription(null);
-    onImageData({ imageUrl: null, description: null, picked: false, isUploading: false });
+    onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
   };
 
   // Empty state — show picker button
@@ -386,7 +426,9 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
     return (
       <View style={imageStyles.emptyContainer}>
         <TouchableOpacity style={[imageStyles.pickButton, { borderColor: colors.border }]} onPress={handlePickImage} activeOpacity={0.8}>
-          <Text style={imageStyles.pickIcon}>🖼️</Text>
+          <View style={[imageStyles.pickIconWrap, { backgroundColor: colors.accentSubtle }]}> 
+            <ImageIcon size={28} color={colors.accent} strokeWidth={2.4} />
+          </View>
           <Text style={[imageStyles.pickLabel, { color: colors.accent }]}>{t('capture.chooseImage')}</Text>
           <Text style={[imageStyles.pickSub, { color: colors.textMuted }]}>{t('capture.chooseImageSub')}</Text>
         </TouchableOpacity>
@@ -439,16 +481,22 @@ const imageStyles = StyleSheet.create({
     gap: 10,
     width: '100%',
   },
-  pickIcon: {
-    fontSize: 48,
+  pickIconWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   pickLabel: {
     fontSize: 17,
     fontWeight: '600',
+    fontFamily: SANS_FONT,
   },
   pickSub: {
     fontSize: 14,
     textAlign: 'center',
+    fontFamily: SANS_FONT,
   },
   scroll: {
     flex: 1,
@@ -473,6 +521,7 @@ const imageStyles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '500',
+    fontFamily: SANS_FONT,
   },
   clearBtn: {
     position: 'absolute',
@@ -487,6 +536,7 @@ const imageStyles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: SANS_FONT,
   },
   analysisBox: {
     marginTop: 16,
@@ -500,10 +550,12 @@ const imageStyles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: 8,
+    fontFamily: SANS_FONT,
   },
   analysisText: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: SANS_FONT,
   },
 });
 // ── End Image Upload ──────────────────────────────────────────────────────────
@@ -537,11 +589,13 @@ export default function CaptureScreen() {
   });
   const [imageData, setImageData] = useState<ImageUploadData>({
     imageUrl: null,
+    thumbnailUrl: null,
     description: null,
     picked: false,
     isUploading: false,
   });
   const [photoNote, setPhotoNote] = useState('');
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   // ── Smart clipboard detection ──
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
@@ -554,11 +608,46 @@ export default function CaptureScreen() {
         const clip = await ExpoClipboard.getStringAsync();
         if (clip && /^https?:\/\/.+/i.test(clip.trim())) {
           setClipboardUrl(clip.trim());
-          Animated.timing(clipOpacity, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+          if (reduceMotionEnabled) {
+            clipOpacity.setValue(1);
+          } else {
+            Animated.timing(clipOpacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+          }
         }
       } catch { }
     })();
+  }, [reduceMotionEnabled]);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (mounted) setReduceMotionEnabled(enabled);
+      })
+      .catch(() => {
+        if (mounted) setReduceMotionEnabled(false);
+      });
+
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => {
+      setReduceMotionEnabled(enabled);
+    });
+
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
   }, []);
+
+  const fadeOutClipboard = (onEnd?: () => void) => {
+    if (reduceMotionEnabled) {
+      clipOpacity.setValue(0);
+      onEnd?.();
+      return;
+    }
+    Animated.timing(clipOpacity, { toValue: 0, duration: 140, useNativeDriver: true }).start(() => {
+      onEnd?.();
+    });
+  };
 
   const handleQuickSaveLink = async () => {
     if (!clipboardUrl) return;
@@ -566,7 +655,7 @@ export default function CaptureScreen() {
     try {
       await memoriesApi.create({ type: 'link', content: clipboardUrl });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Animated.timing(clipOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+      fadeOutClipboard(() => {
         setClipboardUrl(null);
       });
       router.back();
@@ -578,7 +667,7 @@ export default function CaptureScreen() {
   };
 
   const dismissClipboard = () => {
-    Animated.timing(clipOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
+    fadeOutClipboard(() => {
       setClipboardUrl(null);
     });
   };
@@ -615,23 +704,33 @@ export default function CaptureScreen() {
           audio_url: voiceData.audioUrl ?? undefined,
         });
       } else if (mode === 'photo') {
+        const photoMetadata: Record<string, any> = {};
+        if (photoNote.trim()) photoMetadata.user_note = photoNote.trim();
+        if (imageData.thumbnailUrl) photoMetadata.thumbnail_url = imageData.thumbnailUrl;
+
         await memoriesApi.create({
           type: 'photo',
           content: imageData.description || t('capture.imageNote'),
           image_url: imageData.imageUrl ?? undefined,
-          metadata: photoNote.trim() ? { user_note: photoNote.trim() } : undefined,
+          metadata: Object.keys(photoMetadata).length > 0 ? photoMetadata : undefined,
         });
       } else {
         await memoriesApi.create({ type: mode, content: content.trim() });
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSaveSuccess(true);
-      Animated.parallel([
-        Animated.timing(successOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.spring(successScale, { toValue: 1, friction: 6, useNativeDriver: true }),
-      ]).start(() => {
+      if (reduceMotionEnabled) {
+        successOpacity.setValue(1);
+        successScale.setValue(1);
         setTimeout(() => router.back(), 600);
-      });
+      } else {
+        Animated.parallel([
+          Animated.timing(successOpacity, { toValue: 1, duration: 180, useNativeDriver: true }),
+          Animated.spring(successScale, { toValue: 1, friction: 6, useNativeDriver: true }),
+        ]).start(() => {
+          setTimeout(() => router.back(), 600);
+        });
+      }
     } catch (error) {
       console.error('Failed to save:', error);
       Alert.alert(t('capture.error'), t('capture.saveFailed'));
@@ -643,13 +742,16 @@ export default function CaptureScreen() {
   const handleCancel = () => router.back();
 
   const isVoiceReady = voiceData.recorded && !voiceData.isUploading;
-  const isImageReady = imageData.picked && !imageData.isUploading;
+  const isImageReady = imageData.picked && !imageData.isUploading && (!!imageData.imageUrl || !!imageData.thumbnailUrl);
   const canSave =
     mode === 'voice' ? isVoiceReady :
       mode === 'photo' ? isImageReady :
         content.trim().length > 0;
 
   const initials = getInitials(user?.name, user?.email);
+  const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'You';
+  const modeMeta = MODE_META[mode];
+  const ActiveModeIcon = modeMeta.icon;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -661,27 +763,29 @@ export default function CaptureScreen() {
         <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.bg }]}>
           <TouchableOpacity
             onPress={handleCancel}
-            style={[styles.closeBtn, { backgroundColor: colors.inputBg }]}
+            style={styles.closeBtn}
             activeOpacity={0.7}
           >
-            <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>✕</Text>
+            <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
           </TouchableOpacity>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('capture.title')}</Text>
+          <View style={styles.titleWrap}>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>{t('capture.title')}</Text>
+          </View>
 
           <TouchableOpacity
             onPress={handleSave}
             disabled={!canSave || isSaving}
             style={[
               styles.saveBtn,
-              { backgroundColor: canSave && !isSaving ? colors.accent : colors.textMuted },
+              { opacity: canSave && !isSaving ? 1 : 0.38 },
             ]}
             activeOpacity={0.85}
           >
             {isSaving ? (
-              <ActivityIndicator color="#FFF" size="small" />
+              <ActivityIndicator color={colors.brandAccent} size="small" />
             ) : (
-              <Text style={styles.saveBtnText}>{t('capture.save')}</Text>
+              <Text style={[styles.saveBtnText, { color: colors.brandAccent }]}>{t('capture.save')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -690,18 +794,20 @@ export default function CaptureScreen() {
         {clipboardUrl && (
           <Animated.View style={[styles.clipBanner, { opacity: clipOpacity, backgroundColor: colors.cardBg, borderColor: colors.accentMid }]}>
             <View style={styles.clipBannerLeft}>
-              <Text style={styles.clipIcon}>🔗</Text>
+              <View style={[styles.clipIconWrap, { borderColor: colors.textMuted }]}> 
+                <Link2 size={14} color={colors.brandAccent} strokeWidth={2.4} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.clipTitle, { color: colors.textMuted }]}>{t('capture.clipboardDetected')}</Text>
-                <Text style={[styles.clipUrl, { color: colors.accent }]} numberOfLines={1}>{clipboardUrl}</Text>
+                <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
               </View>
             </View>
             <View style={styles.clipActions}>
-              <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.accent }]}>
+              <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.brandAccent }]}> 
                 {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>}
               </TouchableOpacity>
-              <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.accent }]}>
-                <Text style={[styles.clipUseText, { color: colors.accent }]}>{t('capture.useLink')}</Text>
+              <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.brandAccent }]}> 
+                <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Text style={[styles.clipDismiss, { color: colors.textMuted }]}>✕</Text>
@@ -710,30 +816,39 @@ export default function CaptureScreen() {
           </Animated.View>
         )}
 
-        {/* ── Composer / mode panel ── */}
         {mode === 'text' || mode === 'link' ? (
-          /* LinkedIn-style composer row: avatar + text input */
-          <View style={styles.composerRow}>
-            <View style={[styles.avatar, { backgroundColor: colors.accent }]}>
-              <Text style={styles.avatarText}>{initials}</Text>
+          /* Threads-like composer */
+          <View style={styles.composerScreenWrap}>
+            <View style={styles.modePillWrap}>
+              <View style={[styles.modePill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+                <ActiveModeIcon size={14} color={colors.textSecondary} strokeWidth={2.4} />
+                <Text style={[styles.modePillText, { color: colors.textSecondary }]}>{t(modeMeta.labelKey)}</Text>
+              </View>
             </View>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={[styles.composerInput, { color: colors.textPrimary }]}
-                placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                placeholderTextColor={colors.textMuted}
-                multiline={mode === 'text'}
-                autoFocus
-                value={content}
-                onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
-                textAlignVertical="top"
-                keyboardType={mode === 'link' ? 'url' : 'default'}
-                autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
-                autoCorrect={mode !== 'link'}
-              />
-              {mode === 'link' && linkError ? (
-                <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
-              ) : null}
+
+            <View style={[styles.composerRow, { borderColor: colors.border }]}> 
+              <View style={[styles.avatar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+                <Text style={[styles.avatarText, { color: colors.textPrimary }]}>{initials}</Text>
+              </View>
+              <View style={styles.inputWrap}>
+                <Text style={[styles.authorName, { color: colors.textPrimary }]}>{displayName}</Text>
+                <TextInput
+                  style={[styles.composerInput, { color: colors.textPrimary }]}
+                  placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  multiline={mode === 'text'}
+                  autoFocus
+                  value={content}
+                  onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
+                  textAlignVertical="top"
+                  keyboardType={mode === 'link' ? 'url' : 'default'}
+                  autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
+                  autoCorrect={mode !== 'link'}
+                />
+                {mode === 'link' && linkError ? (
+                  <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
+                ) : null}
+              </View>
             </View>
           </View>
         ) : mode === 'voice' ? (
@@ -788,65 +903,102 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   closeBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    minWidth: 56,
+    minHeight: 32,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
-  closeBtnText: { fontSize: 15, fontWeight: '500' },
-  title: { fontSize: 16, fontWeight: '600' },
+  closeBtnText: { fontSize: 14, fontWeight: '500', fontFamily: SANS_FONT },
+  titleWrap: {
+    alignItems: 'center',
+  },
+  title: { fontSize: 17, fontWeight: '600', fontFamily: SANS_FONT },
   saveBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 70,
+    minWidth: 56,
+    minHeight: 32,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
-  saveBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  saveBtnText: { fontSize: 15, fontWeight: '600', fontFamily: SANS_FONT },
 
   // ── Composer (text / link) ──
-  composerRow: {
+  composerScreenWrap: {
     flex: 1,
+  },
+  modePillWrap: {
+    marginHorizontal: 16,
+    marginTop: 10,
+  },
+  modePill: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    alignSelf: 'flex-start',
+    minHeight: 32,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  modePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
+  },
+  composerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 18,
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingHorizontal: 4,
+    paddingTop: 4,
+    paddingBottom: 8,
     gap: 12,
+    minHeight: 180,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   avatar: {
     width: 42,
     height: 42,
     borderRadius: 21,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  avatarText: { color: '#FFF', fontSize: 16, fontWeight: '700' },
+  avatarText: { fontSize: 16, fontWeight: '700', fontFamily: SANS_FONT },
   inputWrap: { flex: 1 },
-  composerInput: {
-    fontSize: 17,
-    lineHeight: 26,
-    minHeight: 80,
+  authorName: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 2,
+    marginBottom: 8,
+    fontFamily: SANS_FONT,
   },
-  errorText: { marginTop: 6, fontSize: 13 },
+  composerInput: {
+    fontSize: 16,
+    lineHeight: 24,
+    minHeight: 140,
+    fontFamily: SANS_FONT,
+  },
+  errorText: { marginTop: 6, fontSize: 13, fontFamily: SANS_FONT },
 
   // ── Voice / Photo panel ──
   modePanel: { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
   photoNoteInput: {
     marginTop: 14,
     minHeight: 80,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     textAlignVertical: 'top',
+    fontFamily: SANS_FONT,
   },
 
   // ── Clipboard banner ──
@@ -855,19 +1007,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
     padding: 12,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 8,
   },
   clipBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  clipIcon: { fontSize: 18 },
-  clipTitle: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  clipUrl: { fontSize: 13, marginTop: 2 },
+  clipIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 9,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clipTitle: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, fontFamily: SANS_FONT },
+  clipUrl: { fontSize: 12, marginTop: 2, fontFamily: SANS_FONT },
   clipActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   clipSaveBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  clipSaveText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
+  clipSaveText: { color: '#FFF', fontSize: 12, fontWeight: '600', fontFamily: SANS_FONT },
   clipUseBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
-  clipUseText: { fontSize: 12, fontWeight: '600' },
-  clipDismiss: { fontSize: 16, paddingLeft: 4 },
+  clipUseText: { fontSize: 12, fontWeight: '600', fontFamily: SANS_FONT },
+  clipDismiss: { fontSize: 16, paddingLeft: 4, fontFamily: SANS_FONT },
 
   // ── Success overlay ──
   successOverlay: {
@@ -881,11 +1040,11 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#10B981',
+    backgroundColor: '#111111',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
   },
   successIcon: { fontSize: 36, color: '#FFF', fontWeight: '700' },
-  successText: { fontSize: 14, color: '#FFF', fontWeight: '600' },
+  successText: { fontSize: 13, color: '#FFF', fontWeight: '600', fontFamily: SANS_FONT },
 });

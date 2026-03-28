@@ -10,10 +10,11 @@ Endpoints:
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func, text, case, cast, Integer
+from sqlalchemy import select, and_, func, text, cast, Integer
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
+from asyncio import Lock
 import uuid
 import logging
 
@@ -29,6 +30,49 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 _VALID_LANGS = {"en", "vi"}
+
+# Lightweight in-process cache for expensive weekly recap generation.
+# Keyed by user + language and invalidated by a signature of recent memories.
+_WEEKLY_RECAP_CACHE_TTL_SECONDS = 60 * 15
+_weekly_recap_cache: dict[str, dict] = {}
+_weekly_recap_cache_lock = Lock()
+
+
+def _weekly_recap_cache_key(user_id: uuid.UUID, language: str) -> str:
+    return f"{user_id}:{language}"
+
+
+def _weekly_recap_signature(memories: list[Memory]) -> str:
+    if not memories:
+        return "empty"
+    return "|".join(
+        f"{m.id}:{(m.updated_at or m.created_at).isoformat() if (m.updated_at or m.created_at) else 'none'}"
+        for m in memories
+    )
+
+
+async def _weekly_recap_cache_get(cache_key: str, signature: str) -> Optional[dict]:
+    now_ts = datetime.now(timezone.utc).timestamp()
+    async with _weekly_recap_cache_lock:
+        entry = _weekly_recap_cache.get(cache_key)
+        if not entry:
+            return None
+        if entry.get("expires_at", 0) <= now_ts:
+            _weekly_recap_cache.pop(cache_key, None)
+            return None
+        if entry.get("signature") != signature:
+            return None
+        return entry.get("data")
+
+
+async def _weekly_recap_cache_set(cache_key: str, signature: str, data: dict) -> None:
+    now_ts = datetime.now(timezone.utc).timestamp()
+    async with _weekly_recap_cache_lock:
+        _weekly_recap_cache[cache_key] = {
+            "signature": signature,
+            "expires_at": now_ts + _WEEKLY_RECAP_CACHE_TTL_SECONDS,
+            "data": data,
+        }
 
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
@@ -279,13 +323,28 @@ async def get_weekly_recap(
     )
     memories = result.scalars().all()
 
-    if not memories:
+    user_language = await _get_user_language(request, db, current_user.id)
+    cache_key = _weekly_recap_cache_key(current_user.id, user_language)
+    signature = _weekly_recap_signature(memories)
+
+    cached = await _weekly_recap_cache_get(cache_key, signature)
+    if cached is not None:
         return {
             "period": {"start": week_ago.isoformat(), "end": now.isoformat()},
+            **cached,
+        }
+
+    if not memories:
+        payload = {
             "total_memories": 0,
             "recap": None,
             "highlights": [],
             "themes": [],
+        }
+        await _weekly_recap_cache_set(cache_key, signature, payload)
+        return {
+            "period": {"start": week_ago.isoformat(), "end": now.isoformat()},
+            **payload,
         }
 
     # Build content summaries for AI
@@ -314,7 +373,6 @@ async def get_weekly_recap(
             categories_used.append({"name": cat.name, "icon": cat.icon})
 
     # Generate AI recap
-    user_language = await _get_user_language(request, db, current_user.id)
     recap_text = await _generate_weekly_recap(
         memory_summaries, dict(type_counts), categories_used, user_language
     )
@@ -334,13 +392,19 @@ async def get_weekly_recap(
             }
         )
 
-    return {
-        "period": {"start": week_ago.isoformat(), "end": now.isoformat()},
+    payload = {
         "total_memories": len(memories),
         "by_type": dict(type_counts),
         "categories_used": categories_used,
         "recap": recap_text,
         "highlights": highlights,
+    }
+
+    await _weekly_recap_cache_set(cache_key, signature, payload)
+
+    return {
+        "period": {"start": week_ago.isoformat(), "end": now.isoformat()},
+        **payload,
     }
 
 

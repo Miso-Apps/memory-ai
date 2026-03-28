@@ -8,36 +8,36 @@ import {
   Home,
   BookOpen,
   Plus,
-  MessageCircle,
+  BarChart3,
   User,
   type LucideIcon,
 } from 'lucide-react-native';
 
-// ─── LinkedIn-style tab icon with press animation and enhanced states ─────────
+// ─── Floating dock icon with subtle active state ───────────────────────────────
 function TabIcon({
   Icon,
   focused,
-  size = 24,
+  size = 20,
 }: {
   Icon: LucideIcon;
   focused: boolean;
   size?: number;
 }) {
   const { colors } = useTheme();
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const scaleAnim = React.useRef(new Animated.Value(focused ? 1 : 0.98)).current;
   const opacityAnim = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
 
   React.useEffect(() => {
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: focused ? 1 : 0.96,
+        toValue: focused ? 1 : 0.98,
         useNativeDriver: true,
-        tension: 300,
-        friction: 20,
+        tension: 260,
+        friction: 18,
       }),
       Animated.timing(opacityAnim, {
         toValue: focused ? 1 : 0,
-        duration: 200,
+        duration: 170,
         useNativeDriver: true,
       }),
     ]).start();
@@ -46,7 +46,6 @@ function TabIcon({
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
       <View style={styles.iconContainer}>
-        {/* Background circle for active state */}
         <Animated.View
           style={[
             styles.iconBackground,
@@ -66,10 +65,9 @@ function TabIcon({
   );
 }
 
-// ─── Enhanced tab button with haptic feedback ──────────────────────────────────
+// ─── Tab button with haptic feedback ────────────────────────────────────────────
 function EnhancedTabButton({ children, onPress, ...rest }: any) {
   const handlePress = (e: any) => {
-    // Haptic feedback on tab press (LinkedIn-style)
     if (Platform.OS === 'ios') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } else {
@@ -85,18 +83,27 @@ function EnhancedTabButton({ children, onPress, ...rest }: any) {
   );
 }
 
-// ─── Center create button embedded in the tab bar ──────────────────────────────
-// LinkedIn-inspired FAB with elevated design and better shadows
-function CreateTabButton({ children, style, ...rest }: any) {
+// ─── Center add button integrated with label ───────────────────────────────────
+function CreateTabButton({ style, ...rest }: any) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    if (Platform.OS === 'ios') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      Haptics.selectionAsync();
+    }
+    router.push('/capture');
+  };
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.92,
+      toValue: 0.95,
       useNativeDriver: true,
-      tension: 300,
-      friction: 10,
+      tension: 280,
+      friction: 14,
     }).start();
   };
 
@@ -104,8 +111,8 @@ function CreateTabButton({ children, style, ...rest }: any) {
     Animated.spring(scaleAnim, {
       toValue: 1,
       useNativeDriver: true,
-      tension: 300,
-      friction: 10,
+      tension: 280,
+      friction: 14,
     }).start();
   };
 
@@ -113,16 +120,18 @@ function CreateTabButton({ children, style, ...rest }: any) {
     <TouchableOpacity
       {...rest}
       style={[style, styles.createTabWrapper]}
-      onPress={() => router.push('/capture')}
+      onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      activeOpacity={1}
+      activeOpacity={0.9}
+      accessibilityRole="button"
+      accessibilityLabel={t('tabs.capture')}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        {/* Outer ring for depth */}
-        <View style={[styles.createBtnRing, { backgroundColor: colors.accentLight }]}>
-          <View style={[styles.createBtn, { backgroundColor: colors.accent, shadowColor: colors.accent }]}>
-            <Plus size={28} color="#FFFFFF" strokeWidth={2.8} />
+        <View style={[styles.createBtnRing, { backgroundColor: colors.brandAccentLight }]}> 
+          <View style={[styles.createBtn, { backgroundColor: colors.brandAccent, shadowColor: colors.brandAccent }]}>
+            <Plus size={22} color="#FFFFFF" strokeWidth={2.8} />
           </View>
         </View>
       </Animated.View>
@@ -142,30 +151,31 @@ export default function TabsLayout() {
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
-          borderTopWidth: 1,
-          borderTopColor: colors.tabBarBorder,
+          borderTopWidth: 0,
+          borderRadius: 24,
+          marginHorizontal: 14,
+          marginBottom: Platform.OS === 'ios' ? 16 : 12,
+          height: Platform.OS === 'ios' ? 78 : 72,
           paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 12 : 10,
-          height: Platform.OS === 'ios' ? 88 : 76,
+          paddingBottom: Platform.OS === 'ios' ? 8 : 7,
+          position: 'absolute',
           ...Platform.select({
             ios: {
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.1,
+              shadowRadius: 14,
             },
             android: {
-              elevation: 8,
+              elevation: 10,
             },
           }),
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 4,
-          letterSpacing: 0.1,
+        tabBarItemStyle: {
+          paddingTop: 6,
         },
-        tabBarShowLabel: true,
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
@@ -188,16 +198,16 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="create"
         options={{
-          title: '',
-          tabBarLabel: () => null,
+          title: t('tabs.capture'),
+          tabBarIcon: () => null,
           tabBarButton: (props) => <CreateTabButton {...props} />,
         }}
       />
       <Tabs.Screen
-        name="chat"
+        name="insights"
         options={{
-          title: t('tabs.chat'),
-          tabBarIcon: ({ focused }) => <TabIcon Icon={MessageCircle} focused={focused} />,
+          title: t('tabs.insights'),
+          tabBarIcon: ({ focused }) => <TabIcon Icon={BarChart3} focused={focused} />,
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
       />
@@ -210,7 +220,7 @@ export default function TabsLayout() {
         }}
       />
       {/* Hidden screens */}
-      <Tabs.Screen name="insights" options={{ href: null }} />
+      <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen name="recall" options={{ href: null }} />
       <Tabs.Screen name="archive" options={{ href: null }} />
     </Tabs>
@@ -219,53 +229,51 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   iconBackground: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     ...Platform.select({
       ios: {
-        shadowColor: '#6366F1',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.15,
-        shadowRadius: 3,
+        shadowOpacity: 0.07,
+        shadowRadius: 4,
       },
       android: {
         elevation: 2,
       },
     }),
   },
-  // LinkedIn-style elevated FAB
   createTabWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
+    marginTop: -8,
   },
   createBtnRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -22,
   },
   createBtn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.24,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

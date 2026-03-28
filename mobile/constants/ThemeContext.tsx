@@ -21,19 +21,25 @@ export interface ThemeColors {
   textTertiary: string;
   textMuted: string;
   textPlaceholder: string;
+  buttonText: string;
 
   // Accent (indigo — same in both themes)
   accent: string;
   accentLight: string;
   accentMid: string;
   accentSubtle: string;
+  brandAccent: string;
+  brandAccentLight: string;
 
   // Semantic
   error: string;
   errorBg: string;
   errorText: string;
   success: string;
+  successBg: string;
   warning: string;
+  warningBg: string;
+  infoBg: string;
 
   // Borders
   border: string;
@@ -60,88 +66,100 @@ export interface ThemeColors {
 
 // ─── Light theme ───────────────────────────────────────────────────────────
 export const LightColors: ThemeColors = {
-  bg: '#F9FAFB',
+  bg: '#FFFFFF',
   cardBg: '#FFFFFF',
-  inputBg: '#F3F4F6',
-  subtleBg: '#F0F0F0',
+  inputBg: '#F4F4F5',
+  subtleBg: '#FAFAFA',
   modalBg: '#FFFFFF',
 
-  textPrimary: '#111827',
-  textSecondary: '#374151',
-  textTertiary: '#6B7280',
-  textMuted: '#9CA3AF',
-  textPlaceholder: '#9CA3AF',
+  textPrimary: '#111111',
+  textSecondary: '#3F3F46',
+  textTertiary: '#52525B',
+  textMuted: '#71717A',
+  textPlaceholder: '#A1A1AA',
+  buttonText: '#FFFFFF',
 
-  accent: '#6366F1',
-  accentLight: 'rgba(99, 102, 241, 0.1)',
-  accentMid: 'rgba(99, 102, 241, 0.15)',
-  accentSubtle: 'rgba(99, 102, 241, 0.05)',
+  accent: '#111111',
+  accentLight: 'rgba(17, 17, 17, 0.14)',
+  accentMid: 'rgba(17, 17, 17, 0.22)',
+  accentSubtle: 'rgba(17, 17, 17, 0.06)',
+  brandAccent: '#C56A3A',
+  brandAccentLight: 'rgba(197, 106, 58, 0.16)',
 
   error: '#EF4444',
   errorBg: 'rgba(239, 68, 68, 0.06)',
   errorText: '#B91C1C',
-  success: '#10B981',
-  warning: '#F59E0B',
+  success: '#111111',
+  successBg: 'rgba(16, 185, 129, 0.1)',
+  warning: '#111111',
+  warningBg: 'rgba(245, 158, 11, 0.1)',
+  infoBg: 'rgba(99, 102, 241, 0.1)',
 
-  border: '#F0F0F0',
-  borderMed: '#E5E7EB',
+  border: '#E4E4E7',
+  borderMed: '#D4D4D8',
 
-  typeBgText: '#EEF2FF',
-  typeBgVoice: '#F0FDF4',
-  typeBgLink: '#FFF7ED',
-  typeBgPhoto: '#FDF2F8',
+  typeBgText: 'transparent',
+  typeBgVoice: 'transparent',
+  typeBgLink: 'transparent',
+  typeBgPhoto: 'transparent',
 
-  tabBarBg: '#FFFFFF',
-  tabBarBorder: '#F3F4F6',
+  tabBarBg: 'rgba(255,255,255,0.95)',
+  tabBarBorder: '#E4E4E7',
 
   switchTrackOff: '#E5E7EB',
 
-  streakBg: '#FEF3C7',
-  streakBorder: '#FDE68A',
-  streakText: '#D97706',
+  streakBg: 'rgba(24, 24, 27, 0.08)',
+  streakBorder: 'rgba(24, 24, 27, 0.16)',
+  streakText: '#111111',
 };
 
 // ─── Dark theme ────────────────────────────────────────────────────────────
 export const DarkColors: ThemeColors = {
-  bg: '#0F1117',
-  cardBg: '#1A1D27',
-  inputBg: '#252833',
-  subtleBg: '#1E2028',
-  modalBg: '#1A1D27',
+  bg: '#09090B',
+  cardBg: '#131316',
+  inputBg: '#1B1B20',
+  subtleBg: '#111114',
+  modalBg: '#131316',
 
-  textPrimary: '#F3F4F6',
-  textSecondary: '#D1D5DB',
-  textTertiary: '#9CA3AF',
-  textMuted: '#6B7280',
-  textPlaceholder: '#6B7280',
+  textPrimary: '#FAFAFA',
+  textSecondary: '#E4E4E7',
+  textTertiary: '#A1A1AA',
+  textMuted: '#71717A',
+  textPlaceholder: '#52525B',
+  buttonText: '#FFFFFF',
 
-  accent: '#818CF8',
-  accentLight: 'rgba(129, 140, 248, 0.15)',
-  accentMid: 'rgba(129, 140, 248, 0.2)',
-  accentSubtle: 'rgba(129, 140, 248, 0.08)',
+  accent: '#52525B',
+  accentLight: 'rgba(161, 161, 170, 0.22)',
+  accentMid: 'rgba(161, 161, 170, 0.34)',
+  accentSubtle: 'rgba(161, 161, 170, 0.12)',
+  brandAccent: '#D97F5C',
+  brandAccentLight: 'rgba(217, 127, 92, 0.24)',
 
   error: '#F87171',
   errorBg: 'rgba(248, 113, 113, 0.1)',
   errorText: '#FCA5A5',
   success: '#34D399',
+  successBg: 'rgba(52, 211, 153, 0.2)',
   warning: '#FBBF24',
+  warningBg: 'rgba(251, 191, 36, 0.2)',
+  infoBg: 'rgba(129, 140, 248, 0.2)',
 
-  border: '#2A2D3A',
-  borderMed: '#3A3D4A',
+  border: '#27272A',
+  borderMed: '#3F3F46',
 
-  typeBgText: 'rgba(129, 140, 248, 0.12)',
-  typeBgVoice: 'rgba(52, 211, 153, 0.12)',
-  typeBgLink: 'rgba(251, 191, 36, 0.12)',
-  typeBgPhoto: 'rgba(244, 114, 182, 0.12)',
+  typeBgText: 'transparent',
+  typeBgVoice: 'transparent',
+  typeBgLink: 'transparent',
+  typeBgPhoto: 'transparent',
 
-  tabBarBg: '#1A1D27',
-  tabBarBorder: '#2A2D3A',
+  tabBarBg: 'rgba(18,18,18,0.94)',
+  tabBarBorder: '#27272A',
 
   switchTrackOff: '#3A3D4A',
 
-  streakBg: 'rgba(217, 119, 6, 0.15)',
-  streakBorder: 'rgba(217, 119, 6, 0.3)',
-  streakText: '#FBBF24',
+  streakBg: 'rgba(250, 250, 250, 0.1)',
+  streakBorder: 'rgba(250, 250, 250, 0.18)',
+  streakText: '#FAFAFA',
 };
 
 // ─── Context ───────────────────────────────────────────────────────────────

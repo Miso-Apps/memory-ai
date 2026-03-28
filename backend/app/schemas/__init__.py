@@ -81,6 +81,8 @@ class MemoryListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+    has_more: bool
+    next_offset: Optional[int] = None
 
 
 # ============ AI Schemas ============
@@ -97,6 +99,33 @@ class RecallResponse(BaseModel):
     """Response schema for AI recall suggestions"""
 
     items: List[RecallItem]
+
+
+class RadarItem(BaseModel):
+    """A memory card with explainable radar metadata."""
+
+    memory: MemoryResponse
+    reason: str
+    reason_code: str
+    confidence: int = Field(..., ge=0, le=100)
+    action_hint: str
+
+
+class RadarResponse(BaseModel):
+    """Response schema for Memory Radar feed."""
+
+    items: List[RadarItem]
+    generated_at: datetime
+
+
+class RadarEventCreate(BaseModel):
+    """Request schema for radar interaction events."""
+
+    memory_id: str
+    event_type: str = Field(..., pattern=r"^(served|opened|dismissed|acted)$")
+    reason_code: Optional[str] = Field(None, max_length=64)
+    confidence: Optional[float] = Field(None, ge=0, le=100)
+    context: Optional[dict] = None
 
 
 class SearchResponse(BaseModel):
@@ -240,6 +269,8 @@ class UserPreferencesUpdate(BaseModel):
     pinned_categories: Optional[List[str]] = None
     hidden_categories: Optional[List[str]] = None
     language: Optional[str] = Field(None, max_length=10)
+    recall_sensitivity: Optional[str] = Field(None, pattern=r"^(low|medium|high)$")
+    proactive_recall_opt_in: Optional[bool] = None
 
 
 class UserPreferencesResponse(BaseModel):
@@ -264,6 +295,8 @@ class UserPreferencesResponse(BaseModel):
     pinned_categories: List[str] = []
     hidden_categories: List[str] = []
     language: str = "en"
+    recall_sensitivity: str = "medium"
+    proactive_recall_opt_in: bool = True
     created_at: datetime
     updated_at: datetime
 

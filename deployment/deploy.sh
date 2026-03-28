@@ -18,9 +18,28 @@ error() { echo -e "${RED}[error]${NC} $*"; exit 1; }
 # ── Preflight checks ──────────────────────────────────────────────────────────
 [[ -f "$SCRIPT_DIR/.env" ]] || error ".env not found. Copy .env.example → .env and fill in values."
 source "$SCRIPT_DIR/.env"
-[[ -z "${DOMAIN:-}" ]]           && error "DOMAIN is not set in .env"
-[[ -z "${SECRET_KEY:-}" ]]       && error "SECRET_KEY is not set in .env"
-[[ -z "${POSTGRES_PASSWORD:-}" ]] && error "POSTGRES_PASSWORD is not set in .env"
+
+required_vars=(
+    DOMAIN
+    FRONTEND_ORIGINS
+    SECRET_KEY
+    POSTGRES_DB
+    POSTGRES_USER
+    POSTGRES_PASSWORD
+    DATABASE_URL
+    REDIS_PASSWORD
+    REDIS_URL
+    MINIO_ROOT_USER
+    MINIO_ROOT_PASSWORD
+    MINIO_BUCKET_NAME
+    OPENAI_API_KEY
+)
+
+for var_name in "${required_vars[@]}"; do
+    if [[ -z "${!var_name:-}" ]]; then
+        error "$var_name is not set in .env"
+    fi
+done
 
 command -v docker >/dev/null 2>&1 || error "Docker is not installed."
 docker compose version >/dev/null 2>&1 || error "Docker Compose plugin v2 is not installed."
@@ -104,11 +123,12 @@ info "Verifying health..."
 sleep 5
 $COMPOSE ps
 
-HEALTH=$(curl -sf "http://localhost/health" | grep -c '"status":"ok"' || true)
-if [[ "$HEALTH" == "1" ]]; then
+HEALTH_BODY=$(curl -sf "http://localhost/health" || true)
+HEALTH=$(echo "$HEALTH_BODY" | grep -Ec '"status"\s*:\s*"(ok|healthy)"' || true)
+if [[ "$HEALTH" -ge 1 ]]; then
     info "✓ API health check passed."
 else
-    warn "Health check may have failed — check: curl http://localhost/health"
+    warn "Health check may have failed — response: ${HEALTH_BODY:-<empty>}"
 fi
 
 info "=== Deploy complete ==="

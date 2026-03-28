@@ -31,6 +31,10 @@ def _to_dict(p: UserPreferences) -> dict:
         "auto_categorize": p.auto_categorize,
         "ai_recall_enabled": p.ai_recall_enabled,
         "ai_suggestions_enabled": p.ai_suggestions_enabled,
+        "recall_sensitivity": p.recall_sensitivity or "medium",
+        "proactive_recall_opt_in": p.proactive_recall_opt_in
+        if p.proactive_recall_opt_in is not None
+        else True,
         "streaming_responses": p.streaming_responses
         if p.streaming_responses is not None
         else True,
@@ -121,6 +125,12 @@ async def update_preferences(
     if update.ai_suggestions_enabled is not None:
         prefs.ai_suggestions_enabled = update.ai_suggestions_enabled
 
+    if update.recall_sensitivity is not None:
+        prefs.recall_sensitivity = update.recall_sensitivity
+
+    if update.proactive_recall_opt_in is not None:
+        prefs.proactive_recall_opt_in = update.proactive_recall_opt_in
+
     if update.streaming_responses is not None:
         prefs.streaming_responses = update.streaming_responses
 
@@ -178,6 +188,8 @@ async def reset_preferences(
         prefs.auto_categorize = True
         prefs.ai_recall_enabled = True
         prefs.ai_suggestions_enabled = True
+        prefs.recall_sensitivity = "medium"
+        prefs.proactive_recall_opt_in = True
         prefs.streaming_responses = True
         prefs.save_location = False
         prefs.analytics_enabled = True

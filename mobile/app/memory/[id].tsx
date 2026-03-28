@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,8 +18,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { memoriesApi } from '../../services/api';
+import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
+import { ChevronLeft, Share2, Copy, PencilLine, Trash2, ChevronRight, Folder } from 'lucide-react-native';
 
 interface Memory {
   id: string;
@@ -27,6 +28,8 @@ interface Memory {
   content: string;
   audioUrl?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
+  linkPreviewUrl?: string;
   userNote?: string;
   aiSummary?: string;
   transcription?: string;
@@ -37,6 +40,20 @@ interface Memory {
   categoryColor?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+function pickPreviewUrl(metadata?: Record<string, any>): string | undefined {
+  if (!metadata) return undefined;
+  const candidates = [
+    metadata.thumbnail_url,
+    metadata.preview_image_url,
+    metadata.preview_image,
+    metadata.image_url,
+    metadata.og_image,
+    metadata.favicon_url,
+  ];
+  const first = candidates.find((v) => typeof v === 'string' && /^https?:\/\//i.test(v));
+  return first as string | undefined;
 }
 
 function formatRelativeDate(date: Date, t: Function): string {
@@ -82,7 +99,7 @@ const TYPE_CONFIG: Record<string, { icon: string; labelKey: string; color: strin
 };
 
 // ─── Audio Player ───────────────────────────────────────────────────────────
-function AudioPlayer({
+const AudioPlayer = React.memo(function AudioPlayer({
   audioUrl,
   audioDuration,
 }: {
@@ -186,10 +203,10 @@ function AudioPlayer({
       </View>
     </View>
   );
-}
+});
 
 // ─── Inline Edit Panel ─────────────────────────────────────────────────────
-function EditPanel({
+const EditPanel = React.memo(function EditPanel({
   memory,
   onSave,
   onCancel,
@@ -235,7 +252,7 @@ function EditPanel({
       />
     </View>
   );
-}
+});
 
 
 
@@ -246,22 +263,35 @@ export default function MemoryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [memory, setMemory] = useState<Memory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [related, setRelated] = useState<RelatedMemory[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadMemory();
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const loadMemory = async () => {
     try {
       const response = await memoriesApi.get(id!);
-      setMemory({
+      const mappedMemory: Memory = {
         id: response.id,
         type: response.type,
         content: response.content,
         audioUrl: response.audio_url,
         imageUrl: response.image_url,
+        thumbnailUrl: response.metadata?.thumbnail_url || undefined,
+        linkPreviewUrl: response.type === 'link' ? pickPreviewUrl(response.metadata) : undefined,
         userNote: response.metadata?.user_note || undefined,
         aiSummary: response.ai_summary,
         transcription: response.transcription,
@@ -272,7 +302,23 @@ export default function MemoryDetailScreen() {
         categoryColor: response.category_color,
         createdAt: new Date(response.created_at),
         updatedAt: new Date(response.updated_at),
-      });
+      };
+      setMemory(mappedMemory);
+
+      setLoadingRelated(true);
+      insightsApi
+        .getRelated(response.id, 5)
+        .then((res) => {
+          const filtered = (res.related || []).filter((item: RelatedMemory) => item.id !== response.id);
+          setRelated(filtered.slice(0, 5));
+        })
+        .catch(() => {
+          setRelated([]);
+        })
+        .finally(() => {
+          setLoadingRelated(false);
+        });
+
       // Mark as viewed
       memoriesApi.markViewed(response.id).catch(() => { });
     } catch {
@@ -282,9 +328,11 @@ export default function MemoryDetailScreen() {
     }
   };
 
-  const handleClose = () => router.back();
+  const handleClose = useCallback(() => {
+    router.back();
+  }, []);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     Alert.alert(t('memory.deleteTitle'), t('memory.deleteMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -297,9 +345,9 @@ export default function MemoryDetailScreen() {
         },
       },
     ]);
-  };
+  }, [id, t]);
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     if (!memory) return;
     try {
       await Share.share({
@@ -308,16 +356,19 @@ export default function MemoryDetailScreen() {
           : `${memory.content}\n\n${t('memory.viaApp')}`,
       });
     } catch { }
-  };
+  }, [memory, t]);
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     if (!memory) return;
     const text = memory.aiSummary || memory.content;
     await Clipboard.setStringAsync(text);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+    if (copiedTimeoutRef.current) {
+      clearTimeout(copiedTimeoutRef.current);
+    }
+    copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+  }, [memory]);
 
   const handleEditSave = async (newContent: string) => {
     if (!memory) return;
@@ -332,6 +383,18 @@ export default function MemoryDetailScreen() {
       Alert.alert(t('common.error'), t('memory.saveFailed'));
     }
   };
+
+  const openRelatedMemory = useCallback((relatedMemoryId: string) => {
+    router.push({
+      pathname: '/memory/[id]',
+      params: { id: relatedMemoryId },
+    });
+  }, []);
+
+  const typeConf = useMemo(() => {
+    if (!memory) return TYPE_CONFIG.text;
+    return TYPE_CONFIG[memory.type] || TYPE_CONFIG.text;
+  }, [memory]);
 
   if (loading) {
     return (
@@ -365,14 +428,12 @@ export default function MemoryDetailScreen() {
     );
   }
 
-  const typeConf = TYPE_CONFIG[memory.type] || TYPE_CONFIG.text;
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       {/* ── Header ─────────────────────────────────────────── */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={handleClose} style={[styles.headerBtn, { backgroundColor: colors.inputBg }]}>
-          <Text style={[styles.headerBtnText, { color: colors.textSecondary }]}>‹</Text>
+          <ChevronLeft size={20} color={colors.textSecondary} strokeWidth={2.4} />
         </TouchableOpacity>
         <View style={styles.headerMeta}>
           <View style={[styles.typePill, { backgroundColor: `${typeConf.color}15` }]}>
@@ -390,7 +451,7 @@ export default function MemoryDetailScreen() {
           <Text style={[styles.headerTime, { color: colors.textMuted }]}>{formatRelativeDate(memory.createdAt, t)}</Text>
         </View>
         <TouchableOpacity onPress={handleShare} style={[styles.headerBtn, { backgroundColor: colors.inputBg }]}>
-          <Text style={[styles.headerBtnText, { color: colors.textSecondary }]}>↗</Text>
+          <Share2 size={18} color={colors.textSecondary} strokeWidth={2.2} />
         </TouchableOpacity>
       </View>
 
@@ -411,10 +472,10 @@ export default function MemoryDetailScreen() {
         )}
 
         {/* Photo image */}
-        {memory.type === 'photo' && memory.imageUrl && (
+        {memory.type === 'photo' && (memory.thumbnailUrl || memory.imageUrl) && (
           <View style={styles.photoSection}>
             <Image
-              source={{ uri: memory.imageUrl }}
+              source={{ uri: memory.thumbnailUrl || memory.imageUrl }}
               style={[styles.photoImage, { backgroundColor: colors.inputBg }]}
               resizeMode="cover"
             />
@@ -445,8 +506,20 @@ export default function MemoryDetailScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.linkCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                  {memory.linkPreviewUrl ? (
+                    <Image
+                      source={{ uri: memory.linkPreviewUrl }}
+                      style={[styles.linkThumb, { backgroundColor: colors.cardBg }]}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.linkThumbFallback, { backgroundColor: colors.typeBgLink }]}>
+                      <Text style={styles.linkIcon}>🔗</Text>
+                    </View>
+                  )}
+
                   <View style={styles.linkCardLeft}>
-                    <Text style={styles.linkIcon}>🔗</Text>
+                    <Text style={[styles.linkMetaLabel, { color: colors.textMuted }]}>{t('memory.linkPreview')}</Text>
                     <Text style={[styles.linkUrl, { color: colors.accent }]} numberOfLines={2}>{memory.content}</Text>
                   </View>
                   <View style={[styles.linkOpenBadge, { backgroundColor: colors.accentLight }]}>
@@ -482,24 +555,98 @@ export default function MemoryDetailScreen() {
         <View style={[styles.dateSection, { borderTopColor: colors.border }]}>
           <Text style={[styles.dateText, { color: colors.textMuted }]}>{formatFullDate(memory.createdAt)}</Text>
         </View>
+
+        {/* Connected Ideas */}
+        {(loadingRelated || related.length > 0) && (
+          <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
+            <Text style={[styles.relatedTitle, { color: colors.textPrimary }]}>{t('memory.relatedMemories')}</Text>
+
+            {loadingRelated ? (
+              <View style={styles.relatedLoadingRow}>
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+                <Text style={[styles.relatedLoadingText, { color: colors.textSecondary }]}>{t('memory.loadingRelated')}</Text>
+              </View>
+            ) : (
+              <View style={styles.relatedList}>
+                {related.map((item) => {
+                  const typeConf = TYPE_CONFIG[item.type] || TYPE_CONFIG.text;
+                  const score = item.similarity != null ? `${Math.round(item.similarity * 100)}% ${t('memory.match')}` : t('memory.relatedViaCategory');
+                  const preview = (item.content || '').trim();
+                  const relatedAt = formatRelativeDate(new Date(item.created_at), t);
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.relatedItem, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                      onPress={() => openRelatedMemory(item.id)}
+                      activeOpacity={0.75}
+                    >
+                      <View style={[styles.relatedTypeDot, { backgroundColor: `${typeConf.color}22` }]}>
+                        <Text style={styles.relatedTypeEmoji}>{typeConf.icon}</Text>
+                      </View>
+                      <View style={styles.relatedBody}>
+                        <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
+                          {preview}
+                        </Text>
+                        <View style={styles.relatedMetaRow}>
+                          <Text style={[styles.relatedMeta, { color: colors.textSecondary }]}>
+                            {score}
+                          </Text>
+                          <Text style={[styles.relatedMetaDot, { color: colors.textMuted }]}>•</Text>
+                          <Text style={[styles.relatedMeta, { color: colors.textMuted }]}>{relatedAt}</Text>
+                        </View>
+                        {item.category_name ? (
+                          <View
+                            style={[
+                              styles.relatedCategoryPill,
+                              { backgroundColor: `${item.category_color || '#6B7280'}18` },
+                            ]}
+                          >
+                            {item.category_icon ? (
+                              <Text style={styles.relatedCategoryIcon}>{item.category_icon}</Text>
+                            ) : (
+                              <Folder size={11} color={item.category_color || '#6B7280'} strokeWidth={2} />
+                            )}
+                            <Text
+                              style={[
+                                styles.relatedCategoryText,
+                                { color: item.category_color || '#6B7280' },
+                              ]}
+                            >
+                              {item.category_name}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* ── Bottom actions ─────────────────────────────────── */}
       <View style={[styles.bottomBar, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
         <TouchableOpacity style={styles.bottomAction} onPress={handleCopy} activeOpacity={0.7}>
-          <Text style={styles.bottomActionIcon}>{copied ? '✓' : '📋'}</Text>
+          {copied ? (
+            <Text style={[styles.bottomActionIcon, { color: colors.accent }]}>✓</Text>
+          ) : (
+            <Copy size={17} color={colors.textMuted} strokeWidth={2.2} />
+          )}
           <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{copied ? t('memory.copied') : t('memory.copy')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={() => setIsEditing(true)} activeOpacity={0.7}>
-          <Text style={styles.bottomActionIcon}>✏️</Text>
+          <PencilLine size={17} color={colors.textMuted} strokeWidth={2.2} />
           <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.edit')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bottomAction} onPress={handleShare} activeOpacity={0.7}>
-          <Text style={[styles.bottomActionIcon, { color: colors.textPrimary }]}>↗</Text>
+          <Share2 size={17} color={colors.textPrimary} strokeWidth={2.2} />
           <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.share')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.bottomAction]} onPress={handleDelete} activeOpacity={0.7}>
-          <Text style={styles.bottomActionIcon}>🗑</Text>
+          <Trash2 size={17} color={colors.error} strokeWidth={2.2} />
           <Text style={[styles.bottomActionLabel, { color: colors.error }]}>{t('memory.dismiss')}</Text>
         </TouchableOpacity>
       </View>
@@ -583,8 +730,27 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
+    gap: 10,
   },
-  linkCardLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  linkCardLeft: { flex: 1, gap: 3 },
+  linkMetaLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.45,
+  },
+  linkThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+  },
+  linkThumbFallback: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   linkIcon: { fontSize: 18 },
   linkUrl: { flex: 1, fontSize: 13, lineHeight: 19 },
   linkOpenBadge: {
@@ -603,7 +769,7 @@ const styles = StyleSheet.create({
   photoSection: { marginBottom: 14, borderRadius: 14, overflow: 'hidden' },
   photoImage: {
     width: '100%',
-    height: 260,
+    height: 220,
     borderRadius: 14,
   },
   photoDescriptionBox: {
@@ -663,6 +829,87 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dateText: { fontSize: 12 },
+
+  // Related memories
+  relatedSection: {
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+  },
+  relatedTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 10,
+  },
+  relatedLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  relatedLoadingText: {
+    fontSize: 13,
+  },
+  relatedList: {
+    gap: 8,
+  },
+  relatedItem: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  relatedTypeDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  relatedTypeEmoji: {
+    fontSize: 12,
+  },
+  relatedBody: {
+    flex: 1,
+    gap: 4,
+  },
+  relatedPreview: {
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  relatedMeta: {
+    fontSize: 12,
+  },
+  relatedMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  relatedMetaDot: {
+    fontSize: 11,
+  },
+  relatedCategoryPill: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 4,
+  },
+  relatedCategoryIcon: {
+    fontSize: 10,
+  },
+  relatedCategoryText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  relatedChevron: {
+    fontSize: 18,
+    paddingTop: 2,
+  },
 
   // Bottom bar
   bottomBar: {

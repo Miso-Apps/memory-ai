@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -20,13 +21,19 @@ import { useTheme } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
+import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
 
 type FilterType = 'all' | 'text' | 'voice' | 'link' | 'photo';
+const PAGE_SIZE = 40;
 
 interface Memory {
   id: string;
   content: string;
   type: 'text' | 'link' | 'voice' | 'photo';
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  linkPreviewUrl?: string;
+  sourceUrl?: string;
   createdAt: Date;
   aiSummary?: string;
   categoryId?: string;
@@ -62,11 +69,11 @@ const mockMemories: Memory[] = [
   },
 ];
 
-const TYPE_ICON: Record<Memory['type'], string> = {
-  text: '📝',
-  voice: '🎤',
-  link: '🔗',
-  photo: '📷',
+const TYPE_META: Record<Memory['type'], { icon: React.ComponentType<any> }> = {
+  text: { icon: FileText },
+  voice: { icon: Mic },
+  link: { icon: Link2 },
+  photo: { icon: ImageIcon },
 };
 
 // Theme-aware type colors are resolved inside MemoryListItem via `colors.typeBgXxx`
@@ -103,38 +110,93 @@ function formatDate(date: Date, t: Function) {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-const TYPE_DOT_COLOR: Record<Memory['type'], string> = {
-  text: '#6366F1',
-  voice: '#10B981',
-  link: '#F59E0B',
-  photo: '#EC4899',
-};
+function isRenderableMediaUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const url = value.trim();
+  return /^(https?:\/\/|file:\/\/|content:\/\/|data:image\/|\/)/i.test(url);
+}
+
+function pickPreviewUrl(metadata?: Record<string, any>): string | undefined {
+  if (!metadata) return undefined;
+  const candidates = [
+    metadata.thumbnail_url,
+    metadata.preview_image_url,
+    metadata.preview_image,
+    metadata.image_url,
+    metadata.og_image,
+    metadata.favicon_url,
+  ];
+  const first = candidates.find((v) => isRenderableMediaUrl(v));
+  return first as string | undefined;
+}
+
+function pickLinkSourceUrl(item: ApiMemory): string | undefined {
+  if (item.type !== 'link') return undefined;
+  const value =
+    item.metadata?.original_url ||
+    item.metadata?.source_url ||
+    item.metadata?.canonical_url ||
+    item.content;
+  return typeof value === 'string' && /^https?:\/\//i.test(value) ? value : undefined;
+}
+
+function getDomain(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./i, '');
+  } catch {
+    return null;
+  }
+}
 
 function MemoryListItem({ memory }: { memory: Memory }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const dotColor = TYPE_DOT_COLOR[memory.type];
+  const meta = TYPE_META[memory.type];
+  const Icon = meta.icon;
+  const typeTint = colors.textSecondary;
+  const thumbUri = memory.type === 'photo'
+    ? memory.thumbnailUrl || memory.imageUrl
+    : memory.type === 'link'
+      ? memory.linkPreviewUrl
+      : undefined;
+  const hasMediaPreview = Boolean(thumbUri);
+  const domain = getDomain(memory.sourceUrl);
+
   return (
     <TouchableOpacity
-      style={styles.memoryItem}
+      style={[styles.memoryItem, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
       onPress={() => router.push(`/memory/${memory.id}`)}
       activeOpacity={0.6}
     >
-      {/* Thin left color bar as type indicator */}
-      <View style={[styles.typeBar, { backgroundColor: dotColor }]} />
+      <View style={styles.mediaWrap}>
+        {hasMediaPreview ? (
+          <Image source={{ uri: thumbUri }} style={styles.mediaThumb} resizeMode="cover" />
+        ) : (
+          <View style={[styles.mediaFallback, { backgroundColor: colors.accentSubtle }]}> 
+            <Icon size={18} color={typeTint} strokeWidth={2.2} />
+          </View>
+        )}
+      </View>
 
       <View style={styles.memoryContent}>
         <Text style={[styles.memoryText, { color: colors.textPrimary }]} numberOfLines={2}>
           {memory.content}
         </Text>
+
         <View style={styles.memoryMeta}>
-          <Text style={[styles.memoryTypeLabel, { color: dotColor }]}>{TYPE_ICON[memory.type]}</Text>
-          <Text style={[styles.memoryDot, { color: colors.border }]}>·</Text>
+          <View style={[styles.metaTypeDot, { backgroundColor: colors.accentMid }]} />
           <Text style={[styles.memoryDate, { color: colors.textMuted }]}>{formatDate(memory.createdAt, t)}</Text>
+          {domain && (
+            <>
+              <Text style={[styles.memoryDot, { color: colors.border }]}>·</Text>
+              <Text style={[styles.domainInline, { color: colors.textSecondary }]} numberOfLines={1}>{domain}</Text>
+            </>
+          )}
+          {hasMediaPreview && <View style={[styles.previewIndicator, { backgroundColor: colors.accentLight }]} />}
         </View>
       </View>
-
-      <Text style={[styles.chevron, { color: colors.border }]}>›</Text>
     </TouchableOpacity>
   );
 }
@@ -149,6 +211,9 @@ export default function LibraryScreen() {
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [allMemories, setAllMemories] = useState<Memory[]>([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [searchResults, setSearchResults] = useState<Memory[] | null>(null);
   const [searchSummary, setSearchSummary] = useState<string | null>(null);
   const [summaryStreaming, setSummaryStreaming] = useState(false);
@@ -157,6 +222,7 @@ export default function LibraryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const categoryEffectInitialized = useRef(false);
+  const loadMemoriesRef = useRef<(reset?: boolean) => Promise<void>>(async () => {});
   // Tracks whether a streaming search is still in-flight so we can cancel on re-search
   const streamAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
 
@@ -169,17 +235,42 @@ export default function LibraryScreen() {
     }
   }, []);
 
-  const loadMemories = useCallback(async () => {
+  const loadMemories = useCallback(async (reset: boolean = true) => {
+    if (!reset && (loading || loadingMore || !hasMore)) return;
+
+    const nextOffset = reset ? 0 : offset;
+
+    if (reset) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
     try {
-      const params: { limit: number; offset: number; category_id?: string } = { limit: 100, offset: 0 };
+      const params: { limit: number; offset: number; category_id?: string } = {
+        limit: PAGE_SIZE,
+        offset: nextOffset,
+      };
       if (selectedCategory) {
         params.category_id = selectedCategory;
       }
       const response = await memoriesApi.list(params);
-      const mapped: Memory[] = response.map((item: ApiMemory) => ({
+      const mapped: Memory[] = response.memories.map((item: ApiMemory) => ({
         id: item.id,
         content: item.ai_summary || item.content,
         type: item.type,
+        imageUrl: isRenderableMediaUrl(item.image_url)
+          ? item.image_url
+          : isRenderableMediaUrl(item.metadata?.image_url)
+            ? item.metadata?.image_url
+            : undefined,
+        thumbnailUrl: isRenderableMediaUrl(item.metadata?.thumbnail_url)
+          ? item.metadata?.thumbnail_url
+          : isRenderableMediaUrl(item.image_url)
+            ? item.image_url
+            : undefined,
+        linkPreviewUrl: pickPreviewUrl(item.metadata),
+        sourceUrl: pickLinkSourceUrl(item),
         createdAt: new Date(item.created_at),
         aiSummary: item.ai_summary,
         categoryId: item.category_id,
@@ -187,13 +278,36 @@ export default function LibraryScreen() {
         categoryIcon: item.category_icon,
         categoryColor: item.category_color,
       }));
-      setAllMemories(mapped);
+
+      if (reset) {
+        setAllMemories(mapped);
+      } else {
+        setAllMemories((prev) => {
+          const dedup = new Map(prev.map((m) => [m.id, m]));
+          mapped.forEach((m) => dedup.set(m.id, m));
+          return Array.from(dedup.values());
+        });
+      }
+
+      setOffset(response.next_offset ?? (nextOffset + mapped.length));
+      setHasMore(response.has_more);
     } catch {
-      setAllMemories(mockMemories);
+      if (reset) {
+        setAllMemories(mockMemories);
+      }
+      setHasMore(false);
     } finally {
-      setLoading(false);
+      if (reset) {
+        setLoading(false);
+      } else {
+        setLoadingMore(false);
+      }
     }
-  }, [selectedCategory]);
+  }, [hasMore, loading, loadingMore, offset, selectedCategory]);
+
+  useEffect(() => {
+    loadMemoriesRef.current = loadMemories;
+  }, [loadMemories]);
 
   // Load categories once
   useEffect(() => {
@@ -203,8 +317,14 @@ export default function LibraryScreen() {
   // Reload whenever this tab comes into focus (e.g., after creating a new memory)
   useFocusEffect(
     useCallback(() => {
-      loadMemories();
-    }, [loadMemories])
+      setSearchResults(null);
+      setSearchSummary(null);
+      setSummaryStreaming(false);
+      setHasSearched(false);
+      setOffset(0);
+      setHasMore(true);
+      loadMemoriesRef.current(true);
+    }, [])
   );
 
   // Also reload when selectedCategory changes while screen is already focused
@@ -213,8 +333,10 @@ export default function LibraryScreen() {
       categoryEffectInitialized.current = true;
       return;
     }
-    loadMemories();
-  }, [selectedCategory, loadMemories]);
+    setOffset(0);
+    setHasMore(true);
+    loadMemoriesRef.current(true);
+  }, [selectedCategory]);
 
   // performSearch — called on Enter press or when category changes while a query is active
   const performSearch = useCallback(async (query: string, catId: string | null) => {
@@ -242,6 +364,18 @@ export default function LibraryScreen() {
       id: item.id,
       content: item.ai_summary || item.content,
       type: item.type,
+      imageUrl: isRenderableMediaUrl(item.image_url)
+        ? item.image_url
+        : isRenderableMediaUrl(item.metadata?.image_url)
+          ? item.metadata?.image_url
+          : undefined,
+      thumbnailUrl: isRenderableMediaUrl(item.metadata?.thumbnail_url)
+        ? item.metadata?.thumbnail_url
+        : isRenderableMediaUrl(item.image_url)
+          ? item.image_url
+          : undefined,
+      linkPreviewUrl: pickPreviewUrl(item.metadata),
+      sourceUrl: pickLinkSourceUrl(item),
       createdAt: new Date(item.created_at),
       aiSummary: item.ai_summary,
       categoryId: item.category_id,
@@ -331,24 +465,32 @@ export default function LibraryScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadMemories();
+    setOffset(0);
+    setHasMore(true);
+    await loadMemories(true);
     setRefreshing(false);
   };
 
-  const FILTERS: { key: FilterType; label: string }[] = [
+  const handleLoadMore = useCallback(() => {
+    if (hasSearched || searching || loading || loadingMore || !hasMore) return;
+    loadMemories(false);
+  }, [hasSearched, hasMore, loadMemories, loading, loadingMore, searching]);
+
+  const FILTERS: { key: FilterType; label: string; icon?: React.ComponentType<any> }[] = [
     { key: 'all', label: `${t('library.filterAll')}  ${counts.all}` },
-    { key: 'text', label: `📝  ${counts.text}` },
-    { key: 'voice', label: `🎤  ${counts.voice}` },
-    { key: 'link', label: `🔗  ${counts.link}` },
-    { key: 'photo', label: `📷  ${counts.photo}` },
+    { key: 'text', label: String(counts.text), icon: FileText },
+    { key: 'voice', label: String(counts.voice), icon: Mic },
+    { key: 'link', label: String(counts.link), icon: Link2 },
+    { key: 'photo', label: String(counts.photo), icon: ImageIcon },
   ];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
 
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}> 
         <Text style={[styles.title, { color: colors.textPrimary }]}>{t('library.title')}</Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('archive.subtitle')}</Text>
       </View>
 
       {/* ── Search bar + Category filter button ── */}
@@ -420,16 +562,25 @@ export default function LibraryScreen() {
           style={styles.filterRow}
           contentContainerStyle={styles.filterContent}
         >
-          {FILTERS.map(({ key, label }) => (
+          {FILTERS.map(({ key, label, icon }) => (
             <TouchableOpacity
               key={key}
               style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }, filter === key && { backgroundColor: colors.accent, borderColor: colors.accent }]}
               onPress={() => setFilter(key)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.chipText, { color: colors.textSecondary }, filter === key && styles.chipTextActive]}>
-                {label}
-              </Text>
+              <View style={styles.chipInner}>
+                {icon ? (
+                  React.createElement(icon, {
+                    size: 14,
+                    color: filter === key ? colors.buttonText : colors.textSecondary,
+                    strokeWidth: 2.5,
+                  })
+                ) : null}
+                <Text style={[styles.chipText, { color: colors.textSecondary }, filter === key && styles.chipTextActive]}>
+                  {label}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -471,9 +622,18 @@ export default function LibraryScreen() {
         data={memories}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <MemoryListItem memory={item} />}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.35}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textSecondary} />}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={[styles.separator, { backgroundColor: colors.border }]} />}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          !hasSearched && loadingMore ? (
+            <View style={styles.loadMoreWrap}>
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyIcon}>{loading ? '⏳' : '📭'}</Text>
@@ -511,7 +671,7 @@ export default function LibraryScreen() {
                 style={[
                   styles.modalRow,
                   { borderColor: colors.border },
-                  !selectedCategory && { backgroundColor: 'rgba(99,102,241,0.08)' },
+                  !selectedCategory && { backgroundColor: colors.accentSubtle },
                 ]}
                 onPress={() => { setSelectedCategory(null); setCategoryModalVisible(false); }}
                 activeOpacity={0.7}
@@ -531,7 +691,7 @@ export default function LibraryScreen() {
                     style={[
                       styles.modalRow,
                       { borderColor: colors.border },
-                      isSelected && { backgroundColor: 'rgba(99,102,241,0.08)' },
+                      isSelected && { backgroundColor: colors.accentSubtle },
                     ]}
                     onPress={() => { setSelectedCategory(isSelected ? null : cat.id); setCategoryModalVisible(false); }}
                     activeOpacity={0.7}
@@ -560,17 +720,19 @@ const styles = StyleSheet.create({
 
   // ── Header ──────────────────────────────────────────────
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 16,
     paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    fontSize: 26,
+    fontWeight: '600',
+    marginBottom: 3,
+  },
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 22,
   },
 
 
@@ -579,6 +741,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
+    marginTop: 12,
     marginBottom: 12,
     gap: 10,
   },
@@ -645,16 +808,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   chip: {
-    height: 34,
+    height: 32,
     paddingHorizontal: 14,
-    borderRadius: 17,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
   },
+  chipInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   chipText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   chipTextActive: {
     color: '#FFFFFF',
@@ -688,8 +856,8 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   insightText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
   },
 
   // ── Result count ────────────────────────────────────────
@@ -708,40 +876,62 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     flexGrow: 1,
   },
+  loadMoreWrap: {
+    paddingTop: 6,
+    paddingBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   separator: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 15,
+    height: 8,
   },
 
   // ── Row item ────────────────────────────────────────────
   memoryItem: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingRight: 4,
-    gap: 12,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
   },
-  typeBar: {
-    width: 3,
-    height: 36,
-    borderRadius: 2,
+  mediaWrap: {
+    width: 58,
+    height: 58,
+    borderRadius: 12,
+    overflow: 'hidden',
     flexShrink: 0,
+  },
+  mediaThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  mediaFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   memoryContent: {
     flex: 1,
+    minHeight: 58,
   },
   memoryText: {
     fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 3,
+    lineHeight: 21,
+    fontWeight: '400',
+    marginBottom: 6,
   },
   memoryMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'nowrap',
   },
-  memoryTypeLabel: {
-    fontSize: 13,
+  metaTypeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
   },
   memoryDot: {
     fontSize: 12,
@@ -750,14 +940,19 @@ const styles = StyleSheet.create({
   memoryDate: {
     fontSize: 12,
   },
+  domainInline: {
+    fontSize: 12,
+    flexShrink: 1,
+  },
+  previewIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
   categoryLabel: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 20,
-    marginLeft: 6,
-    flexShrink: 0,
   },
 
   // ── Empty state ─────────────────────────────────────────
@@ -772,12 +967,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 17,
+    fontWeight: '600',
   },
   emptyClear: {
     marginTop: 10,
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
 
@@ -822,7 +1017,7 @@ const styles = StyleSheet.create({
   modalRowText: {
     flex: 1,
     fontSize: 15,
-    fontWeight: '500',
+    fontWeight: '400',
   },
 });
 

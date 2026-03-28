@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, timezone, timedelta
 import uuid
 import logging
@@ -10,11 +10,12 @@ from app.database import get_db, AsyncSessionLocal
 from app.models.memory import Memory
 from app.models.user import User
 from app.models import Category
-from app.schemas import MemoryCreate, MemoryUpdate, StatusResponse
+from app.schemas import MemoryCreate, MemoryUpdate, MemoryListResponse, StatusResponse
 from app.api.deps import get_current_user
 from app.api.categories import ensure_system_categories
 from app.api.preferences import get_or_create_preferences
 from app.services import ai_service
+from app.services.link_service import fetch_link_content
 
 log = logging.getLogger(__name__)
 
@@ -194,6 +195,36 @@ async def create_memory(
     current_user: User = Depends(get_current_user),
 ):
     """Create a new memory for the authenticated user."""
+    metadata = dict(memory.metadata or {})
+    mem_type = memory.type.value if hasattr(memory.type, "value") else str(memory.type)
+
+    # For link memories, enrich metadata with preview fields used by mobile UI.
+    if mem_type.lower() == "link":
+        try:
+            link_content = await fetch_link_content(memory.content)
+            image = (link_content.get("image") or "").strip()
+            canonical_url = (link_content.get("url") or "").strip()
+
+            if image.lower().startswith(("http://", "https://")):
+                metadata.setdefault("og_image", image)
+                metadata.setdefault("preview_image_url", image)
+                metadata.setdefault("thumbnail_url", image)
+
+            if canonical_url.lower().startswith(("http://", "https://")):
+                metadata.setdefault("canonical_url", canonical_url)
+
+            title = (link_content.get("title") or "").strip()
+            description = (link_content.get("description") or "").strip()
+            sitename = (link_content.get("sitename") or "").strip()
+            if title:
+                metadata.setdefault("title", title)
+            if description:
+                metadata.setdefault("description", description)
+            if sitename:
+                metadata.setdefault("site_name", sitename)
+        except Exception as exc:
+            log.debug("Link metadata enrichment skipped for %s: %s", memory.content, exc)
+
     m = Memory(
         user_id=current_user.id,
         type=memory.type,
@@ -202,14 +233,13 @@ async def create_memory(
         audio_url=memory.audio_url,
         audio_duration=memory.audio_duration,
         image_url=memory.image_url,
-        extra_metadata=memory.metadata or {},
+        extra_metadata=metadata,
     )
     db.add(m)
     await db.flush()
 
     # Fire-and-forget AI summary (skips silently if no OpenAI key)
     summary_content = memory.transcription or memory.content
-    mem_type = memory.type.value if hasattr(memory.type, "value") else str(memory.type)
 
     # Use Accept-Language header (real-time) or DB preference (fallback)
     user_language = await _get_user_language(request, db, current_user.id)
@@ -377,7 +407,7 @@ async def get_reminders(
     }
 
 
-@router.get("/dismissed", response_model=List[dict])
+@router.get("/dismissed", response_model=MemoryListResponse)
 async def list_dismissed(
     limit: int = Query(100, le=200, ge=1),
     offset: int = Query(0, ge=0),
@@ -385,14 +415,31 @@ async def list_dismissed(
     current_user: User = Depends(get_current_user),
 ):
     """List soft-deleted (dismissed) memories for the current user."""
+    base_conditions = and_(Memory.user_id == current_user.id, Memory.is_deleted == True)  # noqa: E712
+
+    total_result = await db.execute(select(func.count()).where(base_conditions))
+    total = total_result.scalar() or 0
+
     result = await db.execute(
         select(Memory)
-        .where(and_(Memory.user_id == current_user.id, Memory.is_deleted == True))  # noqa: E712
+        .where(base_conditions)
         .order_by(Memory.updated_at.desc())
         .limit(limit)
         .offset(offset)
     )
-    return [_to_dict(m) for m in result.scalars().all()]
+
+    items = [_to_dict(m) for m in result.scalars().all()]
+    next_offset = offset + len(items)
+    has_more = next_offset < total
+
+    return {
+        "memories": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": has_more,
+        "next_offset": next_offset if has_more else None,
+    }
 
 
 @router.post("/{memory_id}/restore", response_model=dict)
@@ -483,7 +530,7 @@ async def mark_viewed(
     return _to_dict(m)
 
 
-@router.get("/", response_model=List[dict])
+@router.get("/", response_model=MemoryListResponse)
 async def list_memories(
     type: Optional[str] = Query(
         None, description="Filter by type: text, link, voice, photo"
@@ -519,6 +566,9 @@ async def list_memories(
             )
         )
 
+    total_result = await db.execute(select(func.count()).where(and_(*conditions)))
+    total = total_result.scalar() or 0
+
     result = await db.execute(
         select(Memory)
         .where(and_(*conditions))
@@ -534,7 +584,17 @@ async def list_memories(
         cat_info = await _get_category_info(db, m.category_id)
         results.append(_to_dict(m, cat_info))
 
-    return results
+    next_offset = offset + len(results)
+    has_more = next_offset < total
+
+    return {
+        "memories": results,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": has_more,
+        "next_offset": next_offset if has_more else None,
+    }
 
 
 @router.get("/{memory_id}", response_model=dict)

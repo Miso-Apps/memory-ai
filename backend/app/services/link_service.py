@@ -31,6 +31,7 @@ class LinkContent(TypedDict, total=False):
     author: str
     sitename: str
     description: str
+    image: str
     body: str  # main body text (article or transcript)
     source_type: str  # "youtube" | "twitter" | "article" | "webpage"
 
@@ -72,6 +73,9 @@ async def _fetch_youtube(url: str, video_id: str) -> LinkContent:
                 content["title"] = data.get("title", "").strip()
                 content["author"] = data.get("author_name", "").strip()
                 content["sitename"] = "YouTube"
+                thumb = (data.get("thumbnail_url") or "").strip()
+                if thumb:
+                    content["image"] = thumb
     except Exception as exc:
         log.debug("YouTube oEmbed failed for %s: %s", video_id, exc)
 
@@ -194,6 +198,7 @@ def _parse_og_tags(html: str) -> dict:
         "og:title": "title",
         "og:description": "description",
         "og:site_name": "sitename",
+        "og:image": "image",
         "og:type": "og_type",
     }
 
@@ -278,6 +283,8 @@ async def _fetch_facebook(url: str) -> LinkContent:
                 content["body"] = desc
         if og.get("sitename"):
             content["sitename"] = og["sitename"]
+        if og.get("image"):
+            content.setdefault("image", og["image"])
 
     # ── oEmbed (works for some public posts/videos without an access token) ─────
     is_video = bool(_FB_VIDEO_RE.search(url) or _FB_VIDEO_RE.search(canonical_url))
@@ -383,6 +390,7 @@ async def _fetch_article(url: str) -> LinkContent:
             content["description"] = (metadata.description or "").strip()
             content["author"] = (metadata.author or "").strip()
             content["sitename"] = (metadata.sitename or "").strip()
+            content["image"] = (metadata.image or "").strip()
 
         body = trafilatura.extract(
             html,
@@ -406,6 +414,7 @@ async def _fetch_article(url: str) -> LinkContent:
                     super().__init__()
                     self.title = ""
                     self.desc = ""
+                    self.image = ""
                     self._in_title = False
 
                 def handle_starttag(self, tag, attrs):
@@ -423,6 +432,8 @@ async def _fetch_article(url: str) -> LinkContent:
                                 self.desc = d.get("content", "").strip()
                         if prop == "og:title" and not self.title:
                             self.title = d.get("content", "").strip()
+                        if prop in ("og:image", "twitter:image") and not self.image:
+                            self.image = d.get("content", "").strip()
 
                 def handle_data(self, data):
                     if self._in_title and not self.title:
@@ -438,6 +449,8 @@ async def _fetch_article(url: str) -> LinkContent:
                 content.setdefault("title", p.title)
             if p.desc:
                 content.setdefault("description", p.desc)
+            if p.image:
+                content.setdefault("image", p.image)
         except Exception:
             pass
 

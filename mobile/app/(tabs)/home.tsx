@@ -5,19 +5,35 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
-  Dimensions,
+  ActivityIndicator,
+  Image as RNImage,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { aiApi, memoriesApi, Memory as ApiMemory } from '../../services/api';
-import { useAuthStore } from '../../store/authStore';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BarChart2, ChevronRight } from 'lucide-react-native';
+import { BrandMark } from '../../components/BrandMark';
+import {
+  ChevronRight,
+  FileText,
+  Mic,
+  Link2,
+  Image as ImageIcon,
+  Sparkles,
+  Inbox,
+  RotateCcw,
+  Brain,
+  Flame,
+  Plus,
+  ArrowRight,
+} from 'lucide-react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
+const BRAND_ORANGE = '#C56A3A';
 
 interface RecallMemory {
   id: string;
@@ -25,6 +41,9 @@ interface RecallMemory {
   reason: string;
   type: 'text' | 'link' | 'voice' | 'photo';
   createdAt: Date;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  sourceUrl?: string;
 }
 
 interface ReminderMemory {
@@ -33,6 +52,9 @@ interface ReminderMemory {
   type: 'text' | 'link' | 'voice' | 'photo';
   createdAt: Date;
   timeAgo?: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  sourceUrl?: string;
 }
 
 interface Stats {
@@ -53,14 +75,14 @@ interface MemoryGroup {
   memories: ReminderMemory[];
 }
 
-function getGreetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'home.greetingEvening' {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'home.greetingMorning';
-  if (hour < 17) return 'home.greetingAfternoon';
-  return 'home.greetingEvening';
-}
+type MemoryType = ReminderMemory['type'];
 
-const TYPE_ICON: Record<string, string> = { text: '📝', voice: '🎤', link: '🔗', photo: '📷' };
+const TYPE_META: Record<MemoryType, { icon: typeof FileText; bg: keyof ThemeColors }> = {
+  text: { icon: FileText, bg: 'typeBgText' },
+  voice: { icon: Mic, bg: 'typeBgVoice' },
+  link: { icon: Link2, bg: 'typeBgLink' },
+  photo: { icon: ImageIcon, bg: 'typeBgPhoto' },
+};
 
 function formatRelative(date: Date, t: Function): string {
   const diff = Date.now() - date.getTime();
@@ -76,15 +98,123 @@ function formatRelative(date: Date, t: Function): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function isRenderableMediaUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const url = value.trim();
+  return /^(https?:\/\/|file:\/\/|content:\/\/|data:image\/|\/)/i.test(url);
+}
+
+function pickPreviewUrl(memory: ApiMemory): string | undefined {
+  const metadata = (memory.metadata as Record<string, unknown> | undefined) ?? {};
+  const candidates = [
+    metadata.thumbnail_url,
+    metadata.preview_image_url,
+    metadata.preview_image,
+    memory.image_url,
+    metadata.image_url,
+    metadata.og_image,
+    metadata.favicon_url,
+  ];
+
+  const firstValid = candidates.find((value) => isRenderableMediaUrl(value));
+  return firstValid as string | undefined;
+}
+
+function pickSourceUrl(memory: ApiMemory): string | undefined {
+  const metadata = (memory.metadata as Record<string, unknown> | undefined) ?? {};
+  const candidates = [
+    metadata.original_url,
+    metadata.source_url,
+    metadata.canonical_url,
+    memory.content,
+  ];
+
+  const firstValid = candidates.find(
+    (value) => typeof value === 'string' && /^https?:\/\//i.test(value)
+  );
+  return firstValid as string | undefined;
+}
+
+function getDomainFromUrl(sourceUrl?: string): string | undefined {
+  if (!sourceUrl) return undefined;
+  try {
+    return new URL(sourceUrl).hostname.replace(/^www\./i, '');
+  } catch {
+    return undefined;
+  }
+}
+
+function getLinkFallbackThumbnail(sourceUrl?: string): string | undefined {
+  if (!sourceUrl) return undefined;
+  const encoded = encodeURIComponent(sourceUrl);
+  return `https://www.google.com/s2/favicons?sz=128&domain_url=${encoded}`;
+}
+
+function SmartThumbnail({
+  uri,
+  type,
+  style,
+  accessibilityLabel,
+}: {
+  uri: string;
+  type: MemoryType;
+  style: object;
+  accessibilityLabel?: string;
+}) {
+  const { colors } = useTheme();
+  const [resizeMode, setResizeMode] = useState<'cover' | 'contain'>(type === 'link' ? 'contain' : 'cover');
+
+  return (
+    <RNImage
+      source={{ uri }}
+      style={[style, resizeMode === 'contain' && { backgroundColor: colors.inputBg }]}
+      resizeMode={resizeMode}
+      accessibilityLabel={accessibilityLabel}
+      onLoad={(event) => {
+        const source = (event.nativeEvent as any)?.source;
+        const width = Number(source?.width ?? 0);
+        const height = Number(source?.height ?? 0);
+        if (!width || !height) return;
+
+        if (type === 'photo') {
+          setResizeMode('cover');
+          return;
+        }
+
+        const ratio = width / height;
+        setResizeMode(ratio > 1.9 || ratio < 0.62 ? 'contain' : 'cover');
+      }}
+    />
+  );
+}
+
+// ─── Loading skeleton for cards ──────────────────────────────────────────────
+function SkeletonCard() {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.memCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+      <View style={styles.memCardRow}>
+        <View style={[styles.memCardIconWrap, { backgroundColor: colors.inputBg }]} />
+        <View style={styles.memCardContent}>
+          <View style={{ width: '80%', height: 14, backgroundColor: colors.inputBg, borderRadius: 4, marginBottom: 6 }} />
+          <View style={{ width: '40%', height: 11, backgroundColor: colors.inputBg, borderRadius: 4 }} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // ─── Focus card: smart daily insight ──────────────────────────────────────────
 function FocusCard({
   stats,
   reminders,
   t,
+  colors,
 }: {
   stats: Stats | null;
   reminders: Reminders | null;
   t: Function;
+  colors: ThemeColors;
 }) {
   const unreviewedCount = reminders?.unreviewed?.length ?? 0;
   const revisitCount = reminders?.revisit?.length ?? 0;
@@ -94,167 +224,324 @@ function FocusCard({
   let message: string;
   let actionLabel: string | null = null;
   let actionRoute: string | null = null;
-  let emoji = '🎯';
+  let Icon = Sparkles;
 
   if (todayCount >= 3) {
     message = t('home.focusGreat', { count: todayCount });
-    emoji = '🌟';
+    Icon = Sparkles;
   } else if (unreviewedCount > 0) {
     message = t('home.focusUnreviewed', { count: unreviewedCount });
     actionLabel = t('home.seeAll');
-    emoji = '📬';
+    actionRoute = '/(tabs)/library';
+    Icon = Inbox;
   } else if (revisitCount > 0) {
     message = t('home.focusRevisit', { count: revisitCount });
-    emoji = '🔁';
+    actionLabel = t('home.seeAll');
+    actionRoute = '/(tabs)/recall';
+    Icon = RotateCcw;
   } else if (streak >= 3) {
     message = t('home.focusStreak', { count: streak });
-    emoji = '🔥';
+    Icon = Flame;
   } else {
     message = t('home.focusKeepGoing');
     actionLabel = t('home.quickCapture');
     actionRoute = '/capture';
-    emoji = '💡';
+    Icon = Plus;
   }
 
+  const highlights = [
+    { key: 'saved', label: t('home.statsTotal'), value: stats?.total ?? 0 },
+    { key: 'streak', label: t('home.statsStreak'), value: streak },
+  ];
+
   return (
-    <View style={styles.focusCard}>
-      <LinearGradient
-        colors={['#6366F1', '#818CF8']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.focusGradient}
-      >
+    <View style={[styles.focusCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}> 
+      <View style={styles.focusSurface}>
         <View style={styles.focusHeader}>
-          <Text style={styles.focusEmoji}>{emoji}</Text>
-          <Text style={styles.focusTitle}>{t('home.focusTitle')}</Text>
+          <View style={[styles.focusIconWrap, { borderColor: colors.brandAccent }]}> 
+            <BrandMark size={24} backgroundColor={colors.brandAccent} foregroundColor="#FFF8F2" />
+          </View>
+          <Text style={[styles.focusTitle, { color: colors.textSecondary }]}>{t('home.focusTitle')}</Text>
         </View>
-        <Text style={styles.focusMessage}>{message}</Text>
+        <Text style={[styles.focusMessage, { color: colors.textPrimary }]}>{message}</Text>
+        <View style={styles.focusHighlightsRow}>
+          {highlights.map((item) => (
+            <View key={item.key} style={[styles.focusHighlightTile, { backgroundColor: colors.inputBg }]}> 
+              <Text style={[styles.focusHighlightValue, { color: colors.textPrimary }]}>{item.value}</Text>
+              <Text style={[styles.focusHighlightLabel, { color: colors.textMuted }]} numberOfLines={1}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
         {actionRoute && actionLabel && (
-          <TouchableOpacity
-            style={styles.focusAction}
+          <Pressable
+            style={({ pressed }) => [
+              styles.focusAction,
+              { backgroundColor: colors.brandAccent, borderColor: colors.brandAccentLight },
+              pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+            ]}
             onPress={() => router.push(actionRoute as any)}
-            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`${actionLabel}. ${message}`}
+            accessibilityHint={t('common.tapToOpen')}
           >
-            <Text style={styles.focusActionText}>{actionLabel} →</Text>
-          </TouchableOpacity>
+            <Text style={styles.focusActionText}>{actionLabel}</Text>
+            <ArrowRight size={14} color="#FFFFFF" strokeWidth={2.5} />
+          </Pressable>
         )}
-      </LinearGradient>
+      </View>
     </View>
   );
 }
 
 // ─── Quick capture buttons ────────────────────────────────────────────────────
 function QuickCaptureRow({ t }: { t: Function }) {
-  const { colors } = useTheme();
   const actions = [
-    { key: 'text', icon: '📝', label: t('home.captureText'), color: colors.typeBgText },
-    { key: 'voice', icon: '🎤', label: t('home.captureVoice'), color: colors.typeBgVoice },
-    { key: 'link', icon: '🔗', label: t('home.captureLink'), color: colors.typeBgLink },
-    { key: 'photo', icon: '📷', label: t('home.capturePhoto'), color: colors.typeBgPhoto },
+    {
+      key: 'text',
+      icon: FileText,
+      label: t('home.captureText'),
+      hint: t('home.captureTextHint'),
+    },
+    {
+      key: 'voice',
+      icon: Mic,
+      label: t('home.captureVoice'),
+      hint: t('home.captureVoiceHint'),
+    },
+    {
+      key: 'link',
+      icon: Link2,
+      label: t('home.captureLink'),
+      hint: t('home.captureLinkHint'),
+    },
+    {
+      key: 'photo',
+      icon: ImageIcon,
+      label: t('home.capturePhoto'),
+      hint: t('home.capturePhotoHint'),
+    },
   ];
+  const { colors } = useTheme();
+
   return (
     <View style={styles.quickRow}>
-      {actions.map((a) => (
-        <TouchableOpacity
-          key={a.key}
-          style={[styles.quickBtn, { backgroundColor: a.color, borderColor: colors.border }]}
-          onPress={() => router.push({ pathname: '/capture', params: { mode: a.key } })}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.quickIcon}>{a.icon}</Text>
-          <Text style={[styles.quickLabel, { color: colors.textTertiary }]}>{a.label}</Text>
-        </TouchableOpacity>
-      ))}
+      {actions.map((a) => {
+        const Icon = a.icon;
+        return (
+          <Pressable
+            key={a.key}
+            onPress={() => router.push({ pathname: '/capture', params: { mode: a.key } })}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('home.quickCapture')}: ${a.label}`}
+            accessibilityHint={a.hint}
+            style={styles.quickPressable}
+          >
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.quickBtn,
+                  { backgroundColor: colors.cardBg, borderColor: colors.border },
+                  pressed && styles.quickBtnPressed,
+                ]}
+              >
+                <View style={[styles.quickIconWrap, { borderColor: colors.borderMed }]}> 
+                  <Icon size={18} color={colors.textSecondary} strokeWidth={2.4} />
+                </View>
+              </View>
+            )}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 // ─── Compact memory card ───────────────────────────────────────────────────────
-function MemoryCard({ memory, subtitle, t }: { memory: ReminderMemory; subtitle?: string; t: Function }) {
+const MemoryCard = React.memo(function MemoryCard({
+  memory,
+  subtitle,
+  t,
+}: {
+  memory: ReminderMemory;
+  subtitle?: string;
+  t: Function;
+}) {
   const { colors } = useTheme();
+  const meta = TYPE_META[memory.type];
+  const Icon = meta.icon;
+  const timeLabel = subtitle || formatRelative(memory.createdAt, t);
+  const thumbUri = memory.thumbnailUrl || memory.imageUrl;
+  const hasPreviewThumb = (memory.type === 'photo' || memory.type === 'link') && !!thumbUri;
+
   return (
-    <TouchableOpacity
-      style={[styles.memCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.memCard,
+        { backgroundColor: colors.cardBg, borderColor: colors.border },
+        pressed && { backgroundColor: colors.accentSubtle, transform: [{ scale: 0.98 }] }
+      ]}
       onPress={() => router.push(`/memory/${memory.id}`)}
-      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${memory.type} memory. ${memory.content}`}
+      accessibilityHint={`${timeLabel}. ${t('common.tapToOpen')}`}
     >
       <View style={styles.memCardRow}>
-        <View style={[styles.memCardIconWrap, { backgroundColor: memory.type === 'voice' ? colors.typeBgVoice : memory.type === 'link' ? colors.typeBgLink : memory.type === 'photo' ? colors.typeBgPhoto : colors.typeBgText }]}>
-          <Text style={styles.memCardIcon}>{TYPE_ICON[memory.type]}</Text>
-        </View>
+        {hasPreviewThumb ? (
+          <View style={[styles.memThumbWrap, { borderColor: colors.border }]}>
+            <SmartThumbnail
+              uri={thumbUri!}
+              type={memory.type}
+              style={styles.memThumb}
+              accessibilityLabel={memory.type === 'photo' ? t('home.capturePhoto') : t('home.captureLink')}
+            />
+          </View>
+        ) : (
+          <View style={[styles.memCardIconWrap, { backgroundColor: colors[meta.bg], borderColor: colors.border }]}>
+            <Icon size={18} color={colors.textPrimary} strokeWidth={2.5} />
+          </View>
+        )}
         <View style={styles.memCardContent}>
           <Text style={[styles.memCardText, { color: colors.textPrimary }]} numberOfLines={2}>{memory.content}</Text>
-          <Text style={[styles.memCardMeta, { color: colors.textMuted }]}>{subtitle || formatRelative(memory.createdAt, t)}</Text>
+          <Text style={[styles.memCardMeta, { color: colors.textMuted }]}>{timeLabel}</Text>
         </View>
-        <Text style={[styles.memCardChevron, { color: colors.border }]}>›</Text>
+        <ChevronRight size={18} color={colors.textMuted} strokeWidth={2.5} />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
-}
+});
 
-function StatsCard({ stats, t }: { stats: Stats; t: Function }) {
+function ConnectedIdeaCard({ group, t }: { group: MemoryGroup; t: Function }) {
   const { colors } = useTheme();
+  const previewMemories = group.memories.slice(0, 3);
+
   return (
-    <View style={[styles.statsCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.total}</Text>
-        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.statsTotal')}</Text>
+    <View style={[styles.connectedCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+      <View style={styles.connectedHeader}>
+        <View style={styles.connectedTitleWrap}>
+          <Text style={[styles.connectedTitle, { color: colors.textPrimary }]} numberOfLines={1}>{group.title}</Text>
+        </View>
+        <Text style={[styles.connectedCountText, { color: colors.textMuted }]}>
+          {t('home.memoriesCount', { count: group.memories.length })}
+        </Text>
       </View>
-      <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.this_week}</Text>
-        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.statsWeek')}</Text>
-      </View>
-      <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-      <View style={styles.statItem}>
-        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.today}</Text>
-        <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.statsToday')}</Text>
+
+      <View style={styles.connectedList}>
+        {previewMemories.map((m) => {
+          const meta = TYPE_META[m.type];
+          const Icon = meta.icon;
+          const thumbUri = m.thumbnailUrl || m.imageUrl;
+          const hasPreviewThumb = (m.type === 'photo' || m.type === 'link') && !!thumbUri;
+          const metaLabel = m.type === 'link' ? getDomainFromUrl(m.sourceUrl) : formatRelative(m.createdAt, t);
+
+          return (
+            <Pressable
+              key={m.id}
+              style={({ pressed }) => [
+                styles.connectedMemoryRow,
+                { backgroundColor: colors.inputBg, borderColor: colors.border },
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={() => router.push(`/memory/${m.id}`)}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('home.connectedIdeas')}: ${m.content}`}
+              accessibilityHint={t('common.tapToOpen')}
+            >
+              {hasPreviewThumb ? (
+                <SmartThumbnail uri={thumbUri!} type={m.type} style={styles.connectedThumb} />
+              ) : (
+                <View style={[styles.connectedIconWrap, { borderColor: colors.textMuted }]}> 
+                  <Icon size={14} color={colors.textPrimary} strokeWidth={2.4} />
+                </View>
+              )}
+              <View style={styles.connectedMemoryCopy}>
+                <Text style={[styles.connectedMemoryText, { color: colors.textPrimary }]} numberOfLines={1}>{m.content}</Text>
+                {metaLabel ? (
+                  <Text style={[styles.connectedMemoryMeta, { color: colors.textMuted }]} numberOfLines={1}>{metaLabel}</Text>
+                ) : null}
+              </View>
+              <ArrowRight size={13} color={colors.textMuted} strokeWidth={2.6} />
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 }
 
-// ─── Insights teaser row ──────────────────────────────────────────────────────
-function InsightsTeaserCard({ stats, t }: { stats: Stats; t: Function }) {
+function RevisitCard({ memory, t }: { memory: ReminderMemory; t: Function }) {
   const { colors } = useTheme();
-  const streak = stats.streak ?? 0;
+  const meta = TYPE_META[memory.type];
+  const Icon = meta.icon;
+  const thumbUri = memory.thumbnailUrl || memory.imageUrl;
+  const hasPreviewThumb = (memory.type === 'photo' || memory.type === 'link') && !!thumbUri;
+  const metaLabel = memory.type === 'link'
+    ? getDomainFromUrl(memory.sourceUrl)
+    : formatRelative(memory.createdAt, t);
+
   return (
-    <TouchableOpacity
-      style={[styles.insightsTeaser, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
-      onPress={() => router.push('/(tabs)/insights')}
-      activeOpacity={0.8}
-    >
-      <View style={[styles.insightsTeaserIcon, { backgroundColor: colors.accentSubtle }]}>
-        <BarChart2 size={20} color={colors.accent} strokeWidth={2} />
-      </View>
-      <View style={styles.insightsTeaserBody}>
-        <Text style={[styles.insightsTeaserTitle, { color: colors.textPrimary }]}>
-          {t('tabs.insights')}
-        </Text>
-        <Text style={[styles.insightsTeaserSub, { color: colors.textMuted }]}>
-          {streak > 0
-            ? t('home.insightStreakSub', { streak, count: stats.this_week })
-            : t('home.insightWeekSub', { count: stats.this_week })}
-        </Text>
-      </View>
-      <ChevronRight size={16} color={colors.textMuted} />
-    </TouchableOpacity>
+    <View style={[styles.revisitCardGradient, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+      <Pressable
+        style={({ pressed }) => [styles.revisitCardInner, pressed && { opacity: 0.86 }]}
+        onPress={() => router.push(`/memory/${memory.id}`)}
+        accessibilityRole="button"
+        accessibilityLabel={`${t('home.revisit')}: ${memory.content}`}
+        accessibilityHint={t('common.tapToOpen')}
+      >
+        <View style={styles.revisitMemoryRow}>
+          {hasPreviewThumb ? (
+            <SmartThumbnail uri={thumbUri!} type={memory.type} style={styles.revisitThumb} />
+          ) : (
+            <View style={[styles.revisitIconWrap, { borderColor: colors.textMuted }]}> 
+              <Icon size={15} color={colors.textPrimary} strokeWidth={2.4} />
+            </View>
+          )}
+          <View style={styles.revisitMemoryCopy}>
+            <Text style={[styles.revisitMemoryText, { color: colors.textPrimary }]} numberOfLines={2}>{memory.content}</Text>
+            {metaLabel ? (
+              <Text style={[styles.revisitMemoryMeta, { color: colors.textMuted }]} numberOfLines={1}>{metaLabel}</Text>
+            ) : null}
+          </View>
+          <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.4} />
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
-function SectionHeader({ emoji, title, count, onSeeAll }: { emoji: string; title: string; count?: number; onSeeAll?: () => void }) {
+function SectionHeader({
+  icon,
+  title,
+  count,
+  actionLabel,
+  onAction,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  count?: number;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.sectionLeft}>
-        <Text style={styles.sectionEmoji}>{emoji}</Text>
+        <View style={[styles.sectionIconWrap, { borderColor: colors.textMuted }]}>{icon}</View>
         <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
         {count != null && count > 0 && (
-          <View style={[styles.sectionBadge, { backgroundColor: colors.accent }]}>
-            <Text style={styles.sectionBadgeText}>{count}</Text>
-          </View>
+          <Text style={[styles.sectionBadgeText, { color: colors.textMuted }]}>({count})</Text>
         )}
       </View>
+      {actionLabel && onAction ? (
+        <Pressable
+          onPress={onAction}
+          style={[styles.sectionAction, { borderColor: colors.border, backgroundColor: colors.cardBg }]}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+        >
+          <Text style={[styles.sectionActionText, { color: colors.textSecondary }]}>{actionLabel}</Text>
+          <ChevronRight size={13} color={colors.textSecondary} strokeWidth={2.3} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -263,13 +550,21 @@ function EmptyState({ t }: { t: Function }) {
   const { colors } = useTheme();
   return (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyIcon}>💭</Text>
+      <View style={[styles.emptyIconWrap, { borderColor: colors.textMuted }]}> 
+        <Brain size={32} color={colors.accent} strokeWidth={2.5} />
+      </View>
       <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('home.noMemories')}</Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{t('home.noMemoriesSubtitle')}</Text>
+      <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{t('home.emptyStateHint')}</Text>
       <TouchableOpacity
         style={[styles.emptyButton, { backgroundColor: colors.accent }]}
         onPress={() => router.push('/capture')}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={t('home.createFirst')}
+        accessibilityHint={t('home.createFirstHint')}
       >
+        <Plus size={18} color="#FFFFFF" strokeWidth={2.5} style={{ marginRight: 6 }} />
         <Text style={styles.emptyButtonText}>{t('home.createFirst')}</Text>
       </TouchableOpacity>
     </View>
@@ -278,7 +573,6 @@ function EmptyState({ t }: { t: Function }) {
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const { user } = useAuthStore();
   const [stats, setStats] = useState<Stats | null>(null);
   const [reminders, setReminders] = useState<Reminders | null>(null);
   const [recentRecall, setRecentRecall] = useState<RecallMemory[]>([]);
@@ -286,13 +580,27 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const mapMemory = (m: ApiMemory): ReminderMemory => ({
-    id: m.id,
-    content: m.ai_summary || m.content,
-    type: m.type as 'text' | 'link' | 'voice' | 'photo',
-    createdAt: new Date(m.created_at),
-    timeAgo: (m as any).time_ago,
-  });
+  const mapMemory = (m: ApiMemory): ReminderMemory => {
+    const sourceUrl = m.type === 'link' ? pickSourceUrl(m) : undefined;
+    const previewUrl = pickPreviewUrl(m);
+    const metadata = (m.metadata as Record<string, unknown> | undefined) ?? {};
+    const imageUrl = isRenderableMediaUrl(m.image_url)
+      ? m.image_url
+      : isRenderableMediaUrl(metadata.image_url)
+        ? (metadata.image_url as string)
+        : undefined;
+
+    return {
+      id: m.id,
+      content: m.ai_summary || m.content,
+      type: m.type as 'text' | 'link' | 'voice' | 'photo',
+      createdAt: new Date(m.created_at),
+      timeAgo: (m as any).time_ago,
+      imageUrl,
+      thumbnailUrl: previewUrl || imageUrl || (m.type === 'link' ? getLinkFallbackThumbnail(sourceUrl) : undefined),
+      sourceUrl,
+    };
+  };
 
   const loadData = async () => {
     try {
@@ -315,13 +623,27 @@ export default function HomeScreen() {
 
       if (recallRes.status === 'fulfilled') {
         const recallItems = (recallRes.value.items || []).map(
-          (item: { memory: ApiMemory; reason: string }) => ({
-            id: item.memory.id,
-            content: item.memory.ai_summary || item.memory.content,
-            reason: item.reason,
-            type: item.memory.type as 'text' | 'link' | 'voice' | 'photo',
-            createdAt: new Date(item.memory.created_at),
-          })
+          (item: { memory: ApiMemory; reason: string }) => {
+            const sourceUrl = item.memory.type === 'link' ? pickSourceUrl(item.memory) : undefined;
+            const previewUrl = pickPreviewUrl(item.memory);
+            const metadata = (item.memory.metadata as Record<string, unknown> | undefined) ?? {};
+            const imageUrl = isRenderableMediaUrl(item.memory.image_url)
+              ? item.memory.image_url
+              : isRenderableMediaUrl(metadata.image_url)
+                ? (metadata.image_url as string)
+                : undefined;
+
+            return {
+              id: item.memory.id,
+              content: item.memory.ai_summary || item.memory.content,
+              reason: item.reason,
+              type: item.memory.type as 'text' | 'link' | 'voice' | 'photo',
+              createdAt: new Date(item.memory.created_at),
+              imageUrl,
+              thumbnailUrl: previewUrl || imageUrl || (item.memory.type === 'link' ? getLinkFallbackThumbnail(sourceUrl) : undefined),
+              sourceUrl,
+            };
+          }
         );
         setRecentRecall(recallItems);
 
@@ -371,22 +693,23 @@ export default function HomeScreen() {
     recentRecall.length > 0;
 
   const streak = stats?.streak ?? 0;
-  const firstName = user?.name?.split(' ')[0];
   const { colors } = useTheme();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* Header with greeting + streak */}
+      {/* Header with brand mark + streak */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
-          <View style={styles.headerTextWrap}>
-            <Text style={[styles.greeting, { color: colors.textPrimary }]}>
-              {t(getGreetingKey())}{firstName ? `, ${firstName}` : ''} 👋
-            </Text>
+          <View style={styles.brandBlock}>
+            <View style={styles.brandTitleRow}>
+              <BrandMark size={34} backgroundColor={BRAND_ORANGE} foregroundColor="#FFF8F2" />
+              <Text style={[styles.brandName, { color: colors.textPrimary }]}>Memory AI</Text>
+            </View>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
           </View>
           {streak > 0 && (
             <View style={[styles.streakBadge, { backgroundColor: colors.streakBg, borderColor: colors.streakBorder }]}>
-              <Text style={styles.streakIcon}>🔥</Text>
+              <Flame size={14} color={colors.streakText} strokeWidth={2.2} />
               <Text style={[styles.streakText, { color: colors.streakText }]}>{streak}</Text>
             </View>
           )}
@@ -402,84 +725,88 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Daily Focus Card */}
-        {hasAnyContent && <FocusCard stats={stats} reminders={reminders} t={t} />}
+        {/* Loading State */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <View style={{ marginVertical: 16 }}>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </View>
+          </View>
+        )}
 
-        {/* Quick Capture Row */}
-        <QuickCaptureRow t={t} />
-
-        {!hasAnyContent && !loading ? (
-          <EmptyState t={t} />
-        ) : (
+        {/* Loaded Content */}
+        {!loading && (
           <>
-            {/* Unreviewed memories */}
-            {reminders && reminders.unreviewed.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader emoji="📬" title={t('home.unreviewed')} count={reminders.unreviewed.length} />
-                {reminders.unreviewed.slice(0, 3).map((m) => (
-                  <MemoryCard key={m.id} memory={m} subtitle={t('home.unreviewedHint')} t={t} />
-                ))}
-              </View>
-            )}
+            {/* Daily Focus Card */}
+            {hasAnyContent && <FocusCard stats={stats} reminders={reminders} t={t} colors={colors} />}
 
-            {/* Grouped recall (AI-powered) */}
-            {groups.length > 0 ? (
-              <View style={styles.section}>
-                <SectionHeader emoji="🧠" title={t('home.connectedIdeas')} />
-                {groups.map((group) => (
-                  <View key={group.title} style={[styles.groupCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                    <View style={[styles.groupHeader, { borderBottomColor: colors.border }]}>
-                      <Text style={styles.groupEmoji}>✨</Text>
-                      <Text style={[styles.groupTitle, { color: colors.accent }]}>{group.title}</Text>
-                      <Text style={[styles.groupCount, { color: colors.textMuted }]}>
-                        {t('home.memoriesCount', { count: group.memories.length })}
-                      </Text>
-                    </View>
-                    {group.memories.map((m) => (
-                      <MemoryCard key={m.id} memory={m} t={t} />
+            {/* Quick Capture Row */}
+            <SectionHeader
+              icon={<Plus size={14} color={colors.textSecondary} strokeWidth={2.5} />}
+              title={t('home.quickCapture')}
+            />
+            <QuickCaptureRow t={t} />
+
+            {!hasAnyContent ? (
+              <EmptyState t={t} />
+            ) : (
+              <>
+                {/* Unreviewed memories */}
+                {reminders && reminders.unreviewed.length > 0 && (
+                  <View style={styles.section}>
+                    <SectionHeader
+                      icon={<Inbox size={14} color={colors.textSecondary} strokeWidth={2.3} />}
+                      title={t('home.unreviewed')}
+                      count={reminders.unreviewed.length}
+                      actionLabel={t('home.seeAll')}
+                      onAction={() => router.push('/(tabs)/library')}
+                    />
+                    {reminders.unreviewed.slice(0, 2).map((m) => (
+                      <MemoryCard key={m.id} memory={m} subtitle={t('home.unreviewedHint')} t={t} />
                     ))}
                   </View>
-                ))}
-              </View>
-            ) : recentRecall.length > 0 ? (
-              <View style={styles.section}>
-                <SectionHeader emoji="✨" title={t('home.recentRecall')} />
-                {recentRecall.map((m) => (
-                  <MemoryCard key={m.id} memory={m} subtitle={m.reason} t={t} />
-                ))}
-              </View>
-            ) : null}
+                )}
 
-            {/* Worth revisiting */}
-            {reminders && reminders.revisit.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader emoji="🔁" title={t('home.revisit')} count={reminders.revisit.length} />
-                {reminders.revisit.slice(0, 3).map((m) => (
-                  <MemoryCard key={m.id} memory={m} t={t} />
-                ))}
-              </View>
-            )}
+                {/* Grouped recall (AI-powered) */}
+                {groups.length > 0 ? (
+                  <View style={styles.section}>
+                    <SectionHeader
+                      icon={<Brain size={14} color={colors.textSecondary} strokeWidth={2.3} />}
+                      title={t('home.connectedIdeas')}
+                    />
+                    {groups.map((group) => (
+                      <ConnectedIdeaCard key={group.title} group={group} t={t} />
+                    ))}
+                  </View>
+                ) : recentRecall.length > 0 ? (
+                  <View style={styles.section}>
+                    <SectionHeader
+                      icon={<Sparkles size={14} color={colors.textSecondary} strokeWidth={2.3} />}
+                      title={t('home.recentRecall')}
+                    />
+                    {recentRecall.slice(0, 2).map((m) => (
+                      <MemoryCard key={m.id} memory={m} subtitle={m.reason} t={t} />
+                    ))}
+                  </View>
+                ) : null}
 
-            {/* On this day — enhanced with time context */}
-            {reminders && reminders.on_this_day.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader emoji="📅" title={t('home.onThisDay')} />
-                {reminders.on_this_day.map((m) => (
-                  <MemoryCard
-                    key={m.id}
-                    memory={m}
-                    subtitle={m.timeAgo || formatRelative(m.createdAt, t)}
-                    t={t}
-                  />
-                ))}
-              </View>
-            )}
-
-            {/* Stats + Insights teaser at bottom */}
-            {stats && (
-              <>
-                <StatsCard stats={stats} t={t} />
-                <InsightsTeaserCard stats={stats} t={t} />
+                {/* Worth revisiting */}
+                {reminders && reminders.revisit.length > 0 && (
+                  <View style={styles.section}>
+                    <SectionHeader
+                      icon={<RotateCcw size={14} color={colors.textSecondary} strokeWidth={2.3} />}
+                      title={t('home.revisit')}
+                      count={reminders.revisit.length}
+                      actionLabel={t('home.seeAll')}
+                      onAction={() => router.push('/(tabs)/recall')}
+                    />
+                    {reminders.revisit.slice(0, 2).map((m) => (
+                      <RevisitCard key={m.id} memory={m} t={t} />
+                    ))}
+                  </View>
+                )}
               </>
             )}
           </>
@@ -494,40 +821,43 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  headerTextWrap: { flex: 1 },
-  greeting: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
-  subtitle: { fontSize: 14 },
+  brandBlock: { flex: 1 },
+  brandTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  brandName: { fontSize: 25, fontWeight: '700', letterSpacing: -0.2, fontFamily: SANS_FONT },
+  subtitle: { fontSize: 15, lineHeight: 22, fontFamily: SANS_FONT },
 
-  // Streak badge
+  // Streak badge - FIXED: Touch target 44x44pt
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
+    paddingVertical: 10,
+    borderRadius: 22,
+    gap: 6,
     borderWidth: 1,
   },
-  streakIcon: { fontSize: 16 },
-  streakText: { fontSize: 15, fontWeight: '700' },
+  streakText: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
 
   scrollView: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 120, paddingTop: 12 },
+  loadingContainer: { paddingTop: 8 },
 
   // Focus card
   focusCard: {
-    borderRadius: 20,
-    marginBottom: 16,
+    borderRadius: 18,
+    marginBottom: 12,
     overflow: 'hidden',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.01,
+    shadowRadius: 6,
+    elevation: 0,
   },
-  focusGradient: {
-    padding: 20,
-    borderRadius: 20,
+  focusSurface: {
+    padding: 16,
+    borderRadius: 18,
   },
   focusHeader: {
     flexDirection: 'row',
@@ -535,74 +865,132 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 10,
   },
-  focusEmoji: { fontSize: 20 },
-  focusTitle: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.5 },
-  focusMessage: { fontSize: 15, color: '#FFFFFF', lineHeight: 22, marginBottom: 4 },
-  focusAction: {
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginTop: 8,
-  },
-  focusActionText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
-
-  // Quick capture
-  quickRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
-  },
-  quickBtn: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderRadius: 16,
-    gap: 4,
-    borderWidth: 1,
-  },
-  quickIcon: { fontSize: 20 },
-  quickLabel: { fontSize: 11, fontWeight: '500' },
-
-  // Stats
-  statsCard: {
-    flexDirection: 'row',
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 16,
-    marginTop: 8,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 22, fontWeight: '700' },
-  statLabel: { fontSize: 12, marginTop: 2 },
-  statDivider: { width: 1, height: 32 },
-
-  // Sections
-  section: { marginBottom: 20 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  sectionLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  sectionEmoji: { fontSize: 18 },
-  sectionTitle: { fontSize: 16, fontWeight: '600' },
-  sectionBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
+  focusIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 9,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 6,
-    marginLeft: 2,
   },
-  sectionBadgeText: { fontSize: 11, fontWeight: '700', color: '#fff' },
+  focusTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    fontFamily: SANS_FONT,
+  },
+  focusMessage: {
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 8,
+    fontWeight: '400',
+    fontFamily: SANS_FONT,
+  },
+  focusHighlightsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  focusHighlightTile: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+  },
+  focusHighlightValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 18,
+    fontFamily: SANS_FONT,
+  },
+  focusHighlightLabel: {
+    fontSize: 10,
+    marginTop: 3,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
+  },
+  focusAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    marginTop: 2,
+  },
+  focusActionText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF', fontFamily: SANS_FONT },
+
+  // Quick capture - IMPROVED: Better touch feedback and spacing
+  quickRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  quickPressable: {
+    flex: 1,
+  },
+  quickBtn: {
+    minHeight: 54,
+    paddingHorizontal: 0,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.01,
+    shadowRadius: 6,
+    elevation: 0,
+  },
+  quickBtnPressed: {
+    transform: [{ scale: 0.98 }],
+    opacity: 0.95,
+  },
+  quickIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Sections
+  section: { marginBottom: 14 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  sectionLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionTitle: { fontSize: 15, fontWeight: '600', fontFamily: SANS_FONT },
+  sectionBadgeText: { fontSize: 12, fontWeight: '500', fontFamily: SANS_FONT },
+  sectionAction: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: 5,
+    paddingHorizontal: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  sectionActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
+  },
 
   // Group cards
   groupCard: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 12,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   groupHeader: {
     flexDirection: 'row',
@@ -612,63 +1000,199 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  groupEmoji: { fontSize: 14 },
   groupTitle: { fontSize: 14, fontWeight: '600', flex: 1 },
-  groupCount: { fontSize: 12 },
+  groupCount: { fontSize: 11 },
 
-  // Memory cards
-  memCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 8,
+  // Connected ideas redesign
+  connectedCard: {
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.01,
+    shadowRadius: 6,
+    elevation: 0,
   },
-  memCardRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  memCardIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  memCardIcon: { fontSize: 16 },
-  memCardContent: { flex: 1 },
-  memCardText: { fontSize: 15, lineHeight: 21, marginBottom: 3 },
-  memCardMeta: { fontSize: 12 },
-  memCardChevron: { fontSize: 20 },
-
-  // Insights teaser
-  insightsTeaser: {
+  connectedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 20,
-    gap: 12,
+    marginBottom: 12,
+    gap: 8,
   },
-  insightsTeaserIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  connectedTitleWrap: {
+    flex: 1,
+  },
+  connectedTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
+  },
+  connectedCountText: {
+    fontSize: 11,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
+  },
+  connectedList: {
+    gap: 10,
+  },
+  connectedMemoryRow: {
+    minHeight: 52,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 10,
+  },
+  connectedIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  insightsTeaserBody: { flex: 1 },
-  insightsTeaserTitle: { fontSize: 14, fontWeight: '600', marginBottom: 2 },
-  insightsTeaserSub: { fontSize: 12 },
+  connectedThumb: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+  },
+  connectedMemoryText: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: '400',
+    fontFamily: SANS_FONT,
+  },
+  connectedMemoryCopy: {
+    flex: 1,
+  },
+  connectedMemoryMeta: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
+    fontFamily: SANS_FONT,
+  },
 
-  // Empty
+  // Worth revisiting redesign
+  revisitCardGradient: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    marginBottom: 10,
+  },
+  revisitCardInner: {
+    borderRadius: 15,
+    minHeight: 82,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    justifyContent: 'center',
+  },
+  revisitMemoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  revisitIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revisitThumb: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+  },
+  revisitMemoryText: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+    fontFamily: SANS_FONT,
+  },
+  revisitMemoryCopy: {
+    flex: 1,
+  },
+  revisitMemoryMeta: {
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
+    fontFamily: SANS_FONT,
+  },
+
+  // Memory cards - IMPROVED: Larger touch targets and better hierarchy
+  memCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 10,
+    minHeight: 76,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.01,
+    shadowRadius: 6,
+    elevation: 0,
+  },
+  memCardRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  memCardIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  memThumbWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+  },
+  memThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  memCardContent: { flex: 1 },
+  memCardText: { fontSize: 15, lineHeight: 22, marginBottom: 6, fontWeight: '400', fontFamily: SANS_FONT },
+  memCardMeta: { fontSize: 12, lineHeight: 18, fontWeight: '500', fontFamily: SANS_FONT },
+
+  // Empty - IMPROVED: Better visual hierarchy and CTA
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
-    paddingTop: 40,
+    paddingTop: 60,
   },
-  emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
-  emptySubtitle: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  emptyButton: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
-  emptyButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  emptyTitle: { fontSize: 22, fontWeight: '600', marginBottom: 8, textAlign: 'center', fontFamily: SANS_FONT },
+  emptySubtitle: { fontSize: 16, textAlign: 'center', lineHeight: 24, marginBottom: 12, fontFamily: SANS_FONT },
+  emptyHint: { fontSize: 14, textAlign: 'center', lineHeight: 20, marginBottom: 28, fontFamily: SANS_FONT },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 28,
+    minHeight: 52,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 0,
+  },
+  emptyButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600', fontFamily: SANS_FONT },
 });

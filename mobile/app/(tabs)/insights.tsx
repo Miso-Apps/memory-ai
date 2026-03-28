@@ -9,11 +9,11 @@ import {
   Dimensions,
   ActivityIndicator,
   Animated,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { LinearGradient } from 'expo-linear-gradient';
 import {
   insightsApi,
   InsightsDashboard,
@@ -21,23 +21,18 @@ import {
   StreakDetails,
 } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
+import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEATMAP_CELL = 12;
 const HEATMAP_GAP = 3;
+const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 
-const TYPE_ICON: Record<string, string> = {
-  text: '📝',
-  voice: '🎤',
-  link: '🔗',
-  photo: '📷',
-};
-
-const TYPE_COLORS: Record<string, string> = {
-  text: '#6366F1',
-  voice: '#10B981',
-  link: '#F59E0B',
-  photo: '#EC4899',
+const TYPE_ICON: Record<string, React.ComponentType<any>> = {
+  text: FileText,
+  voice: Mic,
+  link: Link2,
+  photo: ImageIcon,
 };
 
 function formatHour(hour: number): string {
@@ -69,55 +64,50 @@ function RecapCard({ recap, t }: { recap: WeeklyRecap; t: Function }) {
   }
 
   return (
-    <View style={s.recapOuter}>
-      <LinearGradient
-        colors={['#6366F1', '#8B5CF6']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={s.recapGradient}
-      >
-        <View style={s.recapHeader}>
-          <Text style={s.recapEmoji}>📰</Text>
-          <Text style={s.recapTitle}>{t('insights.weeklyRecap')}</Text>
+    <View style={[s.recapCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+      <View style={s.recapHeader}>
+        <Text style={[s.recapTitle, { color: colors.textSecondary }]}>{t('insights.weeklyRecap')}</Text>
+      </View>
+      {recap.recap && (
+        <Text style={[s.recapText, { color: colors.textPrimary }]}>{recap.recap}</Text>
+      )}
+      <View style={s.recapStats}>
+        <View style={s.recapStat}>
+          <Text style={[s.recapStatValue, { color: colors.textPrimary }]}>{recap.total_memories}</Text>
+          <Text style={[s.recapStatLabel, { color: colors.textMuted }]}>{t('insights.memories')}</Text>
         </View>
-        {recap.recap && (
-          <Text style={s.recapText}>{recap.recap}</Text>
-        )}
-        <View style={s.recapStats}>
+        {recap.categories_used && recap.categories_used.length > 0 && (
           <View style={s.recapStat}>
-            <Text style={s.recapStatValue}>{recap.total_memories}</Text>
-            <Text style={s.recapStatLabel}>{t('insights.memories')}</Text>
-          </View>
-          {recap.categories_used && recap.categories_used.length > 0 && (
-            <View style={s.recapStat}>
-              <Text style={s.recapStatValue}>{recap.categories_used.length}</Text>
-              <Text style={s.recapStatLabel}>{t('insights.topics')}</Text>
-            </View>
-          )}
-          {recap.by_type && (
-            <View style={s.recapStat}>
-              <Text style={s.recapStatValue}>{Object.keys(recap.by_type).length}</Text>
-              <Text style={s.recapStatLabel}>{t('insights.types')}</Text>
-            </View>
-          )}
-        </View>
-        {recap.highlights && recap.highlights.length > 0 && (
-          <View style={s.recapHighlights}>
-            <Text style={s.recapHighlightsTitle}>{t('insights.highlights')}</Text>
-            {recap.highlights.map((h) => (
-              <TouchableOpacity
-                key={h.id}
-                style={s.recapHighlight}
-                onPress={() => router.push(`/memory/${h.id}`)}
-                activeOpacity={0.7}
-              >
-                <Text style={s.recapHighlightIcon}>{TYPE_ICON[h.type] || '📝'}</Text>
-                <Text style={s.recapHighlightText} numberOfLines={1}>{h.content}</Text>
-              </TouchableOpacity>
-            ))}
+            <Text style={[s.recapStatValue, { color: colors.textPrimary }]}>{recap.categories_used.length}</Text>
+            <Text style={[s.recapStatLabel, { color: colors.textMuted }]}>{t('insights.topics')}</Text>
           </View>
         )}
-      </LinearGradient>
+        {recap.by_type && (
+          <View style={s.recapStat}>
+            <Text style={[s.recapStatValue, { color: colors.textPrimary }]}>{Object.keys(recap.by_type).length}</Text>
+            <Text style={[s.recapStatLabel, { color: colors.textMuted }]}>{t('insights.types')}</Text>
+          </View>
+        )}
+      </View>
+      {recap.highlights && recap.highlights.length > 0 && (
+        <View style={[s.recapHighlights, { borderTopColor: colors.border }]}> 
+          <Text style={[s.recapHighlightsTitle, { color: colors.textMuted }]}>{t('insights.highlights')}</Text>
+          {recap.highlights.map((h) => (
+            <TouchableOpacity
+              key={h.id}
+              style={s.recapHighlight}
+              onPress={() => router.push(`/memory/${h.id}`)}
+              activeOpacity={0.7}
+            >
+              {(() => {
+                const Icon = TYPE_ICON[h.type] || FileText;
+                return <Icon size={14} color={colors.textSecondary} strokeWidth={2.5} />;
+              })()}
+              <Text style={[s.recapHighlightText, { color: colors.textPrimary }]} numberOfLines={1}>{h.content}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -287,7 +277,10 @@ function TypeBreakdown({
     <View style={s.typeRow}>
       {data.map((item) => (
         <View key={item.type} style={[s.typeCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={s.typeIcon}>{TYPE_ICON[item.type] || '📝'}</Text>
+          {(() => {
+            const Icon = TYPE_ICON[item.type] || FileText;
+            return <Icon size={18} color={colors.textSecondary} strokeWidth={2.5} />;
+          })()}
           <Text style={[s.typeCount, { color: colors.textPrimary }]}>{item.count}</Text>
           <Text style={[s.typePercent, { color: colors.textMuted }]}>{item.percentage}%</Text>
         </View>
@@ -399,8 +392,8 @@ function GrowthBadge({ growth, t }: { growth: number; t: Function }) {
   const positive = growth >= 0;
 
   return (
-    <View style={[s.growthBadge, { backgroundColor: positive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)' }]}>
-      <Text style={[s.growthText, { color: positive ? '#10B981' : '#EF4444' }]}>
+    <View style={[s.growthBadge, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      <Text style={[s.growthText, { color: positive ? colors.accent : colors.textSecondary }]}> 
         {positive ? '↑' : '↓'} {Math.abs(growth)}% {t('insights.vsPrevious')}
       </Text>
     </View>
@@ -439,7 +432,7 @@ function RecapSkeleton() {
         {/* Generating label */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <ActivityIndicator size="small" color={colors.accent} />
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.accent }}>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: colors.accent, fontFamily: SANS_FONT }}>
             {t('insights.generatingInsights', '✨ Generating insights…')}
           </Text>
         </View>
@@ -587,7 +580,7 @@ export default function InsightsScreen() {
               <Text
                 style={[
                   s.periodChipText,
-                  { color: periodDays === p.days ? '#FFFFFF' : colors.textTertiary },
+                  { color: periodDays === p.days ? colors.buttonText : colors.textTertiary },
                 ]}
               >
                 {p.label}
@@ -683,12 +676,12 @@ export default function InsightsScreen() {
 const s = StyleSheet.create({
   container: { flex: 1 },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { fontSize: 14 },
+  loadingText: { fontSize: 14, fontFamily: SANS_FONT },
 
   // Header
   header: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
-  headerTitle: { fontSize: 26, fontWeight: '700', marginBottom: 4 },
-  headerSubtitle: { fontSize: 14 },
+  headerTitle: { fontSize: 26, fontWeight: '600', marginBottom: 4, fontFamily: SANS_FONT },
+  headerSubtitle: { fontSize: 15, fontFamily: SANS_FONT },
 
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
@@ -701,50 +694,42 @@ const s = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  periodChipText: { fontSize: 13, fontWeight: '600' },
+  periodChipText: { fontSize: 13, fontWeight: '500', fontFamily: SANS_FONT },
 
   // Section header
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 10 },
-  sectionEmoji: { fontSize: 18 },
-  sectionTitle: { fontSize: 16, fontWeight: '600' },
+  sectionEmoji: { fontSize: 16, opacity: 0.75 },
+  sectionTitle: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
 
   // Recap card
-  recapOuter: {
-    borderRadius: 20,
-    marginBottom: 12,
-    overflow: 'hidden',
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 6,
-  },
+  recapOuter: { borderRadius: 20, marginBottom: 12, overflow: 'hidden' },
   recapGradient: { padding: 20, borderRadius: 20 },
-  recapCard: { borderRadius: 20, padding: 20, borderWidth: 1, marginBottom: 12 },
-  recapEmpty: { fontSize: 14, textAlign: 'center' },
-  recapHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  recapCard: { borderRadius: 20, padding: 18, borderWidth: 1, marginBottom: 12 },
+  recapEmpty: { fontSize: 15, textAlign: 'center', fontFamily: SANS_FONT },
+  recapHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   recapEmoji: { fontSize: 20 },
-  recapTitle: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: 0.5 },
-  recapText: { fontSize: 15, color: '#FFFFFF', lineHeight: 22, marginBottom: 16 },
+  recapTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: SANS_FONT },
+  recapText: { fontSize: 15, lineHeight: 22, marginBottom: 14, fontFamily: SANS_FONT },
   recapStats: { flexDirection: 'row', gap: 20 },
   recapStat: { alignItems: 'center' },
-  recapStatValue: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
-  recapStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  recapHighlights: { marginTop: 16, paddingTop: 12, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.2)' },
-  recapHighlightsTitle: { fontSize: 12, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  recapStatValue: { fontSize: 20, fontWeight: '600', fontFamily: SANS_FONT },
+  recapStatLabel: { fontSize: 11, marginTop: 2, fontFamily: SANS_FONT },
+  recapHighlights: { marginTop: 14, paddingTop: 11, borderTopWidth: StyleSheet.hairlineWidth },
+  recapHighlightsTitle: { fontSize: 11, fontWeight: '600', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: SANS_FONT },
   recapHighlight: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   recapHighlightIcon: { fontSize: 14 },
-  recapHighlightText: { fontSize: 13, color: '#FFFFFF', flex: 1 },
+  recapHighlightText: { fontSize: 13, flex: 1, fontFamily: SANS_FONT },
 
   // Growth badge
   growthBadge: {
     alignSelf: 'flex-start',
+    borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 999,
     marginBottom: 8,
   },
-  growthText: { fontSize: 13, fontWeight: '600' },
+  growthText: { fontSize: 13, fontWeight: '500', fontFamily: SANS_FONT },
 
   // Stats grid
   statsGrid: {
@@ -761,8 +746,8 @@ const s = StyleSheet.create({
     gap: 4,
   },
   statEmoji: { fontSize: 22 },
-  statValue: { fontSize: 24, fontWeight: '700' },
-  statLabel: { fontSize: 11, textAlign: 'center' },
+  statValue: { fontSize: 24, fontWeight: '600', fontFamily: SANS_FONT },
+  statLabel: { fontSize: 11, textAlign: 'center', fontFamily: SANS_FONT },
 
   // Heatmap
   heatmapCard: {
@@ -792,7 +777,7 @@ const s = StyleSheet.create({
     height: 10,
     borderRadius: 2,
   },
-  heatmapLabelText: { fontSize: 10 },
+  heatmapLabelText: { fontSize: 10, fontFamily: SANS_FONT },
 
   // Category breakdown
   breakdownCard: {
@@ -808,11 +793,11 @@ const s = StyleSheet.create({
   },
   breakdownLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
   breakdownIcon: { fontSize: 16 },
-  breakdownName: { fontSize: 14, fontWeight: '500' },
+  breakdownName: { fontSize: 14, fontWeight: '400', fontFamily: SANS_FONT },
   breakdownRight: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1.2 },
   breakdownBar: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   breakdownBarFill: { height: '100%', borderRadius: 3 },
-  breakdownCount: { fontSize: 12, fontWeight: '600', minWidth: 24, textAlign: 'right' },
+  breakdownCount: { fontSize: 12, fontWeight: '500', minWidth: 24, textAlign: 'right', fontFamily: SANS_FONT },
 
   // Type breakdown
   typeRow: { flexDirection: 'row', gap: 8 },
@@ -825,8 +810,8 @@ const s = StyleSheet.create({
     gap: 4,
   },
   typeIcon: { fontSize: 20 },
-  typeCount: { fontSize: 18, fontWeight: '700' },
-  typePercent: { fontSize: 11 },
+  typeCount: { fontSize: 18, fontWeight: '600', fontFamily: SANS_FONT },
+  typePercent: { fontSize: 11, fontFamily: SANS_FONT },
 
   // Hourly chart
   hourlyCard: {
@@ -835,7 +820,7 @@ const s = StyleSheet.create({
     padding: 16,
   },
   hourlyInfo: { marginBottom: 10 },
-  hourlyPeak: { fontSize: 14, fontWeight: '500' },
+  hourlyPeak: { fontSize: 14, fontWeight: '500', fontFamily: SANS_FONT },
   hourlyBars: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -849,7 +834,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  hourlyLabel: { fontSize: 10 },
+  hourlyLabel: { fontSize: 10, fontFamily: SANS_FONT },
 
   // Consistency
   consistencyCard: {
@@ -860,23 +845,23 @@ const s = StyleSheet.create({
   consistencyHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   consistencyEmoji: { fontSize: 28 },
   consistencyInfo: {},
-  consistencyTitle: { fontSize: 14, fontWeight: '500' },
-  consistencyRate: { fontSize: 24, fontWeight: '700' },
+  consistencyTitle: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
+  consistencyRate: { fontSize: 24, fontWeight: '600', fontFamily: SANS_FONT },
   consistencyBar: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 10 },
   consistencyBarFill: { height: '100%', borderRadius: 4 },
-  consistencyMessage: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
+  consistencyMessage: { fontSize: 14, lineHeight: 21, marginBottom: 12, fontFamily: SANS_FONT },
   consistencyStats: { flexDirection: 'row', gap: 20 },
   consistencyStat: { alignItems: 'center' },
-  consistencyStatValue: { fontSize: 18, fontWeight: '700' },
-  consistencyStatLabel: { fontSize: 11, marginTop: 2 },
+  consistencyStatValue: { fontSize: 18, fontWeight: '600', fontFamily: SANS_FONT },
+  consistencyStatLabel: { fontSize: 11, marginTop: 2, fontFamily: SANS_FONT },
 
   // Empty state
   emptyState: { alignItems: 'center', paddingTop: 60, paddingHorizontal: 32 },
   emptyIcon: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
-  emptySubtitle: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  emptyTitle: { fontSize: 20, fontWeight: '600', marginBottom: 8, textAlign: 'center', fontFamily: SANS_FONT },
+  emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 21, marginBottom: 24, fontFamily: SANS_FONT },
   emptyBtn: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 },
-  emptyBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  emptyBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', fontFamily: SANS_FONT },
 
   // Skeleton
   skeletonBlock: { opacity: 0.5 },
