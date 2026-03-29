@@ -13,6 +13,7 @@ const en = {
   profile: {
     title: 'Profile',
     subtitle: 'Manage your settings',
+    eyebrow: 'Signed in as',
     toggleOn: 'On',
     toggleOff: 'Off',
 

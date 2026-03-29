@@ -13,6 +13,7 @@ const vi = {
   profile: {
     title: 'Cá nhân',
     subtitle: 'Quản lý cài đặt của bạn',
+    eyebrow: 'Đang đăng nhập với',
     toggleOn: 'Bật',
     toggleOff: 'Tắt',
 

@@ -42,6 +42,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme, type ThemeMode } from '../../constants/ThemeContext';
 import type { SupportedLanguage } from '../../i18n';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 function BottomSheetModal({
   visible,
@@ -260,14 +261,19 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      <View style={[s.header, { borderBottomColor: colors.border }]}>
-        <Text style={[s.title, { color: colors.textPrimary }]}>{t('profile.title')}</Text>
-        <Text style={[s.subtitle, { color: colors.textMuted }]}>{t('profile.subtitle')}</Text>
+      {/* ── Header ── */}
+      <View style={[s.profileHeader, { borderBottomColor: colors.border }]}>
+        <ScreenHeader
+          eyebrow={t('profile.eyebrow')}
+          title={user?.name?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'You'}
+          titleSize={30}
+          paddingHorizontal={20}
+        />
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
         {/* AI Features Card */}
-        <View style={[s.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+        <View style={[s.card, s.settingsGroup, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <PreferenceToggleRow
             icon={<Sparkles size={22} color={colors.textSecondary} strokeWidth={2.5} />}
             label={t('profile.recall.label')}
@@ -314,7 +320,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Menu */}
-        <View style={[s.card, s.menuCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+        <View style={[s.card, s.settingsGroup, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <TouchableOpacity style={[s.menuItem, s.menuItemBorder, { borderBottomColor: colors.border }]} onPress={() => setActiveModal('account')} activeOpacity={0.7}>
             <View style={s.menuText}>
               <Text style={[s.menuTitle, { color: colors.textPrimary }]}>{t('profile.menu.account.title')}</Text>
@@ -388,7 +394,10 @@ export default function ProfileScreen() {
         </View>
         <SectionDivider />
         <View style={m.section}>
-          <ActionButton label={t('account.signOut')} icon={<LogOut size={16} color={colors.accent} style={{ marginRight: 6 }} />} variant="accent" onPress={handleLogout} />
+          <TouchableOpacity style={[r.actionBtn, { backgroundColor: colors.inputBg }]} onPress={handleLogout} activeOpacity={0.7}>
+            <LogOut size={16} color={colors.brandAccent} style={{ marginRight: 6 }} />
+            <Text style={[s.signOutText, { color: colors.brandAccent }]}>{t('account.signOut')}</Text>
+          </TouchableOpacity>
         </View>
         <SectionDivider />
         <View style={m.section}>
@@ -518,9 +527,21 @@ export default function ProfileScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  title: { fontSize: 26, fontWeight: '600', marginBottom: 4 },
-  subtitle: { fontSize: 15 },
+  profileHeader: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 4,
+  },
+  settingsGroup: {
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  signOutText: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 15,
+  },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
   card: {
