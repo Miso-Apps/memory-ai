@@ -115,51 +115,60 @@ export const LightColors: ThemeColors = {
 
 // ─── Dark theme ────────────────────────────────────────────────────────────
 export const DarkColors: ThemeColors = {
-  bg: '#09090B',
-  cardBg: '#131316',
-  inputBg: '#1B1B20',
-  subtleBg: '#111114',
-  modalBg: '#131316',
+  // Backgrounds
+  bg: '#0c0c10',
+  cardBg: '#131318',
+  inputBg: 'rgba(255,255,255,0.04)',
+  subtleBg: '#0f0f14',
+  modalBg: '#131318',
 
-  textPrimary: '#FAFAFA',
-  textSecondary: '#E4E4E7',
-  textTertiary: '#A1A1AA',
-  textMuted: '#71717A',
-  textPlaceholder: '#52525B',
+  // Text
+  textPrimary: '#f0ede8',
+  textSecondary: '#a8a4a0',
+  textTertiary: '#777370',
+  textMuted: '#555555',
+  textPlaceholder: '#333333',
   buttonText: '#FFFFFF',
 
-  accent: '#52525B',
-  accentLight: 'rgba(161, 161, 170, 0.22)',
-  accentMid: 'rgba(161, 161, 170, 0.34)',
-  accentSubtle: 'rgba(161, 161, 170, 0.12)',
-  brandAccent: '#D97F5C',
-  brandAccentLight: 'rgba(217, 127, 92, 0.24)',
+  // Accent (indigo — keep unchanged)
+  accent: '#818CF8',
+  accentLight: 'rgba(129,140,248,0.14)',
+  accentMid: 'rgba(129,140,248,0.22)',
+  accentSubtle: 'rgba(129,140,248,0.06)',
+  brandAccent: '#C56A3A',
+  brandAccentLight: 'rgba(197,106,58,0.12)',
 
-  error: '#F87171',
-  errorBg: 'rgba(248, 113, 113, 0.1)',
+  // Semantic
+  error: '#EF4444',
+  errorBg: 'rgba(239,68,68,0.06)',
   errorText: '#FCA5A5',
   success: '#34D399',
-  successBg: 'rgba(52, 211, 153, 0.2)',
+  successBg: 'rgba(52,211,153,0.1)',
   warning: '#FBBF24',
-  warningBg: 'rgba(251, 191, 36, 0.2)',
-  infoBg: 'rgba(129, 140, 248, 0.2)',
+  warningBg: 'rgba(251,191,36,0.1)',
+  infoBg: 'rgba(129,140,248,0.1)',
 
-  border: '#27272A',
-  borderMed: '#3F3F46',
+  // Borders
+  border: 'rgba(255,255,255,0.05)',
+  borderMed: 'rgba(255,255,255,0.08)',
 
+  // Type badges (keep transparent)
   typeBgText: 'transparent',
   typeBgVoice: 'transparent',
   typeBgLink: 'transparent',
   typeBgPhoto: 'transparent',
 
-  tabBarBg: 'rgba(18,18,18,0.94)',
-  tabBarBorder: '#27272A',
+  // Tab bar
+  tabBarBg: 'rgba(12,12,16,0.97)',
+  tabBarBorder: 'rgba(255,255,255,0.05)',
 
-  switchTrackOff: '#3A3D4A',
+  // Switches
+  switchTrackOff: '#2A2A2E',
 
-  streakBg: 'rgba(250, 250, 250, 0.1)',
-  streakBorder: 'rgba(250, 250, 250, 0.18)',
-  streakText: '#FAFAFA',
+  // Streak badge
+  streakBg: 'rgba(197,106,58,0.08)',
+  streakBorder: 'rgba(197,106,58,0.2)',
+  streakText: '#C56A3A',
 };
 
 // ─── Context ───────────────────────────────────────────────────────────────
