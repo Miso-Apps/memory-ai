@@ -17,6 +17,9 @@ import { useTranslation } from 'react-i18next';
 import { aiApi, memoriesApi, Memory as ApiMemory } from '../../services/api';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
 import { BrandMark } from '../../components/BrandMark';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { CapturePrompt } from '../../components/CapturePrompt';
+import { MemoryCard as SharedMemoryCard, type MemoryCardMemory } from '../../components/MemoryCard';
 import {
   ChevronRight,
   FileText,
@@ -34,6 +37,13 @@ import {
 
 const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 const BRAND_ORANGE = '#C56A3A';
+
+function getGreeting(t: (key: string) => string): { eyebrow: string; title: string } {
+  const hour = new Date().getHours();
+  if (hour < 12) return { eyebrow: t('home.greetingMorning'), title: t('home.titleMorning') };
+  if (hour < 17) return { eyebrow: t('home.greetingAfternoon'), title: t('home.titleAfternoon') };
+  return { eyebrow: t('home.greetingEvening'), title: t('home.titleEvening') };
+}
 
 interface RecallMemory {
   id: string;
@@ -356,60 +366,6 @@ function QuickCaptureRow({ t }: { t: Function }) {
   );
 }
 
-// ─── Compact memory card ───────────────────────────────────────────────────────
-const MemoryCard = React.memo(function MemoryCard({
-  memory,
-  subtitle,
-  t,
-}: {
-  memory: ReminderMemory;
-  subtitle?: string;
-  t: Function;
-}) {
-  const { colors } = useTheme();
-  const meta = TYPE_META[memory.type];
-  const Icon = meta.icon;
-  const timeLabel = subtitle || formatRelative(memory.createdAt, t);
-  const thumbUri = memory.thumbnailUrl || memory.imageUrl;
-  const hasPreviewThumb = (memory.type === 'photo' || memory.type === 'link') && !!thumbUri;
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.memCard,
-        { backgroundColor: colors.cardBg, borderColor: colors.border },
-        pressed && { backgroundColor: colors.accentSubtle, transform: [{ scale: 0.98 }] }
-      ]}
-      onPress={() => router.push(`/memory/${memory.id}`)}
-      accessibilityRole="button"
-      accessibilityLabel={`${memory.type} memory. ${memory.content}`}
-      accessibilityHint={`${timeLabel}. ${t('common.tapToOpen')}`}
-    >
-      <View style={styles.memCardRow}>
-        {hasPreviewThumb ? (
-          <View style={[styles.memThumbWrap, { borderColor: colors.border }]}>
-            <SmartThumbnail
-              uri={thumbUri!}
-              type={memory.type}
-              style={styles.memThumb}
-              accessibilityLabel={memory.type === 'photo' ? t('home.capturePhoto') : t('home.captureLink')}
-            />
-          </View>
-        ) : (
-          <View style={[styles.memCardIconWrap, { backgroundColor: colors[meta.bg], borderColor: colors.border }]}>
-            <Icon size={18} color={colors.textPrimary} strokeWidth={2.5} />
-          </View>
-        )}
-        <View style={styles.memCardContent}>
-          <Text style={[styles.memCardText, { color: colors.textPrimary }]} numberOfLines={2}>{memory.content}</Text>
-          <Text style={[styles.memCardMeta, { color: colors.textMuted }]}>{timeLabel}</Text>
-        </View>
-        <ChevronRight size={18} color={colors.textMuted} strokeWidth={2.5} />
-      </View>
-    </Pressable>
-  );
-});
-
 function ConnectedIdeaCard({ group, t }: { group: MemoryGroup; t: Function }) {
   const { colors } = useTheme();
   const previewMemories = group.memories.slice(0, 3);
@@ -526,7 +482,7 @@ function SectionHeader({
     <View style={styles.sectionHeader}>
       <View style={styles.sectionLeft}>
         <View style={[styles.sectionIconWrap, { borderColor: colors.textMuted }]}>{icon}</View>
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{title}</Text>
         {count != null && count > 0 && (
           <Text style={[styles.sectionBadgeText, { color: colors.textMuted }]}>({count})</Text>
         )}
@@ -697,24 +653,23 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* Header with brand mark + streak */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <View style={styles.headerTop}>
-          <View style={styles.brandBlock}>
-            <View style={styles.brandTitleRow}>
-              <BrandMark size={34} backgroundColor={BRAND_ORANGE} foregroundColor="#FFF8F2" />
-              <Text style={[styles.brandName, { color: colors.textPrimary }]}>Memory AI</Text>
+      {/* ── Header ── */}
+      {(() => {
+        const { eyebrow, title } = getGreeting(t);
+        return (
+          <View style={[styles.headerWrap, { borderBottomColor: colors.border }]}>
+            <ScreenHeader
+              eyebrow={eyebrow}
+              title={title}
+              titleSize={30}
+              paddingHorizontal={20}
+            />
+            <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
+              <CapturePrompt />
             </View>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('home.subtitle')}</Text>
           </View>
-          {streak > 0 && (
-            <View style={[styles.streakBadge, { backgroundColor: colors.streakBg, borderColor: colors.streakBorder }]}>
-              <Flame size={14} color={colors.streakText} strokeWidth={2.2} />
-              <Text style={[styles.streakText, { color: colors.streakText }]}>{streak}</Text>
-            </View>
-          )}
-        </View>
-      </View>
+        );
+      })()}
 
       {/* Content */}
       <ScrollView
@@ -758,13 +713,18 @@ export default function HomeScreen() {
                   <View style={styles.section}>
                     <SectionHeader
                       icon={<Inbox size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.unreviewed')}
+                      title={t('home.sectionUnreviewed')}
                       count={reminders.unreviewed.length}
                       actionLabel={t('home.seeAll')}
                       onAction={() => router.push('/(tabs)/library')}
                     />
                     {reminders.unreviewed.slice(0, 2).map((m) => (
-                      <MemoryCard key={m.id} memory={m} subtitle={t('home.unreviewedHint')} t={t} />
+                      <SharedMemoryCard
+                        key={m.id}
+                        memory={{ id: m.id, content: m.content, type: m.type, createdAt: m.createdAt, imageUrl: m.imageUrl, thumbnailUrl: m.thumbnailUrl, sourceUrl: m.sourceUrl }}
+                        timeAgo={t('home.unreviewedHint')}
+                        onPress={() => router.push(`/memory/${m.id}`)}
+                      />
                     ))}
                   </View>
                 )}
@@ -784,10 +744,16 @@ export default function HomeScreen() {
                   <View style={styles.section}>
                     <SectionHeader
                       icon={<Sparkles size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.recentRecall')}
+                      title={t('home.sectionRecalled')}
                     />
                     {recentRecall.slice(0, 2).map((m) => (
-                      <MemoryCard key={m.id} memory={m} subtitle={m.reason} t={t} />
+                      <SharedMemoryCard
+                        key={m.id}
+                        memory={{ id: m.id, content: m.content, type: m.type, createdAt: m.createdAt, imageUrl: m.imageUrl, thumbnailUrl: m.thumbnailUrl, sourceUrl: m.sourceUrl }}
+                        tag={m.reason ? t('home.recallReason') : undefined}
+                        timeAgo={formatRelative(m.createdAt, t)}
+                        onPress={() => router.push(`/memory/${m.id}`)}
+                      />
                     ))}
                   </View>
                 ) : null}
@@ -803,12 +769,48 @@ export default function HomeScreen() {
                       onAction={() => router.push('/(tabs)/recall')}
                     />
                     {reminders.revisit.slice(0, 2).map((m) => (
-                      <RevisitCard key={m.id} memory={m} t={t} />
+                      <SharedMemoryCard
+                        key={m.id}
+                        memory={{ id: m.id, content: m.content, type: m.type, createdAt: m.createdAt, imageUrl: m.imageUrl, thumbnailUrl: m.thumbnailUrl, sourceUrl: m.sourceUrl }}
+                        timeAgo={formatRelative(m.createdAt, t)}
+                        onPress={() => router.push(`/memory/${m.id}`)}
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {/* On this day */}
+                {reminders && reminders.on_this_day.length > 0 && (
+                  <View style={styles.section}>
+                    <SectionHeader
+                      icon={<RotateCcw size={14} color={colors.textSecondary} strokeWidth={2.3} />}
+                      title={t('home.sectionOnThisDay')}
+                      count={reminders.on_this_day.length}
+                    />
+                    {reminders.on_this_day.slice(0, 2).map((m) => (
+                      <SharedMemoryCard
+                        key={m.id}
+                        memory={{ id: m.id, content: m.content, type: m.type, createdAt: m.createdAt, imageUrl: m.imageUrl, thumbnailUrl: m.thumbnailUrl, sourceUrl: m.sourceUrl }}
+                        timeAgo={formatRelative(m.createdAt, t)}
+                        onPress={() => router.push(`/memory/${m.id}`)}
+                      />
                     ))}
                   </View>
                 )}
               </>
             )}
+
+            {/* ── Stats row (bottom of scroll) ── */}
+            <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
+              <View style={[styles.statsPill, { backgroundColor: colors.streakBg, borderColor: colors.streakBorder }]}>
+                <Text style={[styles.statsPillText, { color: colors.streakText }]}>
+                  🔥 {stats?.streak ?? 0}
+                </Text>
+              </View>
+              <Text style={[styles.statsText, { color: colors.textMuted }]}>
+                {stats?.total ?? 0} total · {stats?.this_week ?? 0} this week
+              </Text>
+            </View>
           </>
         )}
       </ScrollView>
@@ -819,25 +821,45 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  brandBlock: { flex: 1 },
-  brandTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
-  brandName: { fontSize: 25, fontWeight: '700', letterSpacing: -0.2, fontFamily: SANS_FONT },
-  subtitle: { fontSize: 15, lineHeight: 22, fontFamily: SANS_FONT },
+  headerWrap: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
 
-  // Streak badge - FIXED: Touch target 44x44pt
-  streakBadge: {
+  // Section label (uppercase caps style)
+  sectionLabel: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 10,
+    paddingHorizontal: 16,
+    marginTop: 16,
+  },
+
+  // Stats row at bottom of scroll
+  statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 44,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 22,
-    gap: 6,
-    borderWidth: 1,
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 8,
   },
-  streakText: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
+  statsPill: {
+    borderRadius: 100,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  statsPillText: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 12,
+  },
+  statsText: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 12,
+  },
 
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 120, paddingTop: 12 },

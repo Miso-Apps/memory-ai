@@ -107,8 +107,14 @@ const vi = {
   // Home screen
   home: {
     greetingMorning: 'Chào buổi sáng',
-    greetingAfternoon: 'Chào buổi chiều',
+    greetingAfternoon: 'Xin chào',
     greetingEvening: 'Chào buổi tối',
+    titleMorning: 'Bạn đang nghĩ gì?',
+    titleAfternoon: 'Chào mừng trở lại',
+    titleEvening: 'Nhìn lại cuối ngày',
+    sectionRecalled: 'Được gợi nhớ',
+    sectionOnThisDay: 'Ngày này năm xưa',
+    sectionUnreviewed: 'Chưa xem',
     subtitle: 'Đây là những điều bạn có thể muốn nhớ lại',
     noMemories: 'Chưa có gì để nhắc lại',
     noMemoriesSubtitle: 'Bắt đầu lưu suy nghĩ và ứng dụng sẽ nhắc lại khi phù hợp',
