@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../constants/ThemeContext';
-import { SerifTitle } from './SerifTitle';
 
 interface ScreenHeaderProps {
   eyebrow?: string;
@@ -15,7 +14,7 @@ export function ScreenHeader({
   eyebrow,
   title,
   subtitle,
-  titleSize = 32,
+  titleSize = 26,
   paddingHorizontal = 20,
 }: ScreenHeaderProps) {
   const { colors } = useTheme();
@@ -23,13 +22,22 @@ export function ScreenHeader({
   return (
     <View style={[styles.container, { paddingHorizontal }]}>
       {eyebrow ? (
-        <Text style={[styles.eyebrow, { color: colors.brandAccent }]}>
+        <Text style={[styles.eyebrow, { color: colors.textMuted }]}>
           {eyebrow.toUpperCase()}
         </Text>
       ) : null}
-      <SerifTitle size={titleSize}>{title}</SerifTitle>
+      <Text
+        style={[
+          styles.title,
+          { color: colors.textPrimary, fontSize: titleSize },
+        ]}
+      >
+        {title}
+      </Text>
       {subtitle ? (
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          {subtitle}
+        </Text>
       ) : null}
     </View>
   );
@@ -43,8 +51,13 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontFamily: 'DMSans_600SemiBold',
     fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 6,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  title: {
+    fontFamily: 'DMSans_700Bold',
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   subtitle: {
     fontFamily: 'DMSans_400Regular',
