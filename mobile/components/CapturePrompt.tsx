@@ -28,12 +28,17 @@ export function CapturePrompt() {
         styles.container,
         {
           borderColor: colors.border,
-          backgroundColor: 'rgba(255,255,255,0.03)',
+          backgroundColor: colors.cardBg,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 3,
+          elevation: 1,
         },
       ]}
     >
       <View style={[styles.dot, { backgroundColor: colors.brandAccent }]} />
-      <Text style={[styles.text, { color: colors.textPlaceholder }]}>
+      <Text style={[styles.text, { color: colors.textMuted }]}>
         {t('home.capturePromptText')}
       </Text>
     </TouchableOpacity>
@@ -59,6 +64,5 @@ const styles = StyleSheet.create({
   text: {
     fontFamily: 'DMSans_400Regular',
     fontSize: 14,
-    fontStyle: 'italic',
   },
 });
