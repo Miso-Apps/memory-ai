@@ -302,6 +302,11 @@ const vi = {
     linkSaveFailed: 'Không thể lưu liên kết.',
     photoSaved: 'Hình ảnh đã lưu ✓',
     saved: 'Đã lưu!',
+    hintIdea: '💡 Ý tưởng',
+    hintMeeting: '📋 Cuộc họp',
+    hintDecision: '🎯 Quyết định',
+    hintConversation: '💬 Cuộc trò chuyện',
+    hintLearning: '📚 Học hỏi',
   },
 
   // Language switcher

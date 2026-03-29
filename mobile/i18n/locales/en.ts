@@ -303,6 +303,11 @@ const en = {
     linkSaveFailed: 'Failed to save link.',
     photoSaved: 'Image saved ✓',
     saved: 'Saved!',
+    hintIdea: '💡 Idea',
+    hintMeeting: '📋 Meeting',
+    hintDecision: '🎯 Decision',
+    hintConversation: '💬 Conversation',
+    hintLearning: '📚 Learning',
   },
 
   // Language switcher
