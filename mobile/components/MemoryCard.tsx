@@ -48,10 +48,10 @@ function extractDomain(url?: string): string | undefined {
 }
 
 const TYPE_LABEL: Record<MemoryCardMemory['type'], string> = {
-  text: '✏ text',
-  voice: '🎙 voice',
-  link: '🔗 link',
-  photo: '📷 photo',
+  text: 'text',
+  voice: 'voice',
+  link: 'link',
+  photo: 'photo',
 };
 
 export function MemoryCard({ memory, tag, timeAgo, onPress, onDismiss }: MemoryCardProps) {
@@ -87,7 +87,15 @@ export function MemoryCard({ memory, tag, timeAgo, onPress, onDismiss }: MemoryC
       activeOpacity={0.75}
       style={[
         styles.card,
-        { backgroundColor: colors.inputBg, borderColor: colors.border },
+        {
+          backgroundColor: colors.cardBg,
+          borderColor: colors.border,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 4,
+          elevation: 1,
+        },
       ]}
     >
       {/* Top row: tag + type */}
@@ -188,8 +196,8 @@ const styles = StyleSheet.create({
   },
   bodyText: {
     fontFamily: 'DMSans_400Regular',
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
+    lineHeight: 20,
   },
   domainRow: {
     flexDirection: 'row',
