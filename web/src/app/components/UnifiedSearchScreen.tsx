@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useRef, useEffect } from 'react';
 import { Toast } from './Toast';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { aiApi, formatMemoryDate, mapApiMemoryType, memoriesApi } from '../services/api';
 
 interface Memory {
   id: string;
@@ -42,6 +43,7 @@ export function UnifiedSearchScreen() {
   const [typedText, setTypedText] = useState('');
   const [showResults, setShowResults] = useState(false);
   const [foundMemories, setFoundMemories] = useState<Memory[]>([]);
+  const [remoteMemories, setRemoteMemories] = useState<Memory[]>([]);
 
   const handleDismiss = () => {
     setShowMenu(false);
@@ -67,7 +69,7 @@ export function UnifiedSearchScreen() {
     }
   };
 
-  const memories: Memory[] = [
+  const mockMemories: Memory[] = [
     {
       id: '1',
       type: 'text',
@@ -132,7 +134,47 @@ export function UnifiedSearchScreen() {
     },
   ];
 
-  const fullAnalysis = `Trong những gì bạn từng lưu, chủ đề công việc xuất hiện nhiều lần, đặc biệt trong những giai đoạn bạn phân vân về hướng đi. Bạn có xu hướng quay lại những câu hỏi về đam mê khi cảm thấy cần thay đổi. Điều đáng chú ý là trong vòng 3 tháng qua, bạn đã lưu nhiều nội dung về chuyển đổi sự nghiệp, cho thấy đây là một suy nghĩ lặp đi lặp lại.`;
+  const memories = remoteMemories.length > 0 ? remoteMemories : mockMemories;
+
+  const fallbackAnalysis = `Trong nhung noi dung ban da luu, chu de cong viec xuat hien lap lai. Ban thuong quay lai cac cau hoi ve dinh huong ca nhan va cach can bang giua dam me voi su on dinh.`;
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadMemories = async () => {
+      try {
+        const payload = await memoriesApi.list({ limit: 120 });
+        if (!mounted) {
+          return;
+        }
+
+        const mapped: Memory[] = payload.memories
+          .filter((item) => item.content || item.ai_summary)
+          .map((item) => ({
+            id: item.id,
+            type: mapApiMemoryType(item.type),
+            content: item.ai_summary || item.content,
+            fullContent: item.transcription || item.content,
+            date: formatMemoryDate(item.created_at),
+            url: typeof item.metadata?.canonical_url === 'string' ? item.metadata.canonical_url : undefined,
+            audioUrl: item.audio_url || undefined,
+            duration: item.audio_duration
+              ? `${Math.floor(item.audio_duration / 60)}:${String(item.audio_duration % 60).padStart(2, '0')}`
+              : undefined,
+            aiSummary: item.ai_summary || undefined,
+          }));
+
+        setRemoteMemories(mapped);
+      } catch {
+        // Keep mock data when API is unavailable.
+      }
+    };
+
+    void loadMemories();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Scroll to source and highlight
   const scrollToSource = (memoryId: string) => {
@@ -204,45 +246,27 @@ export function UnifiedSearchScreen() {
     return parts.length > 0 ? parts : text;
   };
 
-  // AI Search simulation
-  useEffect(() => {
-    if (!isSearching) return;
-
-    const phases: LoadingPhase[] = ['searching', 'analyzing', 'complete'];
-    let currentPhaseIndex = 0;
-
-    const phaseInterval = setInterval(() => {
-      currentPhaseIndex++;
-      if (currentPhaseIndex < phases.length) {
-        setLoadingPhase(phases[currentPhaseIndex]);
-      } else {
-        clearInterval(phaseInterval);
-        startTypingEffect();
-      }
-    }, 800);
-
-    return () => clearInterval(phaseInterval);
-  }, [isSearching]);
-
   // Typing effect for AI summary
-  const startTypingEffect = () => {
+  const startTypingEffect = async (analysisText: string) => {
     let index = 0;
-    const typingInterval = setInterval(() => {
-      if (index < fullAnalysis.length) {
-        setTypedText(fullAnalysis.slice(0, index + 1));
-        index++;
-      } else {
-        clearInterval(typingInterval);
-        setShowResults(true);
-        setAiSummary(fullAnalysis);
-      }
-    }, 8);
+    await new Promise<void>((resolve) => {
+      const typingInterval = setInterval(() => {
+        if (index < analysisText.length) {
+          setTypedText(analysisText.slice(0, index + 1));
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          resolve();
+        }
+      }, 8);
+    });
 
-    return () => clearInterval(typingInterval);
+    setShowResults(true);
+    setAiSummary(analysisText);
   };
 
   // Handle AI search
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchQuery.trim()) {
       // Reset to archive view
       setIsSearching(false);
@@ -253,20 +277,42 @@ export function UnifiedSearchScreen() {
       return;
     }
 
-    // Trigger AI search
     setIsSearching(true);
     setLoadingPhase('searching');
     setTypedText('');
     setAiSummary('');
     setShowResults(false);
-    
-    // Mock: Find relevant memories
-    const relevant = memories.filter(m => 
-      m.content.toLowerCase().includes('công việc') ||
-      m.content.toLowerCase().includes('đam mê') ||
-      m.content.toLowerCase().includes('dự án')
-    );
-    setFoundMemories(relevant);
+
+    try {
+      setLoadingPhase('analyzing');
+      const response = await aiApi.semanticSearch(searchQuery.trim(), 8, true);
+      const mapped: Memory[] = response.results.map((item) => ({
+        id: item.id,
+        type: mapApiMemoryType(item.type),
+        content: item.ai_summary || item.content,
+        fullContent: item.transcription || item.content,
+        date: formatMemoryDate(item.created_at),
+        url: typeof item.metadata?.canonical_url === 'string' ? item.metadata.canonical_url : undefined,
+        audioUrl: item.audio_url || undefined,
+        duration: item.audio_duration
+          ? `${Math.floor(item.audio_duration / 60)}:${String(item.audio_duration % 60).padStart(2, '0')}`
+          : undefined,
+        aiSummary: item.ai_summary || undefined,
+      }));
+
+      setFoundMemories(mapped);
+      setLoadingPhase('complete');
+      await startTypingEffect(response.ai_summary || fallbackAnalysis);
+    } catch {
+      const localResults = memories
+        .filter((m) => m.content.toLowerCase().includes(searchQuery.toLowerCase()))
+        .slice(0, 8);
+      setFoundMemories(localResults);
+      setLoadingPhase('complete');
+      await startTypingEffect(fallbackAnalysis);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleClick = (memory: Memory) => {

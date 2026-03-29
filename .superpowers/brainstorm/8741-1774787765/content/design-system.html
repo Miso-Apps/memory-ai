@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c10; color: #f0ede8; font-family: 'DM Sans', sans-serif; padding: 32px 24px 80px; }
+
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: #555; margin-bottom: 36px; line-height: 1.5; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 40px; }
+  .section-title { font-size: 11px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 16px; }
+
+  /* ── Color grid ── */
+  .color-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .swatch { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+  .swatch-block { height: 52px; }
+  .swatch-info { padding: 8px 10px; background: #131318; }
+  .swatch-name { font-size: 11px; font-weight: 600; color: #f0ede8; }
+  .swatch-hex { font-size: 10px; color: #444; margin-top: 1px; font-family: monospace; }
+
+  /* ── Type scale ── */
+  .type-row { display: flex; flex-direction: column; gap: 20px; }
+  .type-item { border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 20px; }
+  .type-item:last-child { border-bottom: none; }
+  .type-sample { line-height: 1.2; margin-bottom: 6px; }
+  .type-meta { font-size: 11px; color: #444; font-family: monospace; }
+
+  /* ── Component demos ── */
+  .comp-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+
+  /* Memory card */
+  .mem-card { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 13px 15px; border: 1px solid rgba(255,255,255,0.06); width: 260px; }
+  .mem-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+  .mem-tag { font-size: 9px; font-weight: 600; color: #C56A3A; background: rgba(197,106,58,0.1); padding: 3px 9px; border-radius: 100px; white-space: nowrap; letter-spacing: 0.5px; text-transform: uppercase; }
+  .mem-type { font-size: 10px; color: #333; font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+  .mem-text { font-size: 14px; color: #a8a4a0; line-height: 1.55; }
+  .mem-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .mem-time { font-size: 10px; color: #2e2e2e; }
+  .mem-open { font-size: 11px; color: #C56A3A; font-weight: 500; }
+
+  /* Capture prompt */
+  .capture-prompt { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 14px 16px; width: 260px; display: flex; align-items: center; gap: 10px; }
+  .capture-dot { width: 7px; height: 7px; border-radius: 50%; background: #C56A3A; flex-shrink: 0; }
+  .capture-text { font-size: 14px; color: #2e2e2e; font-style: italic; }
+
+  /* Chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .chip { font-size: 11px; font-weight: 500; padding: 5px 12px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.08); color: #666; cursor: pointer; }
+  .chip.active { background: rgba(197,106,58,0.12); border-color: rgba(197,106,58,0.3); color: #C56A3A; font-weight: 600; }
+
+  /* Buttons */
+  .btn-primary { background: #C56A3A; color: #fff; font-size: 14px; font-weight: 600; font-family: 'DM Sans'; padding: 12px 24px; border-radius: 12px; border: none; cursor: pointer; letter-spacing: 0.2px; }
+  .btn-secondary { background: rgba(255,255,255,0.05); color: #f0ede8; font-size: 14px; font-weight: 500; font-family: 'DM Sans'; padding: 12px 24px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); cursor: pointer; }
+  .btn-ghost { background: transparent; color: #555; font-size: 13px; font-weight: 500; font-family: 'DM Sans'; padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); cursor: pointer; }
+
+  /* Tab bar */
+  .tab-bar-demo { background: rgba(12,12,16,0.97); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 320px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 12px; cursor: pointer; }
+  .tab-item.active { background: rgba(197,106,58,0.08); }
+  .tab-icon { font-size: 18px; color: #2a2a2a; }
+  .tab-item.active .tab-icon { color: #f0ede8; }
+  .tab-fab { background: #C56A3A; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: white; box-shadow: 0 4px 12px rgba(197,106,58,0.35); margin-top: -10px; }
+
+  /* Section header */
+  .screen-hdr { padding: 0; }
+  .screen-eye { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .screen-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 32px; color: #f0ede8; line-height: 1.1; letter-spacing: -0.2px; }
+  .screen-sub { font-size: 13px; color: #3a3a3a; margin-top: 5px; }
+
+  .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 32px 0; }
+</style>
+</head>
+<body>
+
+<h2>Section 1 — Design System</h2>
+<p class="page-sub">The foundation: tokens, type scale, and shared components that propagate across all screens</p>
+
+<!-- COLOR TOKENS -->
+<div class="section">
+  <div class="section-title">Color tokens — dark theme</div>
+  <div class="color-grid">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#0c0c10"></div>
+      <div class="swatch-info"><div class="swatch-name">bg</div><div class="swatch-hex">#0c0c10</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#131318"></div>
+      <div class="swatch-info"><div class="swatch-name">cardBg</div><div class="swatch-hex">#131318</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:rgba(255,255,255,0.04)"></div>
+      <div class="swatch-info"><div class="swatch-name">inputBg</div><div class="swatch-hex">white/4%</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#f0ede8"></div>
+      <div class="swatch-info"><div class="swatch-name">textPrimary</div><div class="swatch-hex">#f0ede8</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#a8a4a0"></div>
+      <div class="swatch-info"><div class="swatch-name">textSecondary</div><div class="swatch-hex">#a8a4a0</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#555"></div>
+      <div class="swatch-info"><div class="swatch-name">textMuted</div><div class="swatch-hex">#555555</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#C56A3A"></div>
+      <div class="swatch-info"><div class="swatch-name">brandAccent</div><div class="swatch-hex">#C56A3A</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:rgba(197,106,58,0.12)"></div>
+      <div class="swatch-info"><div class="swatch-name">brandAccentLight</div><div class="swatch-hex">orange/12%</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:rgba(255,255,255,0.05)"></div>
+      <div class="swatch-info"><div class="swatch-name">border</div><div class="swatch-hex">white/5%</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Color tokens — light theme</div>
+  <div class="color-grid">
+    <div class="swatch">
+      <div class="swatch-block" style="background:#faf9f7;border:1px solid #ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">bg</div><div class="swatch-hex">#faf9f7</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#ffffff;border:1px solid #ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">cardBg</div><div class="swatch-hex">#ffffff</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#f2efe9;border:1px solid #ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">inputBg</div><div class="swatch-hex">#f2efe9</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#1a1612;border:1px solid #ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">textPrimary</div><div class="swatch-hex">#1a1612</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#5a5550;border:1px solid #ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">textSecondary</div><div class="swatch-hex">#5a5550</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#C56A3A"></div>
+      <div class="swatch-info"><div class="swatch-name">brandAccent</div><div class="swatch-hex">#C56A3A</div></div>
+    </div>
+    <div class="swatch">
+      <div class="swatch-block" style="background:#ebe8e3"></div>
+      <div class="swatch-info"><div class="swatch-name">border</div><div class="swatch-hex">#ebe8e3</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- TYPE SCALE -->
+<div class="section">
+  <div class="section-title">Type scale</div>
+  <div class="type-row">
+    <div class="type-item">
+      <div class="type-sample" style="font-family:'DM Serif Display',serif;font-style:italic;font-size:34px;color:#f0ede8;letter-spacing:-0.3px;">Morning recall</div>
+      <div class="type-meta">DM Serif Display Italic · 34px · Screen titles</div>
+    </div>
+    <div class="type-item">
+      <div class="type-sample" style="font-family:'DM Serif Display',serif;font-style:italic;font-size:26px;color:#f0ede8;letter-spacing:-0.2px;">Your memories</div>
+      <div class="type-meta">DM Serif Display Italic · 26px · Section titles</div>
+    </div>
+    <div class="type-item">
+      <div class="type-sample" style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:17px;color:#f0ede8;">Decided to push the launch to Q2</div>
+      <div class="type-meta">DM Sans SemiBold · 17px · Card heading / emphasis</div>
+    </div>
+    <div class="type-item">
+      <div class="type-sample" style="font-family:'DM Sans',sans-serif;font-weight:400;font-size:15px;color:#a8a4a0;line-height:1.6;">Decided to push the launch to Q2 to focus on onboarding quality. The whole team aligned on this after Monday's retro.</div>
+      <div class="type-meta">DM Sans Regular · 15px · Body / memory content</div>
+    </div>
+    <div class="type-item">
+      <div class="type-sample" style="font-family:'DM Sans',sans-serif;font-weight:600;font-size:10px;color:#C56A3A;text-transform:uppercase;letter-spacing:1.2px;">Resurfaced · 3 days ago</div>
+      <div class="type-meta">DM Sans SemiBold · 10px · All-caps labels / eyebrows</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- COMPONENTS -->
+<div class="section">
+  <div class="section-title">Screen header</div>
+  <div class="screen-hdr">
+    <div class="screen-eye">Good morning, Brian</div>
+    <div class="screen-title">What's on your mind?</div>
+    <div class="screen-sub">4 things recalled from your past</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Memory card</div>
+  <div class="comp-row">
+    <div class="mem-card">
+      <div class="mem-card-top">
+        <div class="mem-tag">Resurfaced</div>
+        <div class="mem-type">✏ text</div>
+      </div>
+      <div class="mem-text">Decided to push the launch to Q2 to focus on onboarding quality. Team aligned after Monday's retro.</div>
+      <div class="mem-foot">
+        <div class="mem-time">3 days ago</div>
+        <div class="mem-open">Open →</div>
+      </div>
+    </div>
+    <div class="mem-card">
+      <div class="mem-card-top">
+        <div class="mem-tag">On this day</div>
+        <div class="mem-type">🎙 voice</div>
+      </div>
+      <div class="mem-text">Pricing model thoughts — lean toward usage-based rather than seat licensing for better value alignment.</div>
+      <div class="mem-foot">
+        <div class="mem-time">1 year ago</div>
+        <div class="mem-open">Open →</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Capture prompt</div>
+  <div class="capture-prompt">
+    <div class="capture-dot"></div>
+    <div class="capture-text">What's on your mind today?</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Filter chips</div>
+  <div class="chip-row">
+    <div class="chip active">All</div>
+    <div class="chip">✏ Text</div>
+    <div class="chip">🎙 Voice</div>
+    <div class="chip">🔗 Link</div>
+    <div class="chip">📷 Photo</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Buttons</div>
+  <div class="comp-row" style="align-items:center;">
+    <button class="btn-primary">Save memory</button>
+    <button class="btn-secondary">Cancel</button>
+    <button class="btn-ghost">Dismiss</button>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Navigation shell (floating tab bar)</div>
+  <div class="tab-bar-demo">
+    <div class="tab-item active">
+      <div class="tab-icon">⌂</div>
+    </div>
+    <div class="tab-item">
+      <div class="tab-icon">☰</div>
+    </div>
+    <div class="tab-fab">+</div>
+    <div class="tab-item">
+      <div class="tab-icon">◈</div>
+    </div>
+    <div class="tab-item">
+      <div class="tab-icon">○</div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:#333;margin-top:12px;">Tab bar: taller pill shape, warm bg tint, orange FAB with glow shadow. Active icon warms to off-white, inactive to #2a2a2a.</p>
+</div>
+
+</body>
+</html>

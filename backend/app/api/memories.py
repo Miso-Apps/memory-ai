@@ -8,9 +8,17 @@ import logging
 
 from app.database import get_db, AsyncSessionLocal
 from app.models.memory import Memory
+from app.models.memory_link import MemoryLink
 from app.models.user import User
 from app.models import Category
-from app.schemas import MemoryCreate, MemoryUpdate, MemoryListResponse, StatusResponse
+from app.schemas import (
+    MemoryCreate,
+    MemoryUpdate,
+    MemoryListResponse,
+    MemoryLinkCreate,
+    MemoryLinkResponse,
+    StatusResponse,
+)
 from app.api.deps import get_current_user
 from app.api.categories import ensure_system_categories
 from app.api.preferences import get_or_create_preferences
@@ -686,3 +694,161 @@ async def delete_memory(
     m.is_deleted = True
     await db.flush()
     return StatusResponse(status="deleted", message="Memory moved to Dismissed")
+
+
+@router.get("/{memory_id}/links", response_model=list[MemoryLinkResponse])
+async def list_memory_links(
+    memory_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        mid = uuid.UUID(memory_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    owner_q = await db.execute(
+        select(Memory).where(
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+            )
+        )
+    )
+    if not owner_q.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    result = await db.execute(
+        select(MemoryLink)
+        .where(
+            and_(
+                MemoryLink.user_id == current_user.id,
+                MemoryLink.source_memory_id == mid,
+            )
+        )
+        .order_by(MemoryLink.created_at.desc())
+    )
+
+    rows = result.scalars().all()
+    return [
+        {
+            "id": str(r.id),
+            "source_memory_id": str(r.source_memory_id),
+            "target_memory_id": str(r.target_memory_id),
+            "link_type": r.link_type,
+            "score": r.score,
+            "explanation": r.explanation,
+            "created_at": r.created_at,
+        }
+        for r in rows
+    ]
+
+
+@router.post("/{memory_id}/links", response_model=MemoryLinkResponse)
+async def create_memory_link(
+    memory_id: str,
+    body: MemoryLinkCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        source_id = uuid.UUID(memory_id)
+        target_id = uuid.UUID(body.target_memory_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid memory_id")
+
+    if source_id == target_id:
+        raise HTTPException(status_code=422, detail="Cannot link a memory to itself")
+
+    check_q = await db.execute(
+        select(Memory)
+        .where(
+            and_(
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+                Memory.id.in_([source_id, target_id]),
+            )
+        )
+        .order_by(Memory.created_at.desc())
+    )
+    memories = check_q.scalars().all()
+    if len(memories) != 2:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    exists_q = await db.execute(
+        select(MemoryLink).where(
+            and_(
+                MemoryLink.user_id == current_user.id,
+                MemoryLink.source_memory_id == source_id,
+                MemoryLink.target_memory_id == target_id,
+                MemoryLink.link_type == body.link_type,
+            )
+        )
+    )
+    existing = exists_q.scalar_one_or_none()
+    if existing:
+        return {
+            "id": str(existing.id),
+            "source_memory_id": str(existing.source_memory_id),
+            "target_memory_id": str(existing.target_memory_id),
+            "link_type": existing.link_type,
+            "score": existing.score,
+            "explanation": existing.explanation,
+            "created_at": existing.created_at,
+        }
+
+    row = MemoryLink(
+        user_id=current_user.id,
+        source_memory_id=source_id,
+        target_memory_id=target_id,
+        link_type=body.link_type,
+        score=body.score,
+        explanation=body.explanation,
+    )
+    db.add(row)
+    await db.flush()
+    await db.refresh(row)
+
+    return {
+        "id": str(row.id),
+        "source_memory_id": str(row.source_memory_id),
+        "target_memory_id": str(row.target_memory_id),
+        "link_type": row.link_type,
+        "score": row.score,
+        "explanation": row.explanation,
+        "created_at": row.created_at,
+    }
+
+
+@router.delete("/{memory_id}/links/{target_memory_id}", response_model=StatusResponse)
+async def delete_memory_link(
+    memory_id: str,
+    target_memory_id: str,
+    link_type: str = Query("explicit", max_length=32),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        source_id = uuid.UUID(memory_id)
+        target_id = uuid.UUID(target_memory_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    result = await db.execute(
+        select(MemoryLink).where(
+            and_(
+                MemoryLink.user_id == current_user.id,
+                MemoryLink.source_memory_id == source_id,
+                MemoryLink.target_memory_id == target_id,
+                MemoryLink.link_type == link_type,
+            )
+        )
+    )
+    row = result.scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Link not found")
+
+    await db.delete(row)
+    await db.flush()
+    return StatusResponse(status="deleted", message="Link deleted")

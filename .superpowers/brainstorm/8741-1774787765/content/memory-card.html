@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Item Treatment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c10; color: #f0ede8; font-family: 'DM Sans', sans-serif; padding: 32px 24px 100px; }
+
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { font-size: 15px; color: #555; margin-bottom: 32px; line-height: 1.5; }
+
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
+
+  .col-card {
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #1a1a22;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    background: #131318;
+  }
+  .col-card:hover { transform: translateY(-2px); }
+  .col-card.selected { border-color: #C56A3A; }
+  .col-card.selected .sel-badge { display: block; }
+  .sel-badge { display: none; position: absolute; top: 12px; right: 12px; background: #C56A3A; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px; letter-spacing: 0.4px; }
+
+  /* Shared phone chrome */
+  .phone { background: #0c0c10; }
+  .phone .sb { padding: 12px 18px 6px; display: flex; justify-content: space-between; font-size: 11px; color: #2a2a2a; }
+  .phone .hdr { padding: 16px 18px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .phone .hdr-eye { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .phone .hdr-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 26px; color: #f0ede8; line-height: 1.1; }
+  .phone .hdr-sub { font-size: 12px; color: #3a3a3a; margin-top: 3px; }
+
+  /* ── A: Feed (Threads) ── */
+  .feed-item { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .feed-type { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .feed-type-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .feed-type-label { font-size: 10px; font-weight: 600; color: #444; text-transform: uppercase; letter-spacing: 0.8px; }
+  .feed-text { font-size: 14px; color: #b8b4ae; line-height: 1.55; }
+  .feed-meta { font-size: 11px; color: #333; margin-top: 6px; }
+  .feed-actions { display: flex; gap: 14px; margin-top: 8px; }
+  .feed-actions span { font-size: 11px; color: #333; }
+  .feed-actions .open { color: #C56A3A; font-weight: 500; }
+
+  /* ── B: Subtle card ── */
+  .card-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .mem-card { background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px 14px; border: 1px solid rgba(255,255,255,0.05); }
+  .mem-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .mem-card-badge { font-size: 10px; font-weight: 600; color: #C56A3A; background: rgba(197,106,58,0.1); padding: 2px 8px; border-radius: 100px; white-space: nowrap; }
+  .mem-card-type { font-size: 10px; color: #333; font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
+  .mem-card-text { font-size: 13px; color: #a8a4a0; line-height: 1.5; }
+  .mem-card-foot { font-size: 11px; color: #2e2e2e; margin-top: 6px; }
+
+  /* ── C: Rich card ── */
+  .rich-list { padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .rich-card { background: #16161c; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); }
+  .rich-card-accent { height: 3px; background: linear-gradient(90deg, #C56A3A 0%, rgba(197,106,58,0) 100%); }
+  .rich-card-body { padding: 12px 14px 14px; }
+  .rich-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .rich-card-tag { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; }
+  .rich-card-time { font-size: 10px; color: #2e2e2e; }
+  .rich-card-text { font-size: 13px; color: #a8a4a0; line-height: 1.5; }
+  .rich-card-summary { font-size: 11px; color: #4a4a52; margin-top: 6px; line-height: 1.4; font-style: italic; }
+  .rich-card-foot { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .rich-card-type-chip { font-size: 9px; font-weight: 600; color: #444; background: rgba(255,255,255,0.04); border-radius: 100px; padding: 2px 8px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .rich-card-open { margin-left: auto; font-size: 11px; color: #C56A3A; font-weight: 500; }
+
+  .col-label { padding: 14px 16px 16px; border-top: 1px solid rgba(255,255,255,0.04); }
+  .col-label h3 { font-size: 13px; font-weight: 600; color: #f0ede8; }
+  .col-label p { font-size: 12px; color: #444; margin-top: 3px; line-height: 1.4; }
+
+  .sel-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #131318; border-top: 1px solid #1a1a22; padding: 14px 24px; font-size: 13px; color: #555; text-align: center; }
+  .sel-bar span { color: #C56A3A; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h2>How should memories look as list items?</h2>
+<p class="subtitle">This repeating unit defines 80% of the visual feel across Home, Library, and Recall</p>
+
+<div class="cols">
+
+  <!-- A: Feed / Threads -->
+  <div class="col-card" data-choice="a" onclick="pick(this)">
+    <div class="sel-badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr">
+        <div class="hdr-eye">Library</div>
+        <div class="hdr-title">Your memories</div>
+        <div class="hdr-sub">48 captured</div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-type">
+          <div class="feed-type-dot" style="background:#C56A3A"></div>
+          <div class="feed-type-label">Text · 3 days ago</div>
+        </div>
+        <div class="feed-text">Decided to push the launch to Q2 to focus on onboarding quality. Team aligned.</div>
+        <div class="feed-actions"><span>Dismiss</span><span class="open">Open →</span></div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-type">
+          <div class="feed-type-dot" style="background:#6366f1"></div>
+          <div class="feed-type-label">Voice · 1 week ago</div>
+        </div>
+        <div class="feed-text">Voice note about the pricing model — lean toward usage-based rather than seat licensing.</div>
+        <div class="feed-actions"><span>Dismiss</span><span class="open">Open →</span></div>
+      </div>
+      <div class="feed-item">
+        <div class="feed-type">
+          <div class="feed-type-dot" style="background:#0ea5e9"></div>
+          <div class="feed-type-label">Link · 2 weeks ago</div>
+        </div>
+        <div class="feed-text">anthropic.com/research/scaling — notes on emergence in large models</div>
+        <div class="feed-meta">anthropic.com</div>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>A — Borderless feed</h3>
+      <p>No cards, just hairline dividers. Maximum density, very Threads. Fastest to scan.</p>
+    </div>
+  </div>
+
+  <!-- B: Subtle card -->
+  <div class="col-card" data-choice="b" onclick="pick(this)">
+    <div class="sel-badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr">
+        <div class="hdr-eye">Library</div>
+        <div class="hdr-title">Your memories</div>
+        <div class="hdr-sub">48 captured</div>
+      </div>
+      <div class="card-list">
+        <div class="mem-card">
+          <div class="mem-card-top">
+            <div class="mem-card-badge">3 days ago</div>
+            <div class="mem-card-type">✏ Text</div>
+          </div>
+          <div class="mem-card-text">Decided to push the launch to Q2 to focus on onboarding quality. Team aligned.</div>
+        </div>
+        <div class="mem-card">
+          <div class="mem-card-top">
+            <div class="mem-card-badge">1 week ago</div>
+            <div class="mem-card-type">🎙 Voice</div>
+          </div>
+          <div class="mem-card-text">Pricing model — lean toward usage-based rather than seat licensing.</div>
+        </div>
+        <div class="mem-card">
+          <div class="mem-card-top">
+            <div class="mem-card-badge">2 weeks ago</div>
+            <div class="mem-card-type">🔗 Link</div>
+          </div>
+          <div class="mem-card-text">anthropic.com/research/scaling — notes on emergence in large models</div>
+          <div class="mem-card-foot">anthropic.com</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>B — Subtle card <span style="font-size:10px;color:#C56A3A;background:rgba(197,106,58,0.15);padding:2px 7px;border-radius:100px;margin-left:4px;">recommended</span></h3>
+      <p>Slightly raised surface, tight radius. Clear separation without heavy chrome. Breathable and scannable.</p>
+    </div>
+  </div>
+
+  <!-- C: Rich card -->
+  <div class="col-card" data-choice="c" onclick="pick(this)">
+    <div class="sel-badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr">
+        <div class="hdr-eye">Library</div>
+        <div class="hdr-title">Your memories</div>
+        <div class="hdr-sub">48 captured</div>
+      </div>
+      <div class="rich-list">
+        <div class="rich-card">
+          <div class="rich-card-accent"></div>
+          <div class="rich-card-body">
+            <div class="rich-card-header">
+              <div class="rich-card-tag">Resurfaced</div>
+              <div class="rich-card-time">3 days ago</div>
+            </div>
+            <div class="rich-card-text">Decided to push the launch to Q2 to focus on onboarding quality.</div>
+            <div class="rich-card-summary">AI: Decision about product timeline driven by quality concerns.</div>
+            <div class="rich-card-foot">
+              <div class="rich-card-type-chip">✏ text</div>
+              <div class="rich-card-open">Open →</div>
+            </div>
+          </div>
+        </div>
+        <div class="rich-card">
+          <div class="rich-card-accent" style="background: linear-gradient(90deg, #6366f1 0%, rgba(99,102,241,0) 100%)"></div>
+          <div class="rich-card-body">
+            <div class="rich-card-header">
+              <div class="rich-card-tag">Voice note</div>
+              <div class="rich-card-time">1 week ago</div>
+            </div>
+            <div class="rich-card-text">Pricing model thoughts — usage-based vs seat licensing.</div>
+            <div class="rich-card-summary">AI: Leans toward usage-based for better alignment with value.</div>
+            <div class="rich-card-foot">
+              <div class="rich-card-type-chip">🎙 voice</div>
+              <div class="rich-card-open">Open →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>C — Rich card</h3>
+      <p>Accent bar, AI summary inline, more visual weight per item. Shows more context but takes more space.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="sel-bar" id="sel">Click a memory treatment to select</div>
+
+<script>
+function pick(el) {
+  document.querySelectorAll('.col-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const names = { a: 'A — Borderless feed', b: 'B — Subtle card', c: 'C — Rich card' };
+  const n = names[el.dataset.choice];
+  document.getElementById('sel').innerHTML = 'Selected: <span>' + n + '</span> — tell me in the terminal';
+  try { fetch('/__event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'click', choice: el.dataset.choice, text: n, timestamp: Date.now() }) }); } catch(e) {}
+}
+</script>
+</body>
+</html>

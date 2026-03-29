@@ -144,6 +144,57 @@ CREATE INDEX IF NOT EXISTS idx_radar_events_memory_id ON radar_events(memory_id)
 CREATE INDEX IF NOT EXISTS idx_radar_events_event_type ON radar_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_radar_events_created_at ON radar_events(created_at);
 
+-- ── Decision Replay tables ───────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS decision_memories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    memory_id UUID REFERENCES memories(id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
+    rationale TEXT,
+    expected_outcome TEXT,
+    revisit_at TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(32) NOT NULL DEFAULT 'open',
+    reviewed_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_decision_memories_user_id ON decision_memories(user_id);
+CREATE INDEX IF NOT EXISTS idx_decision_memories_status ON decision_memories(status);
+CREATE INDEX IF NOT EXISTS idx_decision_memories_revisit_at ON decision_memories(revisit_at);
+
+-- ── Explicit memory links table ─────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS memory_links (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    source_memory_id UUID NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+    target_memory_id UUID NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+    link_type VARCHAR(32) NOT NULL DEFAULT 'explicit',
+    score DOUBLE PRECISION,
+    explanation TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_memory_links_user_id ON memory_links(user_id);
+CREATE INDEX IF NOT EXISTS idx_memory_links_source_memory_id ON memory_links(source_memory_id);
+CREATE INDEX IF NOT EXISTS idx_memory_links_target_memory_id ON memory_links(target_memory_id);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'uq_memory_links_source_target_type'
+    ) THEN
+        ALTER TABLE memory_links
+        ADD CONSTRAINT uq_memory_links_source_target_type
+        UNIQUE (source_memory_id, target_memory_id, link_type);
+    END IF;
+END
+$$;
+
 -- ── Add category columns to memories table ────────────────────────────────────
 
 DO $$

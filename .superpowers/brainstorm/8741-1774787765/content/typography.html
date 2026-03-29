@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typography Direction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c10; color: #f0ede8; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; padding: 32px 24px 100px; }
+
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: #fff; font-family: 'Inter', sans-serif; }
+  .subtitle { font-size: 15px; color: #666; margin-bottom: 32px; line-height: 1.5; font-family: 'Inter', sans-serif; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+
+  .card {
+    background: #131318;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid #1e1e26;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); border-color: #2a2a36; }
+  .card.selected { border-color: #C56A3A; }
+  .card.selected .badge-selected { display: block; }
+  .badge-selected {
+    display: none;
+    position: absolute; top: 12px; right: 12px;
+    background: #C56A3A; color: white;
+    font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px;
+    font-family: 'Inter', sans-serif; letter-spacing: 0.5px;
+  }
+
+  /* Phone shell shared */
+  .phone { background: #0c0c10; }
+  .phone .sb { background: #0c0c10; padding: 12px 18px 6px; display: flex; justify-content: space-between; font-size: 11px; color: #333; font-family: 'Inter'; }
+  .phone .divider { height: 1px; background: rgba(255,255,255,0.05); }
+  .phone .post { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .phone .post-tag { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; font-family: 'Inter'; }
+  .phone .post-body { font-size: 14px; line-height: 1.55; color: #c8c4be; }
+  .phone .post-chip { display: inline-block; font-size: 10px; color: #C56A3A; background: rgba(197,106,58,0.1); border-radius: 100px; padding: 2px 8px; margin-top: 6px; font-family: 'Inter'; font-weight: 500; }
+  .phone .tab-bar { background: rgba(12,12,16,0.97); border-top: 1px solid rgba(255,255,255,0.05); padding: 10px 0 18px; display: flex; justify-content: space-around; }
+  .phone .tab-bar span { color: #2a2a2a; font-size: 18px; }
+  .phone .tab-bar span.on { color: #f0ede8; }
+  .phone .tab-bar .fab { background: #C56A3A; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; margin-top: -8px; }
+
+  /* Type A: System refined */
+  .hdr-a { padding: 18px 18px 12px; }
+  .hdr-a .eyebrow { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: 'Inter'; }
+  .hdr-a .title { font-size: 28px; font-weight: 700; color: #f0ede8; letter-spacing: -0.8px; line-height: 1.1; font-family: 'Inter'; }
+  .hdr-a .meta { font-size: 12px; color: #444; margin-top: 4px; font-family: 'Inter'; }
+  .post-body-a { font-family: 'Inter'; font-weight: 400; }
+
+  /* Type B: Serif display */
+  .hdr-b { padding: 18px 18px 12px; }
+  .hdr-b .eyebrow { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: 'DM Sans'; }
+  .hdr-b .title { font-size: 30px; color: #f0ede8; letter-spacing: -0.2px; line-height: 1.1; font-family: 'DM Serif Display', serif; font-style: italic; }
+  .hdr-b .meta { font-size: 12px; color: #444; margin-top: 4px; font-family: 'DM Sans'; }
+  .post-body-b { font-family: 'DM Sans'; font-weight: 400; }
+
+  /* Type C: DM Sans throughout */
+  .hdr-c { padding: 18px 18px 12px; }
+  .hdr-c .eyebrow { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-family: 'DM Sans'; }
+  .hdr-c .title { font-size: 28px; font-weight: 600; color: #f0ede8; letter-spacing: -0.5px; line-height: 1.1; font-family: 'DM Serif Display', serif; }
+  .hdr-c .meta { font-size: 12px; color: #444; margin-top: 4px; font-family: 'DM Sans'; }
+  .post-body-c { font-family: 'DM Sans'; }
+
+  .card-label { padding: 14px 18px 18px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .card-label h3 { font-size: 14px; font-weight: 600; color: #f0ede8; font-family: 'Inter'; }
+  .card-label p { font-size: 12px; color: #555; margin-top: 4px; line-height: 1.4; font-family: 'Inter'; }
+
+  .sel-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #131318; border-top: 1px solid #1e1e26; padding: 14px 24px; font-size: 13px; color: #666; text-align: center; font-family: 'Inter'; }
+  .sel-bar span { color: #C56A3A; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h2>What typeface direction feels right?</h2>
+<p class="subtitle">Same screen, three type personalities — all on the Hybrid dark palette</p>
+
+<div class="cards">
+
+  <!-- A: Inter, pure -->
+  <div class="card" data-choice="a" onclick="pick(this)">
+    <div class="badge-selected">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr-a">
+        <div class="eyebrow">Sunday · Mar 29</div>
+        <div class="title">Morning<br>recall</div>
+        <div class="meta">4 things worth revisiting</div>
+      </div>
+      <div class="divider"></div>
+      <div class="post">
+        <div class="post-tag">Resurfaced</div>
+        <div class="post-body post-body-a">Decided to push the launch to Q2 to focus on onboarding quality.</div>
+        <div class="post-chip">3 days ago</div>
+      </div>
+      <div class="post">
+        <div class="post-tag">On this day</div>
+        <div class="post-body post-body-a">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+        <div class="post-chip">1 year ago</div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label">
+      <h3>A — Inter throughout</h3>
+      <p>Bold geometric sans at all sizes. Clean, modern, tight — very Threads. Familiar, no-nonsense.</p>
+    </div>
+  </div>
+
+  <!-- B: DM Serif italic display + DM Sans body -->
+  <div class="card" data-choice="b" onclick="pick(this)">
+    <div class="badge-selected">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr-b">
+        <div class="eyebrow">Sunday · Mar 29</div>
+        <div class="title">Morning recall</div>
+        <div class="meta">4 things worth revisiting</div>
+      </div>
+      <div class="divider"></div>
+      <div class="post">
+        <div class="post-tag">Resurfaced</div>
+        <div class="post-body post-body-b">Decided to push the launch to Q2 to focus on onboarding quality.</div>
+        <div class="post-chip">3 days ago</div>
+      </div>
+      <div class="post">
+        <div class="post-tag">On this day</div>
+        <div class="post-body post-body-b">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+        <div class="post-chip">1 year ago</div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label">
+      <h3>B — Serif italic display + DM Sans body <span style="font-size:10px;color:#C56A3A;background:rgba(197,106,58,0.15);padding:2px 7px;border-radius:100px;">recommended</span></h3>
+      <p>DM Serif Display italic for headers, DM Sans for body. Precisely what Anthropic uses — thoughtful, literary, premium.</p>
+    </div>
+  </div>
+
+  <!-- C: DM Serif upright + DM Sans -->
+  <div class="card" data-choice="c" onclick="pick(this)">
+    <div class="badge-selected">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="hdr-c">
+        <div class="eyebrow">Sunday · Mar 29</div>
+        <div class="title">Morning recall</div>
+        <div class="meta">4 things worth revisiting</div>
+      </div>
+      <div class="divider"></div>
+      <div class="post">
+        <div class="post-tag">Resurfaced</div>
+        <div class="post-body post-body-c">Decided to push the launch to Q2 to focus on onboarding quality.</div>
+        <div class="post-chip">3 days ago</div>
+      </div>
+      <div class="post">
+        <div class="post-tag">On this day</div>
+        <div class="post-body post-body-c">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+        <div class="post-chip">1 year ago</div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label">
+      <h3>C — Serif upright + DM Sans</h3>
+      <p>DM Serif Display (non-italic) for headers. More editorial than literary — authoritative without being precious.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="sel-bar" id="sel">Click a typeface direction</div>
+
+<script>
+function pick(el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const names = { a: 'A — Inter throughout', b: 'B — Serif italic + DM Sans', c: 'C — Serif upright + DM Sans' };
+  document.getElementById('sel').innerHTML = 'Selected: <span>' + names[el.dataset.choice] + '</span> — tell me in the terminal';
+  try { fetch('/__event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'click', choice: el.dataset.choice, text: names[el.dataset.choice], timestamp: Date.now() }) }); } catch(e) {}
+}
+</script>
+</body>
+</html>

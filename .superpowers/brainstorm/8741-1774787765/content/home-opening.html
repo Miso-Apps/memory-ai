@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Opening Moment</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0c0c10; color: #f0ede8; font-family: 'DM Sans', sans-serif; padding: 32px 24px 100px; }
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .subtitle { font-size: 15px; color: #555; margin-bottom: 32px; line-height: 1.5; }
+
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+
+  .wrap {
+    border-radius: 20px; overflow: hidden; cursor: pointer;
+    border: 2px solid #1a1a22; transition: border-color 0.2s, transform 0.15s;
+    position: relative; background: #131318;
+  }
+  .wrap:hover { transform: translateY(-2px); }
+  .wrap.selected { border-color: #C56A3A; }
+  .wrap.selected .badge { display: block; }
+  .badge { display: none; position: absolute; top: 12px; right: 12px; background: #C56A3A; color: #fff; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+
+  .phone { background: #0c0c10; }
+  .sb { padding: 12px 18px 6px; display: flex; justify-content: space-between; font-size: 11px; color: #2a2a2a; font-family: 'DM Sans'; }
+
+  /* Shared memory card */
+  .mcard { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 11px 13px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; }
+  .mcard-tag { font-size: 9px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .mcard-text { font-size: 12px; color: #888; line-height: 1.45; }
+  .mcard-foot { font-size: 10px; color: #2e2e2e; margin-top: 5px; }
+
+  /* ── A: Smart Feed ── */
+  .feed-hero { padding: 20px 18px 14px; }
+  .feed-eye { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .feed-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 28px; color: #f0ede8; line-height: 1.1; letter-spacing: -0.2px; }
+  .feed-sub { font-size: 12px; color: #3a3a3a; margin-top: 4px; }
+  .feed-divider { height: 1px; background: rgba(255,255,255,0.04); margin: 0; }
+  .feed-body { padding: 10px 12px; }
+  .feed-section-label { font-size: 9px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding: 0 2px; }
+
+  /* ── B: Claude greeting ── */
+  .greet-hero { padding: 24px 18px 16px; }
+  .greet-time { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .greet-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 24px; color: #f0ede8; line-height: 1.25; letter-spacing: -0.2px; }
+  .greet-capture { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 12px 14px; margin: 14px 0 0; display: flex; align-items: center; gap: 10px; }
+  .greet-capture-dot { width: 6px; height: 6px; border-radius: 50%; background: #C56A3A; flex-shrink: 0; }
+  .greet-capture-text { font-size: 13px; color: #333; font-style: italic; }
+  .greet-divider { height: 1px; background: rgba(255,255,255,0.04); margin: 14px 0 0; }
+  .greet-body { padding: 10px 12px; }
+  .greet-section-label { font-size: 9px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding: 0 2px; }
+
+  /* ── C: Stats-first ── */
+  .stats-hero { padding: 18px 18px 14px; }
+  .stats-eye { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .stats-title { font-family: 'DM Serif Display', serif; font-style: italic; font-size: 26px; color: #f0ede8; line-height: 1.1; }
+  .stats-row { display: flex; gap: 8px; margin-top: 12px; }
+  .stat-pill { flex: 1; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 10px 8px; text-align: center; }
+  .stat-val { font-family: 'DM Serif Display', serif; font-size: 20px; color: #f0ede8; }
+  .stat-label { font-size: 9px; color: #333; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .streak-pill { background: rgba(197,106,58,0.08); border-color: rgba(197,106,58,0.2); }
+  .streak-val { color: #C56A3A; }
+  .stats-divider { height: 1px; background: rgba(255,255,255,0.04); margin-top: 14px; }
+  .stats-body { padding: 10px 12px; }
+  .stats-section-label { font-size: 9px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; padding: 0 2px; }
+
+  .tab-bar { background: rgba(12,12,16,0.97); border-top: 1px solid rgba(255,255,255,0.04); padding: 10px 0 18px; display: flex; justify-content: space-around; }
+  .tab-bar span { color: #222; font-size: 18px; }
+  .tab-bar span.on { color: #f0ede8; }
+  .tab-bar .fab { background: #C56A3A; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: white; margin-top: -8px; }
+
+  .col-label { padding: 14px 16px 16px; border-top: 1px solid rgba(255,255,255,0.04); }
+  .col-label h3 { font-size: 13px; font-weight: 600; color: #f0ede8; }
+  .col-label p { font-size: 12px; color: #444; margin-top: 3px; line-height: 1.4; }
+
+  .sel-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #131318; border-top: 1px solid #1a1a22; padding: 14px 24px; font-size: 13px; color: #555; text-align: center; }
+  .sel-bar span { color: #C56A3A; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h2>What do users see first when they open the app?</h2>
+<p class="subtitle">The opening moment sets the emotional contract with your users</p>
+
+<div class="cols">
+
+  <!-- A: Smart Feed (AI-first) -->
+  <div class="wrap" data-choice="a" onclick="pick(this)">
+    <div class="badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="feed-hero">
+        <div class="feed-eye">Sunday · Mar 29</div>
+        <div class="feed-title">Morning recall</div>
+        <div class="feed-sub">5 things surfaced for you</div>
+      </div>
+      <div class="feed-divider"></div>
+      <div class="feed-body">
+        <div class="feed-section-label">Recalled for you</div>
+        <div class="mcard">
+          <div class="mcard-tag">Resurfaced · 3 days ago</div>
+          <div class="mcard-text">Decided to push launch to Q2 to focus on onboarding quality.</div>
+        </div>
+        <div class="mcard">
+          <div class="mcard-tag">On this day · 1 year ago</div>
+          <div class="mcard-text">Started learning Mandarin. First session overwhelming but exciting.</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>A — AI-first feed</h3>
+      <p>App opens straight into what the AI surfaced. No preamble — just your memories, recalled.</p>
+    </div>
+  </div>
+
+  <!-- B: Greeting + capture prompt -->
+  <div class="wrap" data-choice="b" onclick="pick(this)">
+    <div class="badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="greet-hero">
+        <div class="greet-time">Good morning, Brian</div>
+        <div class="greet-title">What's on your mind today?</div>
+        <div class="greet-capture">
+          <div class="greet-capture-dot"></div>
+          <div class="greet-capture-text">Capture a thought...</div>
+        </div>
+      </div>
+      <div class="greet-divider"></div>
+      <div class="greet-body">
+        <div class="greet-section-label">From the past</div>
+        <div class="mcard">
+          <div class="mcard-tag">Resurfaced</div>
+          <div class="mcard-text">Decided to push launch to Q2 to focus on onboarding quality.</div>
+          <div class="mcard-foot">3 days ago</div>
+        </div>
+        <div class="mcard">
+          <div class="mcard-tag">On this day</div>
+          <div class="mcard-text">Started learning Mandarin. First session overwhelming but exciting.</div>
+          <div class="mcard-foot">1 year ago</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>B — Greeting + capture prompt <span style="font-size:10px;color:#C56A3A;background:rgba(197,106,58,0.15);padding:2px 7px;border-radius:100px;margin-left:4px;">recommended</span></h3>
+      <p>Opens like Claude — personal, inviting. Nudges capture first, then shows recalled memories below.</p>
+    </div>
+  </div>
+
+  <!-- C: Stats + streak hero -->
+  <div class="wrap" data-choice="c" onclick="pick(this)">
+    <div class="badge">✓ Selected</div>
+    <div class="phone">
+      <div class="sb"><span>9:41</span><span>●●●</span></div>
+      <div class="stats-hero">
+        <div class="stats-eye">Your memory, Mar 29</div>
+        <div class="stats-title">Week in review</div>
+        <div class="stats-row">
+          <div class="stat-pill">
+            <div class="stat-val">48</div>
+            <div class="stat-label">Total</div>
+          </div>
+          <div class="stat-pill">
+            <div class="stat-val">7</div>
+            <div class="stat-label">This week</div>
+          </div>
+          <div class="stat-pill streak-pill">
+            <div class="stat-val streak-val">🔥 5</div>
+            <div class="stat-label">Day streak</div>
+          </div>
+        </div>
+      </div>
+      <div class="stats-divider"></div>
+      <div class="stats-body">
+        <div class="stats-section-label">Recalled for you</div>
+        <div class="mcard">
+          <div class="mcard-tag">Resurfaced</div>
+          <div class="mcard-text">Decided to push launch to Q2 to focus on onboarding quality.</div>
+          <div class="mcard-foot">3 days ago</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="on">⌂</span><span>☰</span>
+        <div class="fab">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="col-label">
+      <h3>C — Stats + streak hero</h3>
+      <p>Opens with your numbers front and center. Gamification-led — good for habit building, but heavier.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="sel-bar" id="sel">Click to select the opening moment</div>
+
+<script>
+function pick(el) {
+  document.querySelectorAll('.wrap').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const names = { a: 'A — AI-first feed', b: 'B — Greeting + capture prompt', c: 'C — Stats + streak hero' };
+  const n = names[el.dataset.choice];
+  document.getElementById('sel').innerHTML = 'Selected: <span>' + n + '</span> — tell me in the terminal';
+  try { fetch('/__event', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'click', choice: el.dataset.choice, text: n, timestamp: Date.now() }) }); } catch(e) {}
+}
+</script>
+</body>
+</html>

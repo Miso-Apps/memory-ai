@@ -162,6 +162,98 @@ async def test():
         )
         assert r.status_code == 422, f"invalid radar event should be 422, got {r.status_code}"
 
+        # Test decision replay lifecycle
+        r = await client.post(
+            "/decisions/",
+            json={
+                "title": "Adopt weekly review ritual",
+                "rationale": "Need better recall discipline",
+                "expected_outcome": "Higher weekly recall usage",
+            },
+            headers=headers,
+        )
+        print(f"POST /decisions/ -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"create decision failed: {r.text}"
+        decision_id = r.json()["id"]
+        assert r.json()["status"] == "open"
+
+        r = await client.get("/decisions/?status=open", headers=headers)
+        assert r.status_code == 200, f"list decisions failed: {r.text}"
+        assert r.json().get("total", 0) >= 1, "expected at least one open decision"
+
+        r = await client.patch(
+            f"/decisions/{decision_id}",
+            json={"status": "reviewed"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"update decision failed: {r.text}"
+        assert r.json().get("status") == "reviewed"
+
+        r = await client.post(
+            f"/decisions/{decision_id}/review",
+            json={"status": "archived"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"review decision failed: {r.text}"
+        assert r.json().get("status") == "archived"
+
+        # Test explicit memory links
+        r = await client.post(
+            "/memories/",
+            json={"type": "text", "content": "Source memory for link"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"source memory create failed: {r.text}"
+        source_memory_id = r.json()["id"]
+
+        r = await client.post(
+            "/memories/",
+            json={"type": "text", "content": "Target memory for link"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"target memory create failed: {r.text}"
+        target_memory_id = r.json()["id"]
+
+        r = await client.post(
+            f"/memories/{source_memory_id}/links",
+            json={
+                "target_memory_id": target_memory_id,
+                "link_type": "explicit",
+                "explanation": "Directly connected decision context",
+            },
+            headers=headers,
+        )
+        print(f"POST /memories/{{id}}/links -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"create memory link failed: {r.text}"
+
+        r = await client.get(f"/memories/{source_memory_id}/links", headers=headers)
+        assert r.status_code == 200, f"list memory links failed: {r.text}"
+        assert len(r.json()) >= 1, "expected at least one explicit link"
+
+        r = await client.get(f"/insights/related/{source_memory_id}", headers=headers)
+        assert r.status_code == 200, f"related with explicit links failed: {r.text}"
+        assert r.json().get("total", 0) >= 1, "expected related memories"
+
+        r = await client.post(
+            "/insights/related/events",
+            json={
+                "memory_id": target_memory_id,
+                "event_type": "related_click",
+                "reason_code": "manual_link_click",
+                "context": {"source_memory_id": source_memory_id},
+            },
+            headers=headers,
+        )
+        assert r.status_code == 200, f"track related event failed: {r.text}"
+        assert r.json().get("status") == "ok"
+
+        r = await client.delete(
+            f"/memories/{source_memory_id}/links/{target_memory_id}",
+            headers=headers,
+        )
+        assert r.status_code == 200, f"delete memory link failed: {r.text}"
+        assert r.json().get("status") == "deleted"
+
         print()
         print("=" * 40)
         print("All endpoint tests PASSED!")

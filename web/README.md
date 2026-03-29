@@ -8,4 +8,12 @@
   Run `npm i` to install the dependencies.
 
   Run `npm run dev` to start the development server.
+
+  ## Environment
+
+  Set backend API URL for web auth/data integration:
+
+  ```bash
+  VITE_API_BASE_URL=http://localhost:8000
+  ```
   

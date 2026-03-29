@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, PenLine, Mic, Check, X, Clipboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { memoriesApi } from '../services/api';
 
 type CaptureMode = 'menu' | 'link' | 'text' | 'audio' | 'success';
 
@@ -14,6 +15,8 @@ export function QuickCapture({ onClose }: QuickCaptureProps) {
   const [textValue, setTextValue] = useState('');
   const [clipboardContent, setClipboardContent] = useState<string | null>(null);
   const [clipboardType, setClipboardType] = useState<'url' | 'text' | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Smart clipboard detection on mount
   useEffect(() => {
@@ -49,16 +52,34 @@ export function QuickCapture({ onClose }: QuickCaptureProps) {
     }, 1800); // Faster than before (2000 → 1800)
   };
 
-  const handleSaveLink = () => {
+  const handleSaveLink = async () => {
     if (!linkValue.trim()) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await memoriesApi.create({ type: 'link', content: linkValue.trim() });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Khong the luu link.');
+      setIsSaving(false);
+      return;
+    }
     setMode('success');
     setTimeout(() => {
       onClose();
     }, 1800);
   };
 
-  const handleSaveText = () => {
+  const handleSaveText = async () => {
     if (!textValue.trim()) return;
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await memoriesApi.create({ type: 'text', content: textValue.trim() });
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Khong the luu ghi chu.');
+      setIsSaving(false);
+      return;
+    }
     setMode('success');
     setTimeout(() => {
       onClose();
@@ -148,8 +169,8 @@ export function QuickCapture({ onClose }: QuickCaptureProps) {
               autoFocus
               className="w-full bg-transparent text-lg outline-none placeholder:text-muted-foreground/40"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && linkValue.trim()) {
-                  handleSaveLink();
+                if (e.key === 'Enter' && linkValue.trim() && !isSaving) {
+                  void handleSaveLink();
                 }
               }}
             />
@@ -159,14 +180,15 @@ export function QuickCapture({ onClose }: QuickCaptureProps) {
           <div className="px-5 pb-8 pb-safe">
             <motion.button
               onClick={handleSaveLink}
-              disabled={!linkValue.trim()}
+              disabled={!linkValue.trim() || isSaving}
               className="w-full bg-accent text-accent-foreground py-4 rounded-full font-medium disabled:opacity-40 disabled:cursor-not-allowed"
               style={{ boxShadow: linkValue.trim() ? 'var(--shadow-fab)' : 'none' }}
               whileHover={{ scale: linkValue.trim() ? 1.02 : 1 }}
               whileTap={{ scale: linkValue.trim() ? 0.98 : 1 }}
             >
-              Lưu
+              {isSaving ? 'Dang luu...' : 'Luu'}
             </motion.button>
+            {saveError && <p className="text-xs text-destructive mt-2 text-center">{saveError}</p>}
           </div>
         </div>
       </motion.div>
@@ -212,13 +234,14 @@ export function QuickCapture({ onClose }: QuickCaptureProps) {
           <div className="px-5 pb-8">
             <motion.button
               onClick={handleSaveText}
-              disabled={!textValue.trim()}
+              disabled={!textValue.trim() || isSaving}
               className="w-full bg-accent text-accent-foreground py-4 rounded-full font-medium shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               whileHover={{ scale: textValue.trim() ? 1.02 : 1 }}
               whileTap={{ scale: textValue.trim() ? 0.98 : 1 }}
             >
-              Lưu
+              {isSaving ? 'Dang luu...' : 'Luu'}
             </motion.button>
+            {saveError && <p className="text-xs text-destructive mt-2 text-center">{saveError}</p>}
           </div>
         </div>
       </motion.div>

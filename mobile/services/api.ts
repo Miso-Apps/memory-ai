@@ -178,6 +178,30 @@ export interface Memory {
   updated_at: string;
 }
 
+export interface MemoryLink {
+  id: string;
+  source_memory_id: string;
+  target_memory_id: string;
+  link_type: string;
+  score?: number;
+  explanation?: string;
+  created_at: string;
+}
+
+export interface Decision {
+  id: string;
+  user_id: string;
+  memory_id?: string | null;
+  title: string;
+  rationale?: string | null;
+  expected_outcome?: string | null;
+  revisit_at?: string | null;
+  status: 'open' | 'reviewed' | 'archived';
+  reviewed_at?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
 export interface PaginatedMemoriesResponse {
   memories: Memory[];
   total: number;
@@ -298,6 +322,30 @@ export const memoriesApi = {
   // Permanently delete a memory
   permanentDelete: async (id: string) => {
     await api.delete(`/memories/${id}/permanent`);
+  },
+
+  // List explicit links from a source memory
+  listLinks: async (id: string) => {
+    const response = await api.get<MemoryLink[]>(`/memories/${id}/links`);
+    return response.data;
+  },
+
+  // Create explicit memory link
+  createLink: async (
+    id: string,
+    payload: { target_memory_id: string; link_type?: string; score?: number; explanation?: string }
+  ) => {
+    const response = await api.post<MemoryLink>(`/memories/${id}/links`, payload);
+    return response.data;
+  },
+
+  // Delete explicit memory link
+  deleteLink: async (id: string, targetMemoryId: string, linkType: string = 'explicit') => {
+    const response = await api.delete<{ status: string; message?: string }>(
+      `/memories/${id}/links/${targetMemoryId}`,
+      { params: { link_type: linkType } }
+    );
+    return response.data;
   },
 
   // Get smart reminders for home screen
@@ -563,6 +611,8 @@ export interface RelatedMemory {
   type: string;
   content: string;
   similarity: number | null;
+  link_type?: string;
+  explanation?: string;
   created_at: string;
   category_name?: string;
   category_icon?: string;
@@ -603,9 +653,71 @@ export const insightsApi = {
     return response.data;
   },
 
+  // Track related-memory click/exposure events
+  trackRelatedEvent: async (payload: {
+    memory_id: string;
+    event_type?: 'related_click';
+    reason_code?: string;
+    confidence?: number;
+    context?: Record<string, any>;
+  }) => {
+    const response = await api.post<{ status: string; event_id: string }>(
+      '/insights/related/events',
+      {
+        event_type: payload.event_type ?? 'related_click',
+        ...payload,
+      }
+    );
+    return response.data;
+  },
+
   // Get detailed streak info
   getStreaks: async () => {
     const response = await api.get<StreakDetails>('/insights/streaks');
+    return response.data;
+  },
+};
+
+export const decisionsApi = {
+  create: async (payload: {
+    title: string;
+    rationale?: string;
+    expected_outcome?: string;
+    revisit_at?: string;
+    memory_id?: string;
+  }) => {
+    const response = await api.post<Decision>('/decisions/', payload);
+    return response.data;
+  },
+
+  list: async (params?: {
+    status?: 'open' | 'reviewed' | 'archived';
+    due_before?: string;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const response = await api.get<{ items: Decision[]; total: number }>('/decisions/', {
+      params,
+    });
+    return response.data;
+  },
+
+  update: async (
+    id: string,
+    payload: Partial<{
+      title: string;
+      rationale: string;
+      expected_outcome: string;
+      revisit_at: string;
+      status: 'open' | 'reviewed' | 'archived';
+    }>
+  ) => {
+    const response = await api.patch<Decision>(`/decisions/${id}`, payload);
+    return response.data;
+  },
+
+  review: async (id: string, status: 'reviewed' | 'archived' = 'reviewed') => {
+    const response = await api.post<Decision>(`/decisions/${id}/review`, { status });
     return response.data;
   },
 };
