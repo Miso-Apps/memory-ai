@@ -13,6 +13,7 @@ const en = {
   profile: {
     title: 'Profile',
     subtitle: 'Manage your settings',
+    eyebrow: 'Signed in as',
     toggleOn: 'On',
     toggleOff: 'Off',
 
@@ -110,6 +111,12 @@ const en = {
     greetingMorning: 'Good morning',
     greetingAfternoon: 'Good afternoon',
     greetingEvening: 'Good evening',
+    titleMorning: "What's on your mind?",
+    titleAfternoon: 'Welcome back',
+    titleEvening: 'End of day reflection',
+    sectionRecalled: 'Recalled for you',
+    sectionOnThisDay: 'On this day',
+    sectionUnreviewed: 'Unreviewed',
     subtitle: "Here's what you might want to remember",
     noMemories: 'Nothing to recall yet',
     noMemoriesSubtitle: 'Start saving your thoughts and we\'ll remind you when they\'re relevant',
@@ -153,12 +160,15 @@ const en = {
     revisitHint: 'A quick revisit can unlock useful context',
     insightStreakSub: '🔥 {{streak}}-day streak · {{count}} this week',
     insightWeekSub: '{{count}} memories this week',
+    capturePromptText: "What's on your mind today?",
+    capturePromptA11y: 'Capture a new memory',
   },
 
   // Library screen
   library: {
-    title: 'Memories',
-    searchPlaceholder: 'Search memories…',
+    eyebrow: '{{count}} memories',
+    title: 'Your archive',
+    searchPlaceholder: 'Search memories...',
     filterAll: 'All',
     allCategories: 'All categories',
     loading: 'Loading…',
@@ -230,6 +240,12 @@ const en = {
     match: 'match',
     loadingRelated: 'Loading connected ideas…',
     relatedViaCategory: 'Related via category',
+    aiSummaryLabel: '✦ AI Summary',
+    actionEdit: 'Edit',
+    actionShare: 'Share',
+    actionReflect: 'Reflect',
+    backToLibrary: '← Library',
+    backToHome: '← Home',
   },
 
   // Capture screen
@@ -294,6 +310,11 @@ const en = {
     linkSaveFailed: 'Failed to save link.',
     photoSaved: 'Image saved ✓',
     saved: 'Saved!',
+    hintIdea: '💡 Idea',
+    hintMeeting: '📋 Meeting',
+    hintDecision: '🎯 Decision',
+    hintConversation: '💬 Conversation',
+    hintLearning: '📚 Learning',
   },
 
   // Language switcher
@@ -346,6 +367,8 @@ const en = {
     daysAgo: '{{count}}d ago',
     weeksAgo: '{{count}}w ago',
     tapToOpen: 'Tap to open',
+    openMemory: 'Open',
+    dismissMemory: 'Dismiss',
   },
 
   // Alerts
@@ -396,7 +419,12 @@ const en = {
 
   // Insights screen
   insights: {
-    title: 'Insights',
+    eyebrow: '{{month}} {{year}}',
+    title: 'Your patterns',
+    streakLabel: 'Day streak',
+    totalLabel: 'Total',
+    activityLabel: 'Activity — last 12 weeks',
+    recapLabel: '✦ Weekly recap',
     subtitle: 'Patterns & trends from your memories',
     loading: 'Analyzing your memories…',
     empty: 'No insights yet',

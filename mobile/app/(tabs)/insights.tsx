@@ -22,6 +22,7 @@ import {
 } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEATMAP_CELL = 12;
@@ -34,6 +35,15 @@ const TYPE_ICON: Record<string, React.ComponentType<any>> = {
   link: Link2,
   photo: ImageIcon,
 };
+
+function heatmapCellColor(count: number, max: number): string {
+  if (count === 0) return 'rgba(255,255,255,0.04)';
+  const ratio = count / Math.max(max, 1);
+  if (ratio < 0.25) return 'rgba(197,106,58,0.2)';
+  if (ratio < 0.5)  return 'rgba(197,106,58,0.45)';
+  if (ratio < 0.75) return 'rgba(197,106,58,0.7)';
+  return '#C56A3A';
+}
 
 function formatHour(hour: number): string {
   if (hour === 0) return '12am';
@@ -64,12 +74,12 @@ function RecapCard({ recap, t }: { recap: WeeklyRecap; t: Function }) {
   }
 
   return (
-    <View style={[s.recapCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-      <View style={s.recapHeader}>
-        <Text style={[s.recapTitle, { color: colors.textSecondary }]}>{t('insights.weeklyRecap')}</Text>
-      </View>
+    <View style={[s.recapCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+      <Text style={[s.recapLabel, { color: colors.brandAccent }]}>
+        {t('insights.recapLabel').toUpperCase()}
+      </Text>
       {recap.recap && (
-        <Text style={[s.recapText, { color: colors.textPrimary }]}>{recap.recap}</Text>
+        <Text style={[s.recapText, { color: colors.textSecondary }]}>{recap.recap}</Text>
       )}
       <View style={s.recapStats}>
         <View style={s.recapStat}>
@@ -170,46 +180,28 @@ function ActivityHeatmap({
 
   const maxCount = Math.max(...days.map((d) => d.count), 1);
 
-  function getCellColor(count: number): string {
-    if (count === 0) return colors.inputBg;
-    const intensity = Math.min(count / maxCount, 1);
-    if (intensity < 0.25) return colors.accentSubtle;
-    if (intensity < 0.5) return colors.accentLight;
-    if (intensity < 0.75) return colors.accentMid;
-    return colors.accent;
-  }
-
   return (
     <View style={[s.heatmapCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
       <View style={s.heatmapGrid}>
-        {days.map((d, i) => (
+        {days.map((d) => (
           <View
             key={d.date}
             style={[
               s.heatmapCell,
-              { backgroundColor: getCellColor(d.count) },
+              { backgroundColor: heatmapCellColor(d.count, maxCount) },
             ]}
           />
         ))}
       </View>
       <View style={s.heatmapLegend}>
         <Text style={[s.heatmapLabelText, { color: colors.textMuted }]}>{t('insights.less')}</Text>
-        {[0, 0.25, 0.5, 0.75, 1].map((intensity, i) => (
+        {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
           <View
             key={i}
             style={[
               s.heatmapLegendCell,
               {
-                backgroundColor:
-                  intensity === 0
-                    ? colors.inputBg
-                    : intensity < 0.3
-                      ? colors.accentSubtle
-                      : intensity < 0.6
-                        ? colors.accentLight
-                        : intensity < 0.85
-                          ? colors.accentMid
-                          : colors.accent,
+                backgroundColor: heatmapCellColor(ratio === 0 ? 0 : ratio * maxCount, maxCount),
               },
             ]}
           />
@@ -524,12 +516,22 @@ export default function InsightsScreen() {
     { days: 90, label: t('insights.period90') },
   ];
 
+  const screenHeader = (
+    <ScreenHeader
+      eyebrow={t('insights.eyebrow', {
+        month: new Date().toLocaleString('default', { month: 'long' }).toUpperCase(),
+        year: new Date().getFullYear(),
+      })}
+      title={t('insights.title')}
+      titleSize={30}
+      paddingHorizontal={16}
+    />
+  );
+
   if (fastLoading) {
     return (
       <SafeAreaView style={[s.container, { backgroundColor: colors.bg }]} edges={['top']}>
-        <View style={s.header}>
-          <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('insights.title')}</Text>
-        </View>
+        {screenHeader}
         <View style={s.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[s.loadingText, { color: colors.textMuted }]}>{t('insights.loading')}</Text>
@@ -541,12 +543,7 @@ export default function InsightsScreen() {
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.bg }]} edges={['top']}>
       {/* Header */}
-      <View style={s.header}>
-        <Text style={[s.headerTitle, { color: colors.textPrimary }]}>{t('insights.title')}</Text>
-        <Text style={[s.headerSubtitle, { color: colors.textSecondary }]}>
-          {t('insights.subtitle')}
-        </Text>
-      </View>
+      {screenHeader}
 
       <ScrollView
         style={s.scroll}
@@ -588,6 +585,34 @@ export default function InsightsScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Streak + Total card */}
+        {(streaks || dashboard) && (
+          <View style={[
+            s.streakCard,
+            {
+              backgroundColor: 'rgba(197,106,58,0.07)',
+              borderColor: 'rgba(197,106,58,0.18)',
+            },
+          ]}>
+            <View>
+              <Text style={[s.streakValue, { color: colors.brandAccent, fontFamily: 'DMSerifDisplay_400Regular_Italic' }]}>
+                🔥 {streaks?.current_streak ?? 0}
+              </Text>
+              <Text style={[s.streakLabel, { color: colors.brandAccent }]}>
+                {t('insights.streakLabel').toUpperCase()}
+              </Text>
+            </View>
+            <View style={s.streakRight}>
+              <Text style={[s.totalValue, { color: colors.textPrimary, fontFamily: 'DMSerifDisplay_400Regular_Italic' }]}>
+                {dashboard?.total_memories ?? 0}
+              </Text>
+              <Text style={[s.totalLabel, { color: colors.textMuted }]}>
+                {t('insights.totalLabel').toUpperCase()}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Weekly Recap — skeleton while LLM is generating */}
         {recapLoading ? (
@@ -701,15 +726,70 @@ const s = StyleSheet.create({
   sectionEmoji: { fontSize: 16, opacity: 0.75 },
   sectionTitle: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
 
+  // Streak card
+  streakCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  streakValue: {
+    fontSize: 28,
+    lineHeight: 32,
+  },
+  streakLabel: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    marginTop: 3,
+    opacity: 0.7,
+  },
+  streakRight: {
+    alignItems: 'flex-end',
+  },
+  totalValue: {
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  totalLabel: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    marginTop: 3,
+  },
+
   // Recap card
   recapOuter: { borderRadius: 20, marginBottom: 12, overflow: 'hidden' },
   recapGradient: { padding: 20, borderRadius: 20 },
-  recapCard: { borderRadius: 20, padding: 18, borderWidth: 1, marginBottom: 12 },
+  recapCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
+  },
   recapEmpty: { fontSize: 15, textAlign: 'center', fontFamily: SANS_FONT },
   recapHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   recapEmoji: { fontSize: 20 },
+  recapLabel: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 9,
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
   recapTitle: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, fontFamily: SANS_FONT },
-  recapText: { fontSize: 15, lineHeight: 22, marginBottom: 14, fontFamily: SANS_FONT },
+  recapText: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 20,
+    marginBottom: 14,
+  },
   recapStats: { flexDirection: 'row', gap: 20 },
   recapStat: { alignItems: 'center' },
   recapStatValue: { fontSize: 20, fontWeight: '600', fontFamily: SANS_FONT },

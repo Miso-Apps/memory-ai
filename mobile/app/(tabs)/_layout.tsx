@@ -50,14 +50,14 @@ function TabIcon({
           style={[
             styles.iconBackground,
             {
-              backgroundColor: colors.accentLight,
+              backgroundColor: colors.brandAccentLight,
               opacity: opacityAnim,
             },
           ]}
         />
         <Icon
           size={size}
-          color={focused ? colors.accent : colors.textMuted}
+          color={focused ? colors.textPrimary : '#2a2a2a'}
           strokeWidth={focused ? 2.5 : 1.8}
         />
       </View>
@@ -130,7 +130,7 @@ function CreateTabButton({ style, ...rest }: any) {
     >
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
         <View style={[styles.createBtnRing, { backgroundColor: colors.brandAccentLight }]}> 
-          <View style={[styles.createBtn, { backgroundColor: colors.brandAccent, shadowColor: colors.brandAccent }]}>
+          <View style={[styles.createBtn, { backgroundColor: colors.brandAccent }]}>
             <Plus size={22} color="#FFFFFF" strokeWidth={2.8} />
           </View>
         </View>
@@ -146,8 +146,8 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: colors.textPrimary,
+        tabBarInactiveTintColor: '#2a2a2a',
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
@@ -155,7 +155,7 @@ export default function TabsLayout() {
           borderRadius: 24,
           marginHorizontal: 14,
           marginBottom: Platform.OS === 'ios' ? 16 : 12,
-          height: Platform.OS === 'ios' ? 78 : 72,
+          height: Platform.OS === 'ios' ? 84 : 78,
           paddingTop: 8,
           paddingBottom: Platform.OS === 'ios' ? 8 : 7,
           position: 'absolute',
@@ -163,8 +163,8 @@ export default function TabsLayout() {
             ios: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.1,
-              shadowRadius: 14,
+              shadowOpacity: 0.12,
+              shadowRadius: 16,
             },
             android: {
               elevation: 10,
@@ -271,9 +271,10 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#C56A3A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.24,
-    shadowRadius: 8,
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
     elevation: 6,
   },
 });

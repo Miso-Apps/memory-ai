@@ -22,6 +22,8 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
 import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { MemoryCard, type MemoryCardMemory } from '../../components/MemoryCard';
 
 type FilterType = 'all' | 'text' | 'voice' | 'link' | 'photo';
 const PAGE_SIZE = 40;
@@ -148,57 +150,6 @@ function getDomain(url?: string): string | null {
   } catch {
     return null;
   }
-}
-
-function MemoryListItem({ memory }: { memory: Memory }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const meta = TYPE_META[memory.type];
-  const Icon = meta.icon;
-  const typeTint = colors.textSecondary;
-  const thumbUri = memory.type === 'photo'
-    ? memory.thumbnailUrl || memory.imageUrl
-    : memory.type === 'link'
-      ? memory.linkPreviewUrl
-      : undefined;
-  const hasMediaPreview = Boolean(thumbUri);
-  const domain = getDomain(memory.sourceUrl);
-
-  return (
-    <TouchableOpacity
-      style={[styles.memoryItem, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
-      onPress={() => router.push(`/memory/${memory.id}`)}
-      activeOpacity={0.6}
-    >
-      <View style={styles.mediaWrap}>
-        {hasMediaPreview ? (
-          <Image source={{ uri: thumbUri }} style={styles.mediaThumb} resizeMode="cover" />
-        ) : (
-          <View style={[styles.mediaFallback, { backgroundColor: colors.accentSubtle }]}> 
-            <Icon size={18} color={typeTint} strokeWidth={2.2} />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.memoryContent}>
-        <Text style={[styles.memoryText, { color: colors.textPrimary }]} numberOfLines={2}>
-          {memory.content}
-        </Text>
-
-        <View style={styles.memoryMeta}>
-          <View style={[styles.metaTypeDot, { backgroundColor: colors.accentMid }]} />
-          <Text style={[styles.memoryDate, { color: colors.textMuted }]}>{formatDate(memory.createdAt, t)}</Text>
-          {domain && (
-            <>
-              <Text style={[styles.memoryDot, { color: colors.border }]}>·</Text>
-              <Text style={[styles.domainInline, { color: colors.textSecondary }]} numberOfLines={1}>{domain}</Text>
-            </>
-          )}
-          {hasMediaPreview && <View style={[styles.previewIndicator, { backgroundColor: colors.accentLight }]} />}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
 }
 
 export default function LibraryScreen() {
@@ -476,6 +427,29 @@ export default function LibraryScreen() {
     loadMemories(false);
   }, [hasSearched, hasMore, loadMemories, loading, loadingMore, searching]);
 
+  const renderItem = useCallback(({ item }: { item: Memory }) => {
+    const mem: MemoryCardMemory = {
+      id: item.id,
+      content: item.content,
+      type: item.type,
+      createdAt: item.createdAt,
+      imageUrl: item.imageUrl,
+      thumbnailUrl: item.thumbnailUrl,
+      linkPreviewUrl: item.linkPreviewUrl,
+      sourceUrl: item.sourceUrl,
+      aiSummary: item.aiSummary,
+    };
+    return (
+      <View style={styles.cardWrapper}>
+        <MemoryCard
+          memory={mem}
+          timeAgo={formatDate(item.createdAt, t)}
+          onPress={() => router.push({ pathname: '/memory/[id]', params: { id: item.id } })}
+        />
+      </View>
+    );
+  }, [t]);
+
   const FILTERS: { key: FilterType; label: string; icon?: React.ComponentType<any> }[] = [
     { key: 'all', label: `${t('library.filterAll')}  ${counts.all}` },
     { key: 'text', label: String(counts.text), icon: FileText },
@@ -488,19 +462,21 @@ export default function LibraryScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
 
       {/* ── Header ── */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}> 
-        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('library.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('archive.subtitle')}</Text>
-      </View>
+      <ScreenHeader
+        eyebrow={t('library.eyebrow', { count: memories.length })}
+        title={t('library.title')}
+        titleSize={30}
+        paddingHorizontal={16}
+      />
 
       {/* ── Search bar + Category filter button ── */}
       <View style={styles.searchBarRow}>
-        <View style={[styles.searchInputWrap, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+        <View style={[styles.searchInputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <Text style={styles.searchMagnifier}>🔍</Text>
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder={t('library.searchPlaceholder')}
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.textPlaceholder}
             value={searchQuery}
             onChangeText={handleSearchChange}
             onSubmitEditing={handleSubmitSearch}
@@ -565,7 +541,9 @@ export default function LibraryScreen() {
           {FILTERS.map(({ key, label, icon }) => (
             <TouchableOpacity
               key={key}
-              style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }, filter === key && { backgroundColor: colors.accent, borderColor: colors.accent }]}
+              style={filter === key
+                ? [styles.chip, styles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(197,106,58,0.3)' }]
+                : [styles.chip, { borderColor: colors.border }]}
               onPress={() => setFilter(key)}
               activeOpacity={0.7}
             >
@@ -573,11 +551,13 @@ export default function LibraryScreen() {
                 {icon ? (
                   React.createElement(icon, {
                     size: 14,
-                    color: filter === key ? colors.buttonText : colors.textSecondary,
+                    color: filter === key ? colors.brandAccent : colors.textMuted,
                     strokeWidth: 2.5,
                   })
                 ) : null}
-                <Text style={[styles.chipText, { color: colors.textSecondary }, filter === key && styles.chipTextActive]}>
+                <Text style={filter === key
+                  ? [styles.chipText, { color: colors.brandAccent }]
+                  : [styles.chipText, { color: colors.textMuted }]}>
                   {label}
                 </Text>
               </View>
@@ -621,7 +601,7 @@ export default function LibraryScreen() {
         contentContainerStyle={styles.listContent}
         data={memories}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <MemoryListItem memory={item} />}
+        renderItem={renderItem}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.35}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.textSecondary} />}
@@ -740,7 +720,7 @@ const styles = StyleSheet.create({
   searchBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 12,
     gap: 10,
@@ -749,19 +729,20 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 44,
     borderRadius: 12,
-    paddingHorizontal: 14,
     borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    gap: 8,
   },
   searchMagnifier: {
     fontSize: 15,
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    paddingVertical: 0,
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   clearBtn: {
     width: 18,
@@ -808,21 +789,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   chip: {
-    height: 32,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 100,
     borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
+  chipActive: {},
   chipInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   chipText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 11,
   },
   chipTextActive: {
     color: '#FFFFFF',
@@ -872,9 +852,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingHorizontal: 20,
     paddingBottom: 40,
     flexGrow: 1,
+  },
+  cardWrapper: {
+    paddingHorizontal: 16,
   },
   loadMoreWrap: {
     paddingTop: 6,

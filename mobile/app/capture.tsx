@@ -121,14 +121,17 @@ function BottomModeBar({
               accessibilityLabel={t(modeMeta.labelKey)}
             >
               {active ? (
-                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: colors.border }]}> 
+                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(197,106,58,0.25)' }]}>
                   <Icon size={17} color={colors.brandAccent} strokeWidth={2.5} />
                 </View>
               ) : (
-                <View style={[modeBarStyles.chipInactive, { borderColor: 'transparent' }]}>
+                <View style={[modeBarStyles.chipInactive, { borderColor: colors.border }]}>
                   <Icon size={17} color={colors.textMuted} strokeWidth={2.4} />
                 </View>
               )}
+              <Text style={[modeBarStyles.modeTabText, { color: active ? colors.brandAccent : colors.textMuted }]}>
+                {t(modeMeta.labelKey)}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -156,6 +159,7 @@ const modeBarStyles = StyleSheet.create({
   chipHitArea: {
     flex: 1,
     alignItems: 'center',
+    flexDirection: 'column',
   },
   chipActive: {
     width: 44,
@@ -174,6 +178,13 @@ const modeBarStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modeTabText: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 3,
   },
 });
 
@@ -778,14 +789,14 @@ export default function CaptureScreen() {
             disabled={!canSave || isSaving}
             style={[
               styles.saveBtn,
-              { opacity: canSave && !isSaving ? 1 : 0.38 },
+              { backgroundColor: colors.brandAccent, opacity: canSave && !isSaving ? 1 : 0.38 },
             ]}
             activeOpacity={0.85}
           >
             {isSaving ? (
-              <ActivityIndicator color={colors.brandAccent} size="small" />
+              <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
-              <Text style={[styles.saveBtnText, { color: colors.brandAccent }]}>{t('capture.save')}</Text>
+              <Text style={styles.saveBtnText}>{t('capture.save')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -833,9 +844,13 @@ export default function CaptureScreen() {
               <View style={styles.inputWrap}>
                 <Text style={[styles.authorName, { color: colors.textPrimary }]}>{displayName}</Text>
                 <TextInput
-                  style={[styles.composerInput, { color: colors.textPrimary }]}
+                  style={[styles.composerInput, {
+                    color: colors.textPrimary,
+                    fontFamily: 'DMSans_400Regular',
+                    fontSize: 15,
+                  }]}
                   placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.textPlaceholder}
                   multiline={mode === 'text'}
                   autoFocus
                   value={content}
@@ -850,6 +865,33 @@ export default function CaptureScreen() {
                 ) : null}
               </View>
             </View>
+
+            {/* Quick-tag hints */}
+            {mode === 'text' && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hintsScroll}
+              >
+                {[
+                  t('capture.hintIdea'),
+                  t('capture.hintMeeting'),
+                  t('capture.hintDecision'),
+                  t('capture.hintConversation'),
+                  t('capture.hintLearning'),
+                ].map((hint) => (
+                  <TouchableOpacity
+                    key={hint}
+                    onPress={() => {
+                      setContent((prev) => (prev ? `${hint} ${prev}` : `${hint} `));
+                    }}
+                    style={[styles.hintChip, { borderColor: colors.border }]}
+                  >
+                    <Text style={[styles.hintChipText, { color: colors.textMuted }]}>{hint}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
         ) : mode === 'voice' ? (
           <View style={styles.modePanel}>
@@ -918,12 +960,19 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 17, fontWeight: '600', fontFamily: SANS_FONT },
   saveBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 16,
     minWidth: 56,
     minHeight: 32,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
   },
-  saveBtnText: { fontSize: 15, fontWeight: '600', fontFamily: SANS_FONT },
+  saveBtnText: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+  },
 
   // ── Composer (text / link) ──
   composerScreenWrap: {
@@ -1027,6 +1076,24 @@ const styles = StyleSheet.create({
   clipUseBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
   clipUseText: { fontSize: 12, fontWeight: '600', fontFamily: SANS_FONT },
   clipDismiss: { fontSize: 16, paddingLeft: 4, fontFamily: SANS_FONT },
+
+  // ── Quick-tag hints ──
+  hintsScroll: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+    flexDirection: 'row',
+  },
+  hintChip: {
+    borderRadius: 100,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  hintChipText: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 12,
+  },
 
   // ── Success overlay ──
   successOverlay: {

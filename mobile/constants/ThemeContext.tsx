@@ -66,100 +66,118 @@ export interface ThemeColors {
 
 // ─── Light theme ───────────────────────────────────────────────────────────
 export const LightColors: ThemeColors = {
-  bg: '#FFFFFF',
-  cardBg: '#FFFFFF',
-  inputBg: '#F4F4F5',
-  subtleBg: '#FAFAFA',
-  modalBg: '#FFFFFF',
+  // Backgrounds
+  bg: '#faf9f7',                          // was #FFFFFF (warm off-white)
+  cardBg: '#ffffff',                      // pure white card on warm bg
+  inputBg: '#f2efe9',                     // was #F4F4F5 (warm tint)
+  subtleBg: '#f5f3ef',
+  modalBg: '#ffffff',
 
-  textPrimary: '#111111',
-  textSecondary: '#3F3F46',
-  textTertiary: '#52525B',
-  textMuted: '#71717A',
-  textPlaceholder: '#A1A1AA',
+  // Text
+  textPrimary: '#1a1612',                 // was #111111 (warm near-black)
+  textSecondary: '#5a5550',               // was #3F3F46
+  textTertiary: '#7a746e',                // was #52525B
+  textMuted: '#9e9894',                   // was #71717A
+  textPlaceholder: '#b8b3ac',             // was #A1A1AA
   buttonText: '#FFFFFF',
 
-  accent: '#111111',
-  accentLight: 'rgba(17, 17, 17, 0.14)',
-  accentMid: 'rgba(17, 17, 17, 0.22)',
-  accentSubtle: 'rgba(17, 17, 17, 0.06)',
+  // Accent (indigo — keep unchanged)
+  accent: '#4F46E5',
+  accentLight: 'rgba(79,70,229,0.1)',
+  accentMid: 'rgba(79,70,229,0.18)',
+  accentSubtle: 'rgba(79,70,229,0.05)',
   brandAccent: '#C56A3A',
-  brandAccentLight: 'rgba(197, 106, 58, 0.16)',
+  brandAccentLight: 'rgba(197,106,58,0.1)',
 
+  // Semantic
   error: '#EF4444',
-  errorBg: 'rgba(239, 68, 68, 0.06)',
+  errorBg: 'rgba(239,68,68,0.06)',
   errorText: '#B91C1C',
-  success: '#111111',
-  successBg: 'rgba(16, 185, 129, 0.1)',
-  warning: '#111111',
-  warningBg: 'rgba(245, 158, 11, 0.1)',
-  infoBg: 'rgba(99, 102, 241, 0.1)',
+  success: '#059669',
+  successBg: 'rgba(5,150,105,0.08)',
+  warning: '#D97706',
+  warningBg: 'rgba(217,119,6,0.08)',
+  infoBg: 'rgba(79,70,229,0.06)',
 
-  border: '#E4E4E7',
-  borderMed: '#D4D4D8',
+  // Borders
+  border: '#ebe8e3',                      // was #E4E4E7 (warm hairline)
+  borderMed: '#dedad4',                   // was #D4D4D8
 
+  // Type badges
   typeBgText: 'transparent',
   typeBgVoice: 'transparent',
   typeBgLink: 'transparent',
   typeBgPhoto: 'transparent',
 
-  tabBarBg: 'rgba(255,255,255,0.95)',
-  tabBarBorder: '#E4E4E7',
+  // Tab bar
+  tabBarBg: 'rgba(250,249,247,0.96)',     // was rgba(255,255,255,0.95)
+  tabBarBorder: '#ebe8e3',
 
+  // Switches
   switchTrackOff: '#E5E7EB',
 
-  streakBg: 'rgba(24, 24, 27, 0.08)',
-  streakBorder: 'rgba(24, 24, 27, 0.16)',
-  streakText: '#111111',
+  // Streak badge
+  streakBg: 'rgba(197,106,58,0.07)',
+  streakBorder: 'rgba(197,106,58,0.18)',
+  streakText: '#C56A3A',
 };
 
 // ─── Dark theme ────────────────────────────────────────────────────────────
 export const DarkColors: ThemeColors = {
-  bg: '#09090B',
-  cardBg: '#131316',
-  inputBg: '#1B1B20',
-  subtleBg: '#111114',
-  modalBg: '#131316',
+  // Backgrounds
+  bg: '#0c0c10',
+  cardBg: '#131318',
+  inputBg: 'rgba(255,255,255,0.04)',
+  subtleBg: '#0f0f14',
+  modalBg: '#131318',
 
-  textPrimary: '#FAFAFA',
-  textSecondary: '#E4E4E7',
-  textTertiary: '#A1A1AA',
-  textMuted: '#71717A',
-  textPlaceholder: '#52525B',
+  // Text
+  textPrimary: '#f0ede8',
+  textSecondary: '#a8a4a0',
+  textTertiary: '#777370',
+  textMuted: '#555555',
+  textPlaceholder: '#333333',
   buttonText: '#FFFFFF',
 
-  accent: '#52525B',
-  accentLight: 'rgba(161, 161, 170, 0.22)',
-  accentMid: 'rgba(161, 161, 170, 0.34)',
-  accentSubtle: 'rgba(161, 161, 170, 0.12)',
-  brandAccent: '#D97F5C',
-  brandAccentLight: 'rgba(217, 127, 92, 0.24)',
+  // Accent (indigo — keep unchanged)
+  accent: '#818CF8',
+  accentLight: 'rgba(129,140,248,0.14)',
+  accentMid: 'rgba(129,140,248,0.22)',
+  accentSubtle: 'rgba(129,140,248,0.06)',
+  brandAccent: '#C56A3A',
+  brandAccentLight: 'rgba(197,106,58,0.12)',
 
-  error: '#F87171',
-  errorBg: 'rgba(248, 113, 113, 0.1)',
+  // Semantic
+  error: '#EF4444',
+  errorBg: 'rgba(239,68,68,0.06)',
   errorText: '#FCA5A5',
   success: '#34D399',
-  successBg: 'rgba(52, 211, 153, 0.2)',
+  successBg: 'rgba(52,211,153,0.1)',
   warning: '#FBBF24',
-  warningBg: 'rgba(251, 191, 36, 0.2)',
-  infoBg: 'rgba(129, 140, 248, 0.2)',
+  warningBg: 'rgba(251,191,36,0.1)',
+  infoBg: 'rgba(129,140,248,0.1)',
 
-  border: '#27272A',
-  borderMed: '#3F3F46',
+  // Borders
+  border: 'rgba(255,255,255,0.05)',
+  borderMed: 'rgba(255,255,255,0.08)',
 
+  // Type badges (keep transparent)
   typeBgText: 'transparent',
   typeBgVoice: 'transparent',
   typeBgLink: 'transparent',
   typeBgPhoto: 'transparent',
 
-  tabBarBg: 'rgba(18,18,18,0.94)',
-  tabBarBorder: '#27272A',
+  // Tab bar
+  tabBarBg: 'rgba(12,12,16,0.97)',
+  tabBarBorder: 'rgba(255,255,255,0.05)',
 
-  switchTrackOff: '#3A3D4A',
+  // Switches
+  switchTrackOff: '#2A2A2E',
 
-  streakBg: 'rgba(250, 250, 250, 0.1)',
-  streakBorder: 'rgba(250, 250, 250, 0.18)',
-  streakText: '#FAFAFA',
+  // Streak badge
+  streakBg: 'rgba(197,106,58,0.08)',
+  streakBorder: 'rgba(197,106,58,0.2)',
+  streakText: '#C56A3A',
 };
 
 // ─── Context ───────────────────────────────────────────────────────────────

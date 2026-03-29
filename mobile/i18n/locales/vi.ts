@@ -13,6 +13,7 @@ const vi = {
   profile: {
     title: 'Cá nhân',
     subtitle: 'Quản lý cài đặt của bạn',
+    eyebrow: 'Đang đăng nhập với',
     toggleOn: 'Bật',
     toggleOff: 'Tắt',
 
@@ -107,8 +108,14 @@ const vi = {
   // Home screen
   home: {
     greetingMorning: 'Chào buổi sáng',
-    greetingAfternoon: 'Chào buổi chiều',
+    greetingAfternoon: 'Xin chào',
     greetingEvening: 'Chào buổi tối',
+    titleMorning: 'Bạn đang nghĩ gì?',
+    titleAfternoon: 'Chào mừng trở lại',
+    titleEvening: 'Nhìn lại cuối ngày',
+    sectionRecalled: 'Được gợi nhớ',
+    sectionOnThisDay: 'Ngày này năm xưa',
+    sectionUnreviewed: 'Chưa xem',
     subtitle: 'Đây là những điều bạn có thể muốn nhớ lại',
     noMemories: 'Chưa có gì để nhắc lại',
     noMemoriesSubtitle: 'Bắt đầu lưu suy nghĩ và ứng dụng sẽ nhắc lại khi phù hợp',
@@ -152,12 +159,15 @@ const vi = {
     revisitHint: 'Xem lại nhanh để khơi gợi bối cảnh hữu ích',
     insightStreakSub: '🔥 Chuỗi {{streak}} ngày · {{count}} tuần này',
     insightWeekSub: '{{count}} ký ức tuần này',
+    capturePromptText: 'Bạn đang nghĩ gì hôm nay?',
+    capturePromptA11y: 'Lưu một ký ức mới',
   },
 
   // Library screen
   library: {
-    title: 'Ký ức',
-    searchPlaceholder: 'Tìm kiếm ký ức…',
+    eyebrow: '{{count}} ký ức',
+    title: 'Kho lưu trữ',
+    searchPlaceholder: 'Tìm kiếm ký ức...',
     filterAll: 'Tất cả',
     allCategories: 'Tất cả danh mục',
     loading: 'Đang tải…',
@@ -229,6 +239,12 @@ const vi = {
     match: 'trùng khớp',
     loadingRelated: 'Đang tải ý tưởng liên quan…',
     relatedViaCategory: 'Liên quan theo danh mục',
+    aiSummaryLabel: '✦ Tóm tắt AI',
+    actionEdit: 'Chỉnh sửa',
+    actionShare: 'Chia sẻ',
+    actionReflect: 'Suy ngẫm',
+    backToLibrary: '← Thư viện',
+    backToHome: '← Trang chủ',
   },
 
   // Capture screen
@@ -293,6 +309,11 @@ const vi = {
     linkSaveFailed: 'Không thể lưu liên kết.',
     photoSaved: 'Hình ảnh đã lưu ✓',
     saved: 'Đã lưu!',
+    hintIdea: '💡 Ý tưởng',
+    hintMeeting: '📋 Cuộc họp',
+    hintDecision: '🎯 Quyết định',
+    hintConversation: '💬 Cuộc trò chuyện',
+    hintLearning: '📚 Học hỏi',
   },
 
   // Language switcher
@@ -345,6 +366,8 @@ const vi = {
     daysAgo: '{{count}} ngày trước',
     weeksAgo: '{{count}} tuần trước',
     tapToOpen: 'Nhấn để mở',
+    openMemory: 'Mở',
+    dismissMemory: 'Bỏ qua',
   },
 
   // Alerts
@@ -395,7 +418,12 @@ const vi = {
 
   // Insights screen
   insights: {
-    title: 'Thống kê',
+    eyebrow: '{{month}} {{year}}',
+    title: 'Mô hình của bạn',
+    streakLabel: 'Ngày liên tiếp',
+    totalLabel: 'Tổng số',
+    activityLabel: 'Hoạt động — 12 tuần qua',
+    recapLabel: '✦ Tóm tắt tuần',
     subtitle: 'Xu hướng & mô hình từ ký ức của bạn',
     loading: 'Đang phân tích ký ức…',
     empty: 'Chưa có thống kê',
