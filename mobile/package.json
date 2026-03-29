@@ -15,6 +15,8 @@
     "bench:memory": "node ./scripts/benchmark-memory-ops.mjs"
   },
   "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.4.2",
+    "@expo-google-fonts/dm-serif-display": "^0.4.2",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@shopify/flash-list": "1.6.4",
     "@tanstack/react-query": "^5.56.2",
@@ -29,6 +31,7 @@
     "expo-crypto": "~13.0.2",
     "expo-document-picker": "~12.0.2",
     "expo-file-system": "~17.0.1",
+    "expo-font": "~12.0.10",
     "expo-haptics": "~13.0.1",
     "expo-image-manipulator": "~12.0.5",
     "expo-image-picker": "~15.1.0",
