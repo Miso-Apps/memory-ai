@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import auth, memories, ai, storage, categories, preferences, insights
+from app.api import auth, memories, ai, storage, categories, preferences, insights, decisions
 from app.database import init_db
 from app.config import settings
 
@@ -48,6 +48,7 @@ app.include_router(storage.router, prefix="/storage", tags=["Storage"])
 app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 app.include_router(preferences.router, prefix="/preferences", tags=["Preferences"])
 app.include_router(insights.router, prefix="/insights", tags=["Insights"])
+app.include_router(decisions.router, prefix="/decisions", tags=["Decisions"])
 
 
 @app.get("/")

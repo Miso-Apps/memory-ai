@@ -1,7 +1,8 @@
 import { Link2, PenLine, Mic, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Toast } from './Toast';
+import { formatMemoryDate, mapApiMemoryType, memoriesApi } from '../services/api';
 
 interface ReminderContent {
   id: string;
@@ -16,19 +17,55 @@ interface ReminderContent {
 }
 
 export function HomeRecall() {
-  // Toggle between states: null (no reminder) | ReminderContent (has reminder)
-  const [reminderContent] = useState<ReminderContent | null>({
-    id: '1',
-    type: 'note',
-    preview: 'Suy nghĩ về việc chuyển đổi công việc. Cân nhắc giữa đam mê và ổn định tài chính.',
-    aiSummary: 'Về việc cân bằng giữa đam mê và ổn định', // Very light AI summary
-    fullContent: 'Mình đang nghĩ đến việc nghỉ công việc hiện tại để theo đuổi dự án riêng. Nhưng lại lo về tài chính và áp lực từ gia đình. Có lẽ mình cần thời gian để chuẩn bị kỹ hơn trước khi quyết định.',
-    savedDate: '3 tuần trước',
-  });
+  const [reminderContent, setReminderContent] = useState<ReminderContent | null>(null);
 
   const [showDetail, setShowDetail] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const [showInsight, setShowInsight] = useState(true); // Show insight occasionally
+  const [showInsight, setShowInsight] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadReminder = async () => {
+      try {
+        const payload = await memoriesApi.getReminders();
+        const candidate = payload.unreviewed[0] || payload.revisit[0] || payload.on_this_day[0];
+        if (!candidate || !mounted) {
+          return;
+        }
+
+        setReminderContent({
+          id: candidate.id,
+          type: mapApiMemoryType(candidate.type) === 'text' ? 'note' : mapApiMemoryType(candidate.type),
+          preview: (candidate.ai_summary || candidate.content || '').slice(0, 180),
+          aiSummary: candidate.ai_summary || undefined,
+          fullContent: candidate.transcription || candidate.content,
+          savedDate: formatMemoryDate(candidate.created_at),
+          url: typeof candidate.metadata?.canonical_url === 'string' ? candidate.metadata.canonical_url : undefined,
+          audioUrl: candidate.audio_url || undefined,
+          duration: candidate.audio_duration ? `${Math.floor(candidate.audio_duration / 60)}:${String(candidate.audio_duration % 60).padStart(2, '0')}` : undefined,
+        });
+      } catch {
+        if (mounted) {
+          setReminderContent(null);
+        }
+      }
+    };
+
+    void loadReminder();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const insightText = useMemo(() => {
+    if (!reminderContent) {
+      return '';
+    }
+    return reminderContent.type === 'note'
+      ? 'Ban dang quay lai nhung ghi chu phan anh suy nghi lau dai cua minh.'
+      : 'Noi dung nay co the lien ket voi chu de ban dang quan tam gan day.';
+  }, [reminderContent]);
 
   const handleDismiss = () => {
     // Hide content without asking why
@@ -174,7 +211,7 @@ export function HomeRecall() {
               
               <div className="bg-accent/5 border border-accent/10 rounded-xl px-4 py-3">
                 <p className="text-[13px] text-muted-foreground/70 leading-relaxed text-center">
-                  Bạn đã lưu khá nhiều nội dung liên quan đến công việc trong thời gian gần đây.
+                  {insightText}
                 </p>
               </div>
             </div>

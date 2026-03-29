@@ -10,7 +10,12 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "Memory AI"
     DEBUG: bool = False
-    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8081"
+    BACKEND_CORS_ORIGINS: str = (
+        "http://localhost:3000,"
+        "http://localhost:8081,"
+        "http://localhost:5173,"
+        "http://127.0.0.1:5173"
+    )
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://memoryai:memoryai@localhost:5432/memoryai"

@@ -4,7 +4,11 @@ import { Switch } from './ui/switch';
 import { useState } from 'react';
 import { DismissedScreen } from './DismissedScreen';
 
-export function ProfileScreen() {
+interface ProfileScreenProps {
+  onSignOut?: () => void;
+}
+
+export function ProfileScreen({ onSignOut }: ProfileScreenProps) {
   const [allowRecall, setAllowRecall] = useState(true);
   const [showDismissed, setShowDismissed] = useState(false);
   const [activeModal, setActiveModal] = useState<'account' | 'privacy' | 'about' | null>(null);
@@ -252,7 +256,10 @@ export function ProfileScreen() {
 
                 {/* Sign Out */}
                 <div className="p-5 border-b border-border/40">
-                  <button className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent py-3 rounded-full text-sm font-medium">
+                  <button
+                    className="w-full flex items-center justify-center gap-2 bg-accent/10 text-accent py-3 rounded-full text-sm font-medium"
+                    onClick={onSignOut}
+                  >
                     <LogOut className="w-4 h-4" />
                     Đăng xuất
                   </button>

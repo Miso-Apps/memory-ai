@@ -6,6 +6,8 @@ import { UnifiedSearchScreen } from './components/UnifiedSearchScreen';
 import { QuickCapture } from './components/QuickCapture';
 import { ProfileScreen } from './components/ProfileScreen';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { AuthGate } from './components/AuthGate';
+import { authApi, type AuthSession } from './services/api';
 
 type Tab = 'recall' | 'archive' | 'menu';
 
@@ -13,6 +15,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('recall');
   const [showWelcome, setShowWelcome] = useState(false);
   const [showQuickCapture, setShowQuickCapture] = useState(false);
+  const [session, setSession] = useState<AuthSession | null>(() => authApi.getStoredSession());
+
+  if (!session) {
+    return <AuthGate onAuthenticated={(next) => setSession(next)} />;
+  }
 
   if (showWelcome) {
     return (
@@ -66,7 +73,12 @@ function App() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             >
-              <ProfileScreen />
+              <ProfileScreen
+                onSignOut={() => {
+                  authApi.clearSession();
+                  setSession(null);
+                }}
+              />
             </motion.div>
           )}
         </AnimatePresence>

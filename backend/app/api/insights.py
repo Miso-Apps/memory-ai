@@ -20,10 +20,13 @@ import logging
 
 from app.database import get_db
 from app.models.memory import Memory
+from app.models.memory_link import MemoryLink
+from app.models.radar_event import RadarEvent
 from app.models.category import Category
 from app.models.user import User
 from app.api.deps import get_current_user
 from app.api.preferences import get_or_create_preferences
+from app.schemas import RadarEventCreate
 from app.services import ai_service
 
 log = logging.getLogger(__name__)
@@ -506,9 +509,60 @@ async def get_related_memories(
         raise HTTPException(status_code=404, detail="Memory not found")
 
     related = []
+    added_ids: set[str] = set()
+
+    # Strategy 0: Explicit links created by user
+    explicit_q = await db.execute(
+        select(MemoryLink, Memory)
+        .join(Memory, Memory.id == MemoryLink.target_memory_id)
+        .where(
+            and_(
+                MemoryLink.user_id == current_user.id,
+                MemoryLink.source_memory_id == mid,
+                Memory.is_deleted == False,  # noqa: E712
+            )
+        )
+        .order_by(MemoryLink.created_at.desc())
+        .limit(limit)
+    )
+    for link_row, mem in explicit_q.all():
+        cat_info = {}
+        if mem.category_id:
+            cat_result = await db.execute(select(Category).where(Category.id == mem.category_id))
+            cat = cat_result.scalar_one_or_none()
+            if cat:
+                cat_info = {
+                    "category_name": cat.name,
+                    "category_icon": cat.icon,
+                    "category_color": cat.color,
+                }
+
+        mem_id = str(mem.id)
+        related.append(
+            {
+                "id": mem_id,
+                "type": mem.type.value if hasattr(mem.type, "value") else str(mem.type),
+                "content": mem.ai_summary
+                or (
+                    mem.content[:120] + "..."
+                    if len(mem.content or "") > 120
+                    else mem.content
+                ),
+                "similarity": round(float(link_row.score), 3)
+                if link_row.score is not None
+                else None,
+                "created_at": mem.created_at.isoformat() if mem.created_at else None,
+                "link_type": link_row.link_type,
+                "explanation": link_row.explanation,
+                **cat_info,
+            }
+        )
+        added_ids.add(mem_id)
+        if len(related) >= limit:
+            break
 
     # Strategy 1: Embedding-based similarity (if source has embedding)
-    if source.embedding is not None:
+    if source.embedding is not None and len(related) < limit:
         try:
             stmt = (
                 select(
@@ -526,14 +580,14 @@ async def get_related_memories(
                     )
                 )
                 .order_by(text("distance"))
-                .limit(limit)
+                .limit(limit - len(related))
             )
             vector_results = await db.execute(stmt)
             for row in vector_results.all():
                 mem = row[0]
                 distance = float(row[1])
                 similarity = max(0.0, 1.0 - distance)
-                if similarity > 0.10:  # threshold for "related"
+                if similarity > 0.10 and str(mem.id) not in added_ids:  # threshold for "related"
                     # Get category info
                     cat_info = {}
                     if mem.category_id:
@@ -564,9 +618,13 @@ async def get_related_memories(
                             "created_at": mem.created_at.isoformat()
                             if mem.created_at
                             else None,
+                            "link_type": "semantic",
                             **cat_info,
                         }
                     )
+                    added_ids.add(str(mem.id))
+                    if len(related) >= limit:
+                        break
         except Exception as exc:
             log.warning("Embedding similarity search failed: %s", exc)
 
@@ -595,7 +653,7 @@ async def get_related_memories(
             .limit(limit - len(related))
         )
         for mem in fallback_q.scalars().all():
-            if str(mem.id) not in already_ids:
+            if str(mem.id) not in already_ids and str(mem.id) not in added_ids:
                 cat_info = {}
                 if mem.category_id:
                     cat_result = await db.execute(
@@ -624,15 +682,56 @@ async def get_related_memories(
                         "created_at": mem.created_at.isoformat()
                         if mem.created_at
                         else None,
+                        "link_type": "temporal",
                         **cat_info,
                     }
                 )
+                added_ids.add(str(mem.id))
 
     return {
         "memory_id": memory_id,
         "related": related,
         "total": len(related),
     }
+
+
+@router.post("/related/events", response_model=dict)
+async def create_related_event(
+    body: RadarEventCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Track related-memory click events for CTR instrumentation."""
+    try:
+        memory_id = uuid.UUID(body.memory_id)
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Invalid memory_id")
+
+    memory_result = await db.execute(
+        select(Memory).where(
+            and_(
+                Memory.id == memory_id,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+            )
+        )
+    )
+    memory = memory_result.scalar_one_or_none()
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    event = RadarEvent(
+        user_id=current_user.id,
+        memory_id=memory_id,
+        event_type="related_click",
+        reason_code=body.reason_code or "related_memory",
+        confidence=body.confidence,
+        context=body.context or {},
+    )
+    db.add(event)
+    await db.flush()
+
+    return {"status": "ok", "event_id": str(event.id)}
 
 
 @router.get("/streaks", response_model=dict)

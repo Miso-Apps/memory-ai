@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Direction</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f0f; color: #f0f0f0; font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif; padding: 32px 24px 80px; }
+
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+  .subtitle { font-size: 15px; color: #888; margin-bottom: 32px; line-height: 1.5; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+  .card {
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .card:hover { transform: translateY(-2px); }
+  .card.selected { border-color: #6366f1; }
+  .card.selected::after {
+    content: '✓ Selected';
+    position: absolute;
+    top: 12px; right: 12px;
+    background: #6366f1;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 100px;
+  }
+
+  /* ── OPTION A: Threads-core ───────────────────────── */
+  .phone-a {
+    background: #0a0a0a;
+    padding: 0;
+  }
+  .phone-a .status-bar { background: #0a0a0a; padding: 14px 20px 8px; display: flex; justify-content: space-between; font-size: 12px; color: #555; }
+  .phone-a .header { padding: 16px 20px 12px; border-bottom: 1px solid #1a1a1a; }
+  .phone-a .header-title { font-size: 26px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .phone-a .header-sub { font-size: 13px; color: #555; margin-top: 2px; }
+  .phone-a .feed { padding: 0; }
+  .phone-a .post { padding: 16px 20px; border-bottom: 1px solid #111; }
+  .phone-a .post-reason { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .phone-a .post-text { font-size: 15px; color: #e8e8e8; line-height: 1.55; font-weight: 400; }
+  .phone-a .post-meta { font-size: 12px; color: #444; margin-top: 8px; }
+  .phone-a .post-actions { display: flex; gap: 16px; margin-top: 10px; }
+  .phone-a .post-actions span { font-size: 12px; color: #444; }
+  .phone-a .tab-bar { background: rgba(10,10,10,0.95); border-top: 1px solid #1a1a1a; padding: 12px 0 20px; display: flex; justify-content: space-around; }
+  .phone-a .tab-bar span { color: #444; font-size: 20px; }
+  .phone-a .tab-bar span.active { color: #fff; }
+  .card-label { padding: 16px 20px; }
+  .card-label h3 { font-size: 15px; font-weight: 600; color: #fff; }
+  .card-label p { font-size: 13px; color: #666; margin-top: 4px; line-height: 1.4; }
+
+  /* ── OPTION B: Anthropic-soul ─────────────────────── */
+  .phone-b {
+    background: #faf9f7;
+    color: #1a1a1a;
+  }
+  .phone-b .status-bar { background: #faf9f7; padding: 14px 20px 8px; display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
+  .phone-b .header { padding: 20px 20px 14px; border-bottom: 1px solid #ebe8e3; }
+  .phone-b .header-title { font-size: 26px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.3px; font-style: italic; }
+  .phone-b .header-sub { font-size: 13px; color: #9e9a94; margin-top: 3px; }
+  .phone-b .feed { padding: 0; }
+  .phone-b .post { padding: 16px 20px; border-bottom: 1px solid #ebe8e3; }
+  .phone-b .post-reason { font-size: 11px; font-weight: 500; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .phone-b .post-text { font-size: 15px; color: #2a2a2a; line-height: 1.6; font-weight: 400; }
+  .phone-b .post-meta { font-size: 12px; color: #bbb; margin-top: 8px; }
+  .phone-b .tab-bar { background: rgba(250,249,247,0.96); border-top: 1px solid #ebe8e3; padding: 12px 0 20px; display: flex; justify-content: space-around; }
+  .phone-b .tab-bar span { color: #ccc; font-size: 20px; }
+  .phone-b .tab-bar span.active { color: #1a1a1a; }
+  .card-label-b { padding: 16px 20px; background: #faf9f7; }
+  .card-label-b h3 { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .card-label-b p { font-size: 13px; color: #9e9a94; margin-top: 4px; line-height: 1.4; }
+
+  /* ── OPTION C: Hybrid ─────────────────────────────── */
+  .phone-c {
+    background: #0c0c10;
+  }
+  .phone-c .status-bar { background: #0c0c10; padding: 14px 20px 8px; display: flex; justify-content: space-between; font-size: 12px; color: #444; }
+  .phone-c .header { padding: 20px 20px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .phone-c .header-eyebrow { font-size: 11px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .phone-c .header-title { font-size: 26px; font-weight: 600; color: #f0ede8; letter-spacing: -0.3px; }
+  .phone-c .header-sub { font-size: 13px; color: #555; margin-top: 3px; }
+  .phone-c .feed { padding: 0; }
+  .phone-c .post { padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .phone-c .post-reason {
+    font-size: 11px; font-weight: 600; color: #C56A3A;
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .phone-c .post-reason::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: #C56A3A; display: inline-block; }
+  .phone-c .post-text { font-size: 15px; color: #d8d4ce; line-height: 1.6; font-weight: 400; }
+  .phone-c .post-meta { font-size: 12px; color: #3a3a3a; margin-top: 8px; }
+  .phone-c .chip { display: inline-block; font-size: 10px; font-weight: 600; color: #C56A3A; background: rgba(197,106,58,0.12); border-radius: 100px; padding: 2px 8px; margin-top: 8px; }
+  .phone-c .tab-bar { background: rgba(12,12,16,0.96); border-top: 1px solid rgba(255,255,255,0.06); padding: 12px 0 20px; display: flex; justify-content: space-around; }
+  .phone-c .tab-bar span { color: #333; font-size: 20px; }
+  .phone-c .tab-bar span.active { color: #f0ede8; }
+  .phone-c .tab-bar .add-btn { background: #C56A3A; width: 36px; height: 36px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: white; margin-top: -10px; }
+
+  .selection-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; border-top: 1px solid #2a2a2a; padding: 14px 24px; font-size: 14px; color: #888; text-align: center; }
+  .selection-bar span { color: #6366f1; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h2>Which design direction feels right?</h2>
+<p class="subtitle">Three interpretations of "Threads × Anthropic" — pick the one that matches your vision</p>
+
+<div class="cards">
+
+  <!-- Option A: Threads-core -->
+  <div class="card" data-choice="a" onclick="toggleCard(this)">
+    <div class="phone-a">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="header">
+        <div class="header-title">Today</div>
+        <div class="header-sub">3 memories surfaced</div>
+      </div>
+      <div class="feed">
+        <div class="post">
+          <div class="post-reason">Resurfaced · 3 days ago</div>
+          <div class="post-text">Meeting with the product team — we decided to push the launch to Q2 to focus on onboarding quality.</div>
+          <div class="post-meta">tap to open</div>
+        </div>
+        <div class="post">
+          <div class="post-reason">On this day · 1 year ago</div>
+          <div class="post-text">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+          <div class="post-actions"><span>Dismiss</span><span>Open →</span></div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="active">⌂</span><span>☰</span><span>＋</span><span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label">
+      <h3>A — Threads-core</h3>
+      <p>High contrast black, feed-like cards with hairline dividers. Minimal, text-forward, social-reading feel.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Anthropic-soul -->
+  <div class="card" data-choice="b" onclick="toggleCard(this)">
+    <div class="phone-b">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="header">
+        <div class="header-title">Good morning</div>
+        <div class="header-sub">Here's what your past self left you</div>
+      </div>
+      <div class="feed">
+        <div class="post">
+          <div class="post-reason">Recalled for you</div>
+          <div class="post-text">Meeting with the product team — we decided to push the launch to Q2 to focus on onboarding quality.</div>
+          <div class="post-meta">3 days ago</div>
+        </div>
+        <div class="post">
+          <div class="post-reason">On this day</div>
+          <div class="post-text">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+          <div class="post-meta">1 year ago</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="active" style="color:#1a1a1a;">⌂</span><span>☰</span><span>＋</span><span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label-b">
+      <h3 style="color:#1a1a1a;">B — Anthropic-soul</h3>
+      <p>Warm off-white, italic display text, earthy accent. Feels like a thoughtful notebook or Claude itself.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Hybrid (recommended) -->
+  <div class="card" data-choice="c" onclick="toggleCard(this)">
+    <div class="phone-c">
+      <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+      <div class="header">
+        <div class="header-eyebrow">Sunday · Mar 29</div>
+        <div class="header-title">Morning recall</div>
+        <div class="header-sub">4 things worth revisiting</div>
+      </div>
+      <div class="feed">
+        <div class="post">
+          <div class="post-reason">Resurfaced</div>
+          <div class="post-text">Meeting with the product team — we decided to push the launch to Q2 to focus on onboarding quality.</div>
+          <div class="chip">3 days ago</div>
+        </div>
+        <div class="post">
+          <div class="post-reason">On this day</div>
+          <div class="post-text">Started learning Mandarin. First session felt overwhelming but exciting.</div>
+          <div class="chip">1 year ago</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="active">⌂</span><span>☰</span>
+        <div class="add-btn">+</div>
+        <span>◈</span><span>○</span>
+      </div>
+    </div>
+    <div class="card-label">
+      <h3>C — Hybrid <span style="font-size:11px;color:#6366f1;background:rgba(99,102,241,0.15);padding:2px 8px;border-radius:100px;margin-left:6px;">recommended</span></h3>
+      <p>Near-black dark default with warm off-white text + orange accents. Threads structure, Anthropic soul.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="selection-bar" id="sel-bar">Click a direction to select it</div>
+
+<script>
+function toggleCard(el) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  const choice = el.dataset.choice;
+  const names = { a: 'A — Threads-core', b: 'B — Anthropic-soul', c: 'C — Hybrid' };
+  document.getElementById('sel-bar').innerHTML = 'Selected: <span>' + names[choice] + '</span> — tell me in the terminal when ready';
+
+  // Log event
+  try {
+    fetch('/__event', { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ type: 'click', choice, text: names[choice], timestamp: Date.now() }) });
+  } catch(e) {}
+}
+</script>
+</body>
+</html>

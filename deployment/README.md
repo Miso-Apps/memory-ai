@@ -180,6 +180,25 @@ Smoke-check after deploy:
 curl -H "Authorization: Bearer <token>" "https://api.dukiai.com/ai/radar?limit=3"
 ```
 
+## 6.2 Decision + Links schema updates (2026-03)
+
+Applied by `backend/migrate.py` during deploy:
+- `decision_memories` table + indexes (`user_id`, `status`, `revisit_at`)
+- `memory_links` table + indexes (`user_id`, `source_memory_id`, `target_memory_id`)
+- Unique constraint: `uq_memory_links_source_target_type`
+
+Fresh database bootstrap parity:
+- `backend/init-db.sql` includes these tables/indexes/constraint for first-time environments.
+
+Smoke-check after deploy:
+```bash
+curl -H "Authorization: Bearer <token>" "https://api.dukiai.com/decisions?status=open"
+curl -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Test decision"}' \
+  "https://api.dukiai.com/decisions/"
+```
+
 ---
 
 ## 7. Subsequent deploys
