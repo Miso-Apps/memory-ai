@@ -164,8 +164,9 @@ const vi = {
 
   // Library screen
   library: {
-    title: 'Ký ức',
-    searchPlaceholder: 'Tìm kiếm ký ức…',
+    eyebrow: '{{count}} ký ức',
+    title: 'Kho lưu trữ',
+    searchPlaceholder: 'Tìm kiếm ký ức...',
     filterAll: 'Tất cả',
     allCategories: 'Tất cả danh mục',
     loading: 'Đang tải…',

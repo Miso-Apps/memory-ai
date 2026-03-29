@@ -165,8 +165,9 @@ const en = {
 
   // Library screen
   library: {
-    title: 'Memories',
-    searchPlaceholder: 'Search memories…',
+    eyebrow: '{{count}} memories',
+    title: 'Your archive',
+    searchPlaceholder: 'Search memories...',
     filterAll: 'All',
     allCategories: 'All categories',
     loading: 'Loading…',
