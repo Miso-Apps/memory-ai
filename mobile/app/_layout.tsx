@@ -9,11 +9,11 @@ import { useSettingsStore } from '../store/settingsStore';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
 import '../i18n'; // initialize i18n
 import { useFonts } from 'expo-font';
-import { DMSerifDisplay_400Regular_Italic } from '@expo-google-fonts/dm-serif-display';
 import {
   DMSans_400Regular,
   DMSans_500Medium,
   DMSans_600SemiBold,
+  DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
 
 const queryClient = new QueryClient({
@@ -110,10 +110,10 @@ function ThemedStack() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    DMSerifDisplay_400Regular_Italic,
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_600SemiBold,
+    DMSans_700Bold,
   });
 
   if (!fontsLoaded) return null;
