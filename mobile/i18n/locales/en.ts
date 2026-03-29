@@ -153,6 +153,8 @@ const en = {
     revisitHint: 'A quick revisit can unlock useful context',
     insightStreakSub: '🔥 {{streak}}-day streak · {{count}} this week',
     insightWeekSub: '{{count}} memories this week',
+    capturePromptText: "What's on your mind today?",
+    capturePromptA11y: 'Capture a new memory',
   },
 
   // Library screen

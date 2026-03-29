@@ -152,6 +152,8 @@ const vi = {
     revisitHint: 'Xem lại nhanh để khơi gợi bối cảnh hữu ích',
     insightStreakSub: '🔥 Chuỗi {{streak}} ngày · {{count}} tuần này',
     insightWeekSub: '{{count}} ký ức tuần này',
+    capturePromptText: 'Bạn đang nghĩ gì hôm nay?',
+    capturePromptA11y: 'Lưu một ký ức mới',
   },
 
   // Library screen
