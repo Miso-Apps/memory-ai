@@ -418,7 +418,12 @@ const en = {
 
   // Insights screen
   insights: {
-    title: 'Insights',
+    eyebrow: '{{month}} {{year}}',
+    title: 'Your patterns',
+    streakLabel: 'Day streak',
+    totalLabel: 'Total',
+    activityLabel: 'Activity — last 12 weeks',
+    recapLabel: '✦ Weekly recap',
     subtitle: 'Patterns & trends from your memories',
     loading: 'Analyzing your memories…',
     empty: 'No insights yet',

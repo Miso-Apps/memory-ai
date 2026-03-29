@@ -417,7 +417,12 @@ const vi = {
 
   // Insights screen
   insights: {
-    title: 'Thống kê',
+    eyebrow: '{{month}} {{year}}',
+    title: 'Mô hình của bạn',
+    streakLabel: 'Ngày liên tiếp',
+    totalLabel: 'Tổng số',
+    activityLabel: 'Hoạt động — 12 tuần qua',
+    recapLabel: '✦ Tóm tắt tuần',
     subtitle: 'Xu hướng & mô hình từ ký ức của bạn',
     loading: 'Đang phân tích ký ức…',
     empty: 'Chưa có thống kê',
