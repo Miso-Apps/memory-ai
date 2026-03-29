@@ -238,6 +238,12 @@ const vi = {
     match: 'trùng khớp',
     loadingRelated: 'Đang tải ý tưởng liên quan…',
     relatedViaCategory: 'Liên quan theo danh mục',
+    aiSummaryLabel: '✦ Tóm tắt AI',
+    actionEdit: 'Chỉnh sửa',
+    actionShare: 'Chia sẻ',
+    actionReflect: 'Suy ngẫm',
+    backToLibrary: '← Thư viện',
+    backToHome: '← Trang chủ',
   },
 
   // Capture screen

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
   Image,
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
@@ -20,7 +19,8 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { ChevronLeft, Share2, Copy, PencilLine, Trash2, ChevronRight, Folder } from 'lucide-react-native';
+import { ChevronRight, Folder } from 'lucide-react-native';
+import { SerifTitle } from '../../components/SerifTitle';
 
 interface Memory {
   id: string;
@@ -89,6 +89,18 @@ function formatTime(ms: number): string {
   const mins = Math.floor(totalSecs / 60);
   const secs = totalSecs % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function deriveTitle(aiSummary?: string, content?: string): string {
+  if (aiSummary) {
+    const firstSentence = aiSummary.split(/[.!?]/)[0].trim();
+    if (firstSentence.length > 0 && firstSentence.length <= 60) return firstSentence;
+  }
+  if (content) {
+    const words = content.trim().split(/\s+/).slice(0, 6).join(' ');
+    return words.length > 0 ? words : content.slice(0, 40);
+  }
+  return '';
 }
 
 const TYPE_CONFIG: Record<string, { icon: string; labelKey: string; color: string }> = {
@@ -266,20 +278,10 @@ export default function MemoryDetailScreen() {
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [related, setRelated] = useState<RelatedMemory[]>([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     loadMemory();
   }, [id]);
-
-  useEffect(() => {
-    return () => {
-      if (copiedTimeoutRef.current) {
-        clearTimeout(copiedTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const loadMemory = async () => {
     try {
@@ -332,21 +334,6 @@ export default function MemoryDetailScreen() {
     router.back();
   }, []);
 
-  const handleDelete = useCallback(() => {
-    Alert.alert(t('memory.deleteTitle'), t('memory.deleteMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('memory.dismiss'),
-        style: 'destructive',
-        onPress: async () => {
-          try { await memoriesApi.delete(id!); } catch { }
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.back();
-        },
-      },
-    ]);
-  }, [id, t]);
-
   const handleShare = useCallback(async () => {
     if (!memory) return;
     try {
@@ -357,18 +344,6 @@ export default function MemoryDetailScreen() {
       });
     } catch { }
   }, [memory, t]);
-
-  const handleCopy = useCallback(async () => {
-    if (!memory) return;
-    const text = memory.aiSummary || memory.content;
-    await Clipboard.setStringAsync(text);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setCopied(true);
-    if (copiedTimeoutRef.current) {
-      clearTimeout(copiedTimeoutRef.current);
-    }
-    copiedTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-  }, [memory]);
 
   const handleEditSave = async (newContent: string) => {
     if (!memory) return;
@@ -390,11 +365,6 @@ export default function MemoryDetailScreen() {
       params: { id: relatedMemoryId },
     });
   }, []);
-
-  const typeConf = useMemo(() => {
-    if (!memory) return TYPE_CONFIG.text;
-    return TYPE_CONFIG[memory.type] || TYPE_CONFIG.text;
-  }, [memory]);
 
   if (loading) {
     return (
@@ -430,29 +400,35 @@ export default function MemoryDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
-      {/* ── Header ─────────────────────────────────────────── */}
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={handleClose} style={[styles.headerBtn, { backgroundColor: colors.inputBg }]}>
-          <ChevronLeft size={20} color={colors.textSecondary} strokeWidth={2.4} />
+      {/* ── Header ── */}
+      <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={[styles.backLink, { color: colors.brandAccent }]}>
+            {t('memory.backToLibrary')}
+          </Text>
         </TouchableOpacity>
-        <View style={styles.headerMeta}>
-          <View style={[styles.typePill, { backgroundColor: `${typeConf.color}15` }]}>
-            <Text style={styles.typePillIcon}>{typeConf.icon}</Text>
-            <Text style={[styles.typePillLabel, { color: typeConf.color }]}>{t(typeConf.labelKey)}</Text>
-          </View>
-          {memory.categoryName && (
-            <View style={[styles.categoryPill, { backgroundColor: `${memory.categoryColor || '#6B7280'}15` }]}>
-              <Text style={styles.categoryPillIcon}>{memory.categoryIcon || '📁'}</Text>
-              <Text style={[styles.categoryPillLabel, { color: memory.categoryColor || '#6B7280' }]}>
-                {memory.categoryName}
+        {memory ? (
+          <>
+            <Text style={[styles.dateEyebrow, { color: colors.brandAccent }]}>
+              {new Date(memory.createdAt).toLocaleDateString(undefined, {
+                weekday: 'long', month: 'long', day: 'numeric',
+              }).toUpperCase()}
+            </Text>
+            <SerifTitle size={24} style={{ paddingHorizontal: 0, marginBottom: 6 }}>
+              {deriveTitle(memory.aiSummary, memory.content)}
+            </SerifTitle>
+            <View style={styles.metaRow}>
+              <View style={[styles.typeChip, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Text style={[styles.typeChipText, { color: colors.textMuted }]}>
+                  {memory.type?.toLowerCase()}
+                </Text>
+              </View>
+              <Text style={[styles.metaTime, { color: colors.textMuted }]}>
+                {formatRelativeDate(memory.createdAt, t)}
               </Text>
             </View>
-          )}
-          <Text style={[styles.headerTime, { color: colors.textMuted }]}>{formatRelativeDate(memory.createdAt, t)}</Text>
-        </View>
-        <TouchableOpacity onPress={handleShare} style={[styles.headerBtn, { backgroundColor: colors.inputBg }]}>
-          <Share2 size={18} color={colors.textSecondary} strokeWidth={2.2} />
-        </TouchableOpacity>
+          </>
+        ) : null}
       </View>
 
       {/* ── Content ────────────────────────────────────────── */}
@@ -462,14 +438,22 @@ export default function MemoryDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* AI Summary card */}
-        {memory.aiSummary && (
-          <View style={[styles.summaryCard, { backgroundColor: colors.accentLight, borderColor: colors.accentMid }]}>
-            <View style={styles.summaryHeader}>
-              <Text style={[styles.summaryLabel, { color: colors.accent }]}>✨ {t('memory.aiSummary')}</Text>
-            </View>
-            <Text style={[styles.summaryText, { color: colors.textPrimary }]}>{memory.aiSummary}</Text>
+        {memory?.aiSummary ? (
+          <View style={[
+            styles.aiSummaryCard,
+            {
+              backgroundColor: 'rgba(197,106,58,0.06)',
+              borderColor: 'rgba(197,106,58,0.14)',
+            },
+          ]}>
+            <Text style={[styles.aiSummaryLabel, { color: colors.brandAccent }]}>
+              {t('memory.aiSummaryLabel')}
+            </Text>
+            <Text style={[styles.aiSummaryText, { color: colors.textSecondary }]}>
+              {memory.aiSummary}
+            </Text>
           </View>
-        )}
+        ) : null}
 
         {/* Photo image */}
         {memory.type === 'photo' && (memory.thumbnailUrl || memory.imageUrl) && (
@@ -627,27 +611,22 @@ export default function MemoryDetailScreen() {
         )}
       </ScrollView>
 
-      {/* ── Bottom actions ─────────────────────────────────── */}
-      <View style={[styles.bottomBar, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
-        <TouchableOpacity style={styles.bottomAction} onPress={handleCopy} activeOpacity={0.7}>
-          {copied ? (
-            <Text style={[styles.bottomActionIcon, { color: colors.accent }]}>✓</Text>
-          ) : (
-            <Copy size={17} color={colors.textMuted} strokeWidth={2.2} />
-          )}
-          <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{copied ? t('memory.copied') : t('memory.copy')}</Text>
+      {/* ── Bottom actions ── */}
+      <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
+        <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => setIsEditing(true)} activeOpacity={0.7}>
+          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>
+            {t('memory.actionEdit')}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomAction} onPress={() => setIsEditing(true)} activeOpacity={0.7}>
-          <PencilLine size={17} color={colors.textMuted} strokeWidth={2.2} />
-          <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.edit')}</Text>
+        <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={handleShare} activeOpacity={0.7}>
+          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>
+            {t('memory.actionShare')}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.bottomAction} onPress={handleShare} activeOpacity={0.7}>
-          <Share2 size={17} color={colors.textPrimary} strokeWidth={2.2} />
-          <Text style={[styles.bottomActionLabel, { color: colors.textMuted }]}>{t('memory.share')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.bottomAction]} onPress={handleDelete} activeOpacity={0.7}>
-          <Trash2 size={17} color={colors.error} strokeWidth={2.2} />
-          <Text style={[styles.bottomActionLabel, { color: colors.error }]}>{t('memory.dismiss')}</Text>
+        <TouchableOpacity style={[styles.actionBtn, { borderColor: 'rgba(197,106,58,0.25)' }]} activeOpacity={0.7}>
+          <Text style={[styles.actionBtnText, { color: colors.brandAccent }]}>
+            {t('memory.actionReflect')}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -659,61 +638,71 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   loadingText: { fontSize: 16, marginTop: 12 },
 
-  // Header
-  header: {
+  // Detail Header
+  detailHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  backLink: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 12,
+    marginBottom: 14,
+  },
+  dateEyebrow: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    gap: 8,
   },
-  headerBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+  typeChip: {
+    borderRadius: 100,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
   },
-  headerBtnText: { fontSize: 20, fontWeight: '500' },
-  headerMeta: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 },
-  headerTime: { fontSize: 13 },
-  typePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
+  typeChipText: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  typePillIcon: { fontSize: 12 },
-  typePillLabel: { fontSize: 12, fontWeight: '600' },
-
-  // Category pill
-  categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    gap: 4,
+  metaTime: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 11,
   },
-  categoryPillIcon: { fontSize: 11 },
-  categoryPillLabel: { fontSize: 11, fontWeight: '600' },
 
   // Scroll
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingVertical: 16 },
 
   // AI Summary card
-  summaryCard: {
+  aiSummaryCard: {
     borderRadius: 14,
-    padding: 12,
-    marginBottom: 14,
     borderWidth: 1,
+    padding: 14,
+    marginHorizontal: 20,
+    marginTop: 16,
   },
-  summaryHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  summaryLabel: { fontSize: 12, fontWeight: '700' },
-  summaryText: { fontSize: 15, lineHeight: 22 },
+  aiSummaryLabel: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  aiSummaryText: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -911,21 +900,24 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
 
-  // Bottom bar
-  bottomBar: {
+  // Action row
+  actionRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
+    gap: 8,
+    padding: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  bottomAction: {
+  actionBtn: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  bottomActionIcon: { fontSize: 18, marginBottom: 2 },
-  bottomActionLabel: { fontSize: 11, fontWeight: '500' },
+  actionBtnText: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 13,
+  },
 
   // Edit panel
   editPanel: { flex: 1 },

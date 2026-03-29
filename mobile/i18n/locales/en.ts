@@ -239,6 +239,12 @@ const en = {
     match: 'match',
     loadingRelated: 'Loading connected ideas…',
     relatedViaCategory: 'Related via category',
+    aiSummaryLabel: '✦ AI Summary',
+    actionEdit: 'Edit',
+    actionShare: 'Share',
+    actionReflect: 'Reflect',
+    backToLibrary: '← Library',
+    backToHome: '← Home',
   },
 
   // Capture screen
