@@ -347,6 +347,8 @@ const vi = {
     daysAgo: '{{count}} ngày trước',
     weeksAgo: '{{count}} tuần trước',
     tapToOpen: 'Nhấn để mở',
+    openMemory: 'Mở',
+    dismissMemory: 'Bỏ qua',
   },
 
   // Alerts

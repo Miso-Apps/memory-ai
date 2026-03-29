@@ -348,6 +348,8 @@ const en = {
     daysAgo: '{{count}}d ago',
     weeksAgo: '{{count}}w ago',
     tapToOpen: 'Tap to open',
+    openMemory: 'Open',
+    dismissMemory: 'Dismiss',
   },
 
   // Alerts
