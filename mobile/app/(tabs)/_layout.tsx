@@ -57,7 +57,7 @@ function TabIcon({
         />
         <Icon
           size={size}
-          color={focused ? colors.textPrimary : '#2a2a2a'}
+          color={focused ? colors.textPrimary : colors.textMuted}
           strokeWidth={focused ? 2.5 : 1.8}
         />
       </View>
@@ -129,10 +129,8 @@ function CreateTabButton({ style, ...rest }: any) {
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <View style={[styles.createBtnRing, { backgroundColor: colors.brandAccentLight }]}> 
-          <View style={[styles.createBtn, { backgroundColor: colors.brandAccent }]}>
-            <Plus size={22} color="#FFFFFF" strokeWidth={2.8} />
-          </View>
+        <View style={[styles.createBtn, { backgroundColor: colors.brandAccent }]}>
+          <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -258,23 +256,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: -8,
   },
-  createBtnRing: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   createBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#C56A3A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
