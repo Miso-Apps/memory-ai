@@ -117,6 +117,7 @@ function BottomModeBar({
               style={[
                 modeBarStyles.slot,
                 active && { backgroundColor: colors.brandAccent, borderRadius: 12 },
+                !active && { opacity: 0.55 },
               ]}
               onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
               activeOpacity={0.85}
@@ -127,8 +128,7 @@ function BottomModeBar({
               <Text style={modeBarStyles.emoji}>{MODE_EMOJI[key]}</Text>
               <Text style={[
                 modeBarStyles.modeTabText,
-                { color: active ? '#FFFFFF' : colors.textMuted },
-                !active && { opacity: 0.45 },
+                { color: active ? '#FFFFFF' : colors.textSecondary },
               ]}>
                 {t(MODE_META[key].labelKey)}
               </Text>
