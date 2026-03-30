@@ -265,15 +265,24 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
 
   return (
     <View style={voiceStyles.container}>
-      {/* Pulse ring + button */}
+      {/* Pulse rings + button */}
       <View style={voiceStyles.btnWrap}>
+        {/* Static outer rings for warmth */}
+        <View style={[voiceStyles.staticRingOuter, { borderColor: 'rgba(201,125,58,0.12)' }]} />
+        <View style={[voiceStyles.staticRingInner, { borderColor: 'rgba(201,125,58,0.22)' }]} />
+        {/* Animated pulse ring when recording */}
         {isRecording && (
           <Animated.View
             style={[voiceStyles.pulseRing, { borderColor: colors.error, transform: [{ scale: pulseAnim }] }]}
           />
         )}
         <TouchableOpacity
-          style={[voiceStyles.btn, { backgroundColor: isRecording ? colors.error : colors.accent }]}
+          style={[
+            voiceStyles.btn,
+            {
+              backgroundColor: isRecording ? colors.error : colors.brandAccent,
+            },
+          ]}
           onPress={isRecording ? stopRecording : startRecording}
           activeOpacity={0.85}
           disabled={status === 'uploading'}
@@ -297,19 +306,39 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
       {status === 'recording' && (
         <Text style={[voiceStyles.hintText, { color: colors.textMuted }]}>{t('capture.tapToStop')}</Text>
       )}
-      {status === 'done' && transcription && (
-        <View style={[voiceStyles.txBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[voiceStyles.txLabel, { color: colors.textMuted }]}>{t('capture.modeVoice')}</Text>
-          <Text style={[voiceStyles.txText, { color: colors.textPrimary }]}>{transcription}</Text>
-        </View>
-      )}
+
+      {/* Transcription card */}
+      <View style={[voiceStyles.txCard, { backgroundColor: colors.cardBg }]}>
+        <Text style={[voiceStyles.txLabel, { color: colors.textMuted }]}>{t('capture.modeVoice')}</Text>
+        <Text style={[
+          voiceStyles.txText,
+          { color: status === 'done' && transcription ? colors.textPrimary : colors.textPlaceholder },
+          !transcription && { fontStyle: 'italic' },
+        ]}>
+          {transcription ?? t('capture.tapToRecord')}
+        </Text>
+      </View>
     </View>
   );
 }
 
 const voiceStyles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
-  btnWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
+  container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 24 },
+  btnWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  staticRingOuter: {
+    position: 'absolute',
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    borderWidth: 2,
+  },
+  staticRingInner: {
+    position: 'absolute',
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    borderWidth: 2,
+  },
   pulseRing: {
     position: 'absolute',
     width: 136,
@@ -319,23 +348,33 @@ const voiceStyles = StyleSheet.create({
     opacity: 0.45,
   },
   btn: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 18,
+    shadowColor: '#c97d3a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
     elevation: 10,
   },
-  stopSquare: { width: 30, height: 30, backgroundColor: '#FFF', borderRadius: 4 },
-  micEmoji: { fontSize: 42 },
-  statusText: { fontSize: 16, fontWeight: '500', textAlign: 'center' },
-  hintText: { marginTop: 6, fontSize: 13, textAlign: 'center' },
-  txBox: { marginTop: 20, padding: 16, borderRadius: 16, borderWidth: 1, maxWidth: '100%' },
-  txLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
-  txText: { fontSize: 15, lineHeight: 22 },
+  stopSquare: { width: 28, height: 28, backgroundColor: '#FFF', borderRadius: 4 },
+  statusText: { fontSize: 15, fontWeight: '500', textAlign: 'center', marginBottom: 4 },
+  hintText: { fontSize: 13, textAlign: 'center', marginBottom: 16 },
+  txCard: {
+    marginTop: 16,
+    padding: 16,
+    borderRadius: 18,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  txLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
+  txText: { fontSize: 14, lineHeight: 21 },
 });
 
 // ── Image Upload Component ─────────────────────────────────────────────────
