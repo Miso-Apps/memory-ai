@@ -458,12 +458,18 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
   if (!pickedUri) {
     return (
       <View style={imageStyles.emptyContainer}>
-        <TouchableOpacity style={[imageStyles.pickButton, { borderColor: colors.border }]} onPress={handlePickImage} activeOpacity={0.8}>
-          <View style={[imageStyles.pickIconWrap, { backgroundColor: colors.accentSubtle }]}> 
-            <ImageIcon size={28} color={colors.accent} strokeWidth={2.4} />
+        <TouchableOpacity
+          style={[imageStyles.pickCard, { borderColor: colors.border, backgroundColor: colors.cardBg }]}
+          onPress={handlePickImage}
+          activeOpacity={0.8}
+        >
+          <View style={[imageStyles.pickIconWell, { backgroundColor: '#fff8f2' }]}>
+            <Text style={imageStyles.pickEmoji}>📷</Text>
           </View>
-          <Text style={[imageStyles.pickLabel, { color: colors.accent }]}>{t('capture.chooseImage')}</Text>
-          <Text style={[imageStyles.pickSub, { color: colors.textMuted }]}>{t('capture.chooseImageSub')}</Text>
+          <Text style={[imageStyles.pickLabel, { color: colors.brandAccent }]}>{t('capture.chooseImage')}</Text>
+          <Text style={[imageStyles.pickSub, { color: colors.textMuted }]}>
+            {t('capture.chooseImageSub')}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -504,31 +510,40 @@ const imageStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pickButton: {
+  pickCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 40,
-    borderRadius: 20,
+    padding: 36,
+    borderRadius: 22,
     borderWidth: 2,
     borderStyle: 'dashed',
     gap: 10,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  pickIconWrap: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
+  pickIconWell: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  pickEmoji: {
+    fontSize: 28,
+  },
   pickLabel: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600',
     fontFamily: SANS_FONT,
   },
   pickSub: {
-    fontSize: 14,
+    fontSize: 13,
     textAlign: 'center',
+    lineHeight: 18,
     fontFamily: SANS_FONT,
   },
   scroll: {
