@@ -818,32 +818,6 @@ export default function CaptureScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Clipboard URL Banner ── */}
-        {clipboardUrl && (
-          <Animated.View style={[styles.clipBanner, { opacity: clipOpacity, backgroundColor: colors.cardBg, borderColor: colors.accentMid }]}>
-            <View style={styles.clipBannerLeft}>
-              <View style={[styles.clipIconWrap, { borderColor: colors.textMuted }]}> 
-                <Link2 size={14} color={colors.brandAccent} strokeWidth={2.4} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.clipTitle, { color: colors.textMuted }]}>{t('capture.clipboardDetected')}</Text>
-                <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
-              </View>
-            </View>
-            <View style={styles.clipActions}>
-              <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.brandAccent }]}> 
-                {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.brandAccent }]}> 
-                <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                <Text style={[styles.clipDismiss, { color: colors.textMuted }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        )}
-
         {mode === 'text' || mode === 'link' ? (
           <View style={styles.composerScreenWrap}>
             <View style={[styles.inputCard, { backgroundColor: colors.cardBg }]}>
@@ -866,6 +840,34 @@ export default function CaptureScreen() {
               />
               {mode === 'link' && linkError ? (
                 <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
+              ) : null}
+              {mode === 'link' && clipboardUrl ? (
+                <Animated.View
+                  style={[styles.clipInCard, {
+                    opacity: clipOpacity,
+                    backgroundColor: colors.subtleBg,
+                    borderColor: '#f5dfc8',
+                  }]}
+                >
+                  <View style={styles.clipInCardLeft}>
+                    <Link2 size={13} color={colors.brandAccent} strokeWidth={2.4} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.clipTitle, { color: colors.textMuted }]}>{t('capture.clipboardDetected')}</Text>
+                      <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.clipActions}>
+                    <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.brandAccent }]}>
+                      {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.brandAccent }]}>
+                      <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={[styles.clipDismiss, { color: colors.textMuted }]}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
               ) : null}
               {mode === 'text' && (
                 <>
@@ -1013,23 +1015,18 @@ const styles = StyleSheet.create({
     fontFamily: SANS_FONT,
   },
 
-  // ── Clipboard banner ──
-  clipBanner: {
-    marginHorizontal: 16,
+  // ── Clipboard banner (in-card) ──
+  clipInCard: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 10,
     marginTop: 10,
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
+    gap: 6,
   },
-  clipBannerLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  clipIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
-    borderWidth: StyleSheet.hairlineWidth,
+  clipInCardLeft: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
   },
   clipTitle: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, fontFamily: SANS_FONT },
   clipUrl: { fontSize: 12, marginTop: 2, fontFamily: SANS_FONT },
