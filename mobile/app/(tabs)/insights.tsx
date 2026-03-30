@@ -596,7 +596,7 @@ export default function InsightsScreen() {
             },
           ]}>
             <View>
-              <Text style={[s.streakValue, { color: colors.brandAccent, fontFamily: 'DMSerifDisplay_400Regular_Italic' }]}>
+              <Text style={[s.streakValue, { color: colors.brandAccent, fontFamily: 'DMSans_600SemiBold' }]}>
                 🔥 {streaks?.current_streak ?? 0}
               </Text>
               <Text style={[s.streakLabel, { color: colors.brandAccent }]}>
@@ -604,7 +604,7 @@ export default function InsightsScreen() {
               </Text>
             </View>
             <View style={s.streakRight}>
-              <Text style={[s.totalValue, { color: colors.textPrimary, fontFamily: 'DMSerifDisplay_400Regular_Italic' }]}>
+              <Text style={[s.totalValue, { color: colors.textPrimary, fontFamily: 'DMSans_600SemiBold' }]}>
                 {dashboard?.total_memories ?? 0}
               </Text>
               <Text style={[s.totalLabel, { color: colors.textMuted }]}>
