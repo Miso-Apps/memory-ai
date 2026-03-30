@@ -414,7 +414,7 @@ export default function MemoryDetailScreen() {
         <View style={styles.navRow}>
           <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={[styles.backLink, { color: colors.brandAccent }]}>
-              {'‹ '}{t('memory.backToLibrary')}
+              {t('memory.backToLibrary')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>

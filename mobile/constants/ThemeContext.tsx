@@ -23,7 +23,7 @@ export interface ThemeColors {
   textPlaceholder: string;
   buttonText: string;
 
-  // Accent (indigo — same in both themes)
+  // Accent
   accent: string;
   accentLight: string;
   accentMid: string;
@@ -81,7 +81,7 @@ export const LightColors: ThemeColors = {
   textPlaceholder: '#c8c0b8',
   buttonText: '#FFFFFF',
 
-  // Accent (indigo — unchanged)
+  // Accent
   accent: '#4F46E5',
   accentLight: 'rgba(79,70,229,0.1)',
   accentMid: 'rgba(79,70,229,0.18)',
@@ -139,7 +139,7 @@ export const DarkColors: ThemeColors = {
   textPlaceholder: '#4a4440',
   buttonText: '#FFFFFF',
 
-  // Accent (indigo — unchanged)
+  // Accent
   accent: '#818CF8',
   accentLight: 'rgba(129,140,248,0.14)',
   accentMid: 'rgba(129,140,248,0.22)',
