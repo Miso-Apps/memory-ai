@@ -842,23 +842,25 @@ export default function CaptureScreen() {
               {mode === 'link' && linkError ? (
                 <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
               ) : null}
-              <View style={[styles.inputDivider, { borderColor: '#f2d5b8' }]} />
               {mode === 'text' && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.hintsScroll}
-                >
-                  {HINT_CHIPS.map((chip) => (
-                    <TouchableOpacity
-                      key={chip.labelKey}
-                      onPress={() => setContent((prev) => (prev ? `${t(chip.labelKey)} ${prev}` : `${t(chip.labelKey)} `))}
-                      style={[styles.hintChip, { backgroundColor: chip.bg, borderColor: chip.border }]}
-                    >
-                      <Text style={[styles.hintChipText, { color: chip.text }]}>{t(chip.labelKey)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <>
+                  <View style={[styles.inputDivider, { borderColor: '#f2d5b8' }]} />
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.hintsScroll}
+                  >
+                    {HINT_CHIPS.map((chip) => (
+                      <TouchableOpacity
+                        key={chip.labelKey}
+                        onPress={() => setContent((prev) => (prev ? `${t(chip.labelKey)} ${prev}` : `${t(chip.labelKey)} `))}
+                        style={[styles.hintChip, { backgroundColor: chip.bg, borderColor: chip.border }]}
+                      >
+                        <Text style={[styles.hintChipText, { color: chip.text }]}>{t(chip.labelKey)}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
               )}
             </View>
           </View>
@@ -1026,9 +1028,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   hintChipText: {
-    fontFamily: 'DMSans_400Regular',
+    fontFamily: 'DMSans_600SemiBold',
     fontSize: 12,
-    fontWeight: '600',
   },
 
   // ── Success overlay ──
