@@ -1067,6 +1067,7 @@ const styles = StyleSheet.create({
   hintChipText: {
     fontFamily: 'DMSans_600SemiBold',
     fontSize: 12,
+    fontWeight: '600',
   },
 
   // ── Success overlay ──

@@ -35,8 +35,8 @@ Color-coded by semantic type — each chip has its own background, border, and t
 | ✨ idea | `#fff8f2` | `#f5dfc8` | `#c47a3a` |
 | 📅 meeting | `#f2f8ff` | `#d0e8ff` | `#4a7ab5` |
 | ✅ decision | `#f0fff4` | `#b8e8c8` | `#2e7d52` |
-| 💭 feeling | `#fff0f8` | `#f0c0dc` | `#a0456a` |
-| 🌟 insight | `#f5f0ff` | `#d8c8f8` | `#6a4ab5` |
+| 💬 conversation | `#fff0f8` | `#f0c0dc` | `#a0456a` |
+| 📚 learning | `#f5f0ff` | `#d8c8f8` | `#6a4ab5` |
 
 Chips prepend their label to the text input content on press (existing behavior unchanged).
 
