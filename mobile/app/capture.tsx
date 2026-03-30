@@ -121,7 +121,7 @@ function BottomModeBar({
               accessibilityLabel={t(modeMeta.labelKey)}
             >
               {active ? (
-                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(197,106,58,0.25)' }]}>
+                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: `rgba(184, 92, 32, 0.25)` }]}>
                   <Icon size={17} color={colors.brandAccent} strokeWidth={2.5} />
                 </View>
               ) : (
