@@ -36,7 +36,6 @@ import {
 } from 'lucide-react-native';
 
 const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const BRAND_ORANGE = '#C56A3A';
 
 function getGreeting(t: (key: string) => string): { eyebrow: string; title: string } {
   const hour = new Date().getHours();
