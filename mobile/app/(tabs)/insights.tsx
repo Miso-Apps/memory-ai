@@ -36,13 +36,13 @@ const TYPE_ICON: Record<string, React.ComponentType<any>> = {
   photo: ImageIcon,
 };
 
-function heatmapCellColor(count: number, max: number): string {
-  if (count === 0) return 'rgba(255,255,255,0.04)';
+function heatmapCellColor(count: number, max: number, isDark: boolean): string {
+  if (count === 0) return isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
   const ratio = count / Math.max(max, 1);
-  if (ratio < 0.25) return 'rgba(197,106,58,0.2)';
-  if (ratio < 0.5)  return 'rgba(197,106,58,0.45)';
-  if (ratio < 0.75) return 'rgba(197,106,58,0.7)';
-  return '#C56A3A';
+  if (ratio < 0.25) return 'rgba(184,92,32,0.20)';
+  if (ratio < 0.5)  return 'rgba(184,92,32,0.45)';
+  if (ratio < 0.75) return 'rgba(184,92,32,0.70)';
+  return '#b85c20';
 }
 
 function formatHour(hour: number): string {
@@ -164,7 +164,7 @@ function ActivityHeatmap({
   data: Array<{ date: string; count: number }>;
   t: Function;
 }) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   // Fill last 30 days
   const today = new Date();
@@ -188,7 +188,7 @@ function ActivityHeatmap({
             key={d.date}
             style={[
               s.heatmapCell,
-              { backgroundColor: heatmapCellColor(d.count, maxCount) },
+              { backgroundColor: heatmapCellColor(d.count, maxCount, isDark) },
             ]}
           />
         ))}
@@ -201,7 +201,7 @@ function ActivityHeatmap({
             style={[
               s.heatmapLegendCell,
               {
-                backgroundColor: heatmapCellColor(ratio === 0 ? 0 : ratio * maxCount, maxCount),
+                backgroundColor: heatmapCellColor(ratio === 0 ? 0 : ratio * maxCount, maxCount, isDark),
               },
             ]}
           />
