@@ -103,10 +103,10 @@ function deriveTitle(aiSummary?: string, content?: string): string {
 }
 
 const TYPE_CONFIG: Record<string, { icon: string; labelKey: string; color: string }> = {
-  text: { icon: '📝', labelKey: 'memory.typeText', color: '#3B82F6' },
-  voice: { icon: '🎤', labelKey: 'memory.typeVoice', color: '#8B5CF6' },
-  link: { icon: '🔗', labelKey: 'memory.typeLink', color: '#10B981' },
-  photo: { icon: '📷', labelKey: 'memory.typePhoto', color: '#F59E0B' },
+  text: { icon: '📝', labelKey: 'memory.typeText', color: '#5B7FA6' },
+  voice: { icon: '🎤', labelKey: 'memory.typeVoice', color: '#C2410C' },
+  link: { icon: '🔗', labelKey: 'memory.typeLink', color: '#2D7D63' },
+  photo: { icon: '📷', labelKey: 'memory.typePhoto', color: '#B45309' },
 };
 
 // ─── Audio Player ───────────────────────────────────────────────────────────
@@ -450,8 +450,8 @@ export default function MemoryDetailScreen() {
           <View style={[
             styles.aiSummaryCard,
             {
-              backgroundColor: 'rgba(197,106,58,0.06)',
-              borderColor: 'rgba(197,106,58,0.14)',
+              backgroundColor: colors.brandAccentLight,
+              borderColor: 'rgba(184,92,32,0.14)',
             },
           ]}>
             <Text style={[styles.aiSummaryLabel, { color: colors.brandAccent }]}>
