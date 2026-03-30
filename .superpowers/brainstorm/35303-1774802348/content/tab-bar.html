@@ -1,0 +1,322 @@
+<h2>Tab bar style</h2>
+<p class="subtitle">This defines the bottom frame of every screen. Shown in both light and dark.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  .pairs { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin: 24px 0 8px; }
+  .pair-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pair-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: #888; font-weight: 600; }
+  .mini-phones { display: flex; gap: 8px; }
+  .mini-phone {
+    width: 140px;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1.5px solid;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen-body {
+    flex: 1;
+    padding: 14px 12px 10px;
+  }
+  .screen-eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
+  .screen-h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 10px; }
+  .mini-card { border-radius: 9px; padding: 8px 9px; margin-bottom: 5px; border: 1px solid; }
+  .mini-card-text { font-size: 10px; line-height: 1.4; }
+
+  /* Light skin */
+  .l { background: #f7f4f0; border-color: #e0dbd4; }
+  .l .screen-eyebrow { color: #b8b0a7; }
+  .l .screen-h1 { color: #1c1814; }
+  .l .mini-card { background: #fff; border-color: #ede8e2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .l .mini-card-text { color: #5a5248; }
+
+  /* Dark skin */
+  .d { background: #1c1814; border-color: rgba(255,255,255,0.06); }
+  .d .screen-eyebrow { color: #6b6258; }
+  .d .screen-h1 { color: #f0ede8; }
+  .d .mini-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+  .d .mini-card-text { color: #a09890; }
+
+  .pair-desc { font-size: 11px; color: #888; max-width: 290px; text-align: center; margin: 0; line-height: 1.5; }
+
+  /* ── Tab style A: Standard flat ────────────────────────── */
+  .tab-flat {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 6px 0 10px;
+    border-top: 1px solid;
+  }
+  .l .tab-flat { border-color: #e8e3dc; background: rgba(247,244,240,0.97); }
+  .d .tab-flat { border-color: rgba(255,255,255,0.06); background: rgba(28,24,20,0.97); }
+
+  .tab-flat-item { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .tab-flat-icon { font-size: 17px; opacity: 0.28; }
+  .tab-flat-icon.active { opacity: 1; }
+  .tab-flat-label { font-size: 8px; font-weight: 500; opacity: 0.3; letter-spacing: 0.2px; }
+  .tab-flat-label.active { opacity: 0.85; }
+  .l .tab-flat-label { color: #1c1814; }
+  .d .tab-flat-label { color: #f0ede8; }
+  .tab-flat-add {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; margin-bottom: 2px;
+    background: #b85c20;
+    box-shadow: 0 3px 8px rgba(184,92,32,0.28);
+  }
+
+  /* ── Tab style B: Floating pill ────────────────────────── */
+  .tab-pill-wrap { padding: 0 10px 10px; }
+  .tab-pill {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-radius: 20px;
+    padding: 9px 6px;
+    border: 1px solid;
+  }
+  .l .tab-pill { background: rgba(247,244,240,0.97); border-color: #e0dbd4; box-shadow: 0 4px 14px rgba(0,0,0,0.08); }
+  .d .tab-pill { background: rgba(28,24,20,0.97); border-color: rgba(255,255,255,0.07); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+
+  .tab-pill-icon { font-size: 16px; opacity: 0.25; }
+  .tab-pill-icon.active { opacity: 1; }
+  .tab-pill-add {
+    width: 32px; height: 32px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; margin-top: -4px;
+    background: #b85c20;
+    box-shadow: 0 3px 8px rgba(184,92,32,0.3);
+  }
+
+  /* ── Tab style C: Labels only, no icons ───────────────── */
+  .tab-labels {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 8px 4px 10px;
+    border-top: 1px solid;
+  }
+  .l .tab-labels { border-color: #e8e3dc; background: rgba(247,244,240,0.97); }
+  .d .tab-labels { border-color: rgba(255,255,255,0.06); background: rgba(28,24,20,0.97); }
+
+  .tab-labels-item { display: flex; flex-direction: column; align-items: center; }
+  .tab-labels-text { font-size: 9px; font-weight: 600; opacity: 0.25; letter-spacing: 0.2px; text-transform: uppercase; }
+  .tab-labels-text.active { opacity: 0.9; }
+  .l .tab-labels-text { color: #1c1814; }
+  .d .tab-labels-text { color: #f0ede8; }
+  .tab-labels-dot { width: 4px; height: 4px; border-radius: 2px; background: #b85c20; margin-top: 3px; opacity: 0; }
+  .tab-labels-dot.active { opacity: 1; }
+  .tab-labels-add {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff;
+    background: #b85c20;
+  }
+</style>
+
+<div class="pairs">
+
+  <!-- A: Standard flat with labels -->
+  <div class="pair-col">
+    <div class="pair-label">A — Standard + labels</div>
+    <div class="mini-phones">
+      <div class="mini-phone l">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-flat">
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon active">⌂</div>
+            <div class="tab-flat-label active">Home</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">☰</div>
+            <div class="tab-flat-label">Library</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-add">+</div>
+            <div class="tab-flat-label" style="opacity:0">·</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">◈</div>
+            <div class="tab-flat-label">Insights</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">○</div>
+            <div class="tab-flat-label">Profile</div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-phone d">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-flat">
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon active">⌂</div>
+            <div class="tab-flat-label active">Home</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">☰</div>
+            <div class="tab-flat-label">Library</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-add">+</div>
+            <div class="tab-flat-label" style="opacity:0">·</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">◈</div>
+            <div class="tab-flat-label">Insights</div>
+          </div>
+          <div class="tab-flat-item">
+            <div class="tab-flat-icon">○</div>
+            <div class="tab-flat-label">Profile</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">Classic iOS pattern. Icons + labels, top hairline border. Familiar, never wrong.</p>
+  </div>
+
+  <!-- B: Floating pill, icons only -->
+  <div class="pair-col">
+    <div class="pair-label">B — Floating pill</div>
+    <div class="mini-phones">
+      <div class="mini-phone l">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-pill-icon active">⌂</div>
+            <div class="tab-pill-icon">☰</div>
+            <div class="tab-pill-add">+</div>
+            <div class="tab-pill-icon">◈</div>
+            <div class="tab-pill-icon">○</div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-phone d">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-pill-icon active">⌂</div>
+            <div class="tab-pill-icon">☰</div>
+            <div class="tab-pill-add">+</div>
+            <div class="tab-pill-icon">◈</div>
+            <div class="tab-pill-icon">○</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">What you have now but properly paired with the warm palette. Feels more distinct.</p>
+  </div>
+
+  <!-- C: Labels only, no icons -->
+  <div class="pair-col">
+    <div class="pair-label">C — Text labels only</div>
+    <div class="mini-phones">
+      <div class="mini-phone l">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-labels">
+          <div class="tab-labels-item">
+            <div class="tab-labels-text active">Home</div>
+            <div class="tab-labels-dot active"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Library</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-add">+</div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Insights</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Profile</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-phone d">
+        <div class="screen-body">
+          <div class="screen-eyebrow">Evening</div>
+          <div class="screen-h1">What's on<br>your mind?</div>
+          <div class="mini-card"><div class="mini-card-text">Meeting notes: product launch timeline</div></div>
+          <div class="mini-card"><div class="mini-card-text">Article on design systems</div></div>
+        </div>
+        <div class="tab-labels">
+          <div class="tab-labels-item">
+            <div class="tab-labels-text active">Home</div>
+            <div class="tab-labels-dot active"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Library</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-add">+</div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Insights</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+          <div class="tab-labels-item">
+            <div class="tab-labels-text">Profile</div>
+            <div class="tab-labels-dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">Word labels + active dot. Editorial, opinionated. Like Threads but warmer.</p>
+  </div>
+
+</div>
+
+<div class="options" style="margin-top:8px">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Standard + labels</h3>
+      <p>Icons with text labels, top hairline. Native iOS feel, zero friction.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Floating pill</h3>
+      <p>Keep the pill but fix the palette. More distinct look.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Text labels only</h3>
+      <p>Words + active dot, no icons. Editorial and opinionated.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,321 @@
+<h2>Which dark mode feels right?</h2>
+<p class="subtitle">All three pair with the warm cream light mode you picked. The difference is in how "warm" vs "deep" the dark side goes.</p>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  .pair-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 28px 0 8px;
+  }
+  .pair-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .pair-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: #888;
+    font-weight: 600;
+  }
+  .pair-phones {
+    display: flex;
+    gap: 8px;
+  }
+  .phone {
+    width: 150px;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 1.5px solid;
+    padding: 16px 12px 12px;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 380px;
+  }
+  .phone-mode-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.5;
+    margin-bottom: 10px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 10px; }
+  .eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px; }
+  .prompt-bar {
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 11px;
+    margin-bottom: 12px;
+    border: 1px solid;
+  }
+  .sec-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 7px; }
+  .card {
+    border-radius: 11px;
+    padding: 10px;
+    margin-bottom: 6px;
+    border: 1px solid;
+  }
+  .card-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .card-type-label { font-size: 8px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .card-time { font-size: 8px; }
+  .card-text { font-size: 11px; line-height: 1.5; }
+  .tab-bar { display: flex; justify-content: space-around; align-items: center; padding: 9px 0 5px; margin-top: 10px; border-top: 1px solid; }
+  .tab-icon { font-size: 14px; opacity: 0.25; }
+  .tab-icon.active { opacity: 1; }
+  .tab-add { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; margin-top: -5px; }
+
+  /* LIGHT — same across all pairs */
+  .light { background: #f7f4f0; border-color: #e0dbd4; }
+  .light .phone-mode-label { color: #b8b0a7; }
+  .light .eyebrow { color: #b8b0a7; }
+  .light .h1 { color: #1c1814; }
+  .light .prompt-bar { background: #fff; border-color: #e8e3dc; color: #c0b8b0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .light .sec-label { color: #c0b8b0; }
+  .light .card { background: #fff; border-color: #ede8e2; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .light .card-type-label { color: #b8b0a7; }
+  .light .card-time { color: #c8c0b8; }
+  .light .card-text { color: #5a5248; }
+  .light .tab-bar { border-color: #e8e3dc; }
+  .light .tab-add { background: #b85c20; box-shadow: 0 3px 8px rgba(184,92,32,0.25); }
+
+  /* DARK A — Warm Charcoal */
+  .dark-a { background: #1c1814; border-color: rgba(255,255,255,0.06); }
+  .dark-a .phone-mode-label { color: #6b6258; }
+  .dark-a .eyebrow { color: #6b6258; }
+  .dark-a .h1 { color: #f0ede8; }
+  .dark-a .prompt-bar { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); color: #4a4440; }
+  .dark-a .sec-label { color: #5a5248; }
+  .dark-a .card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+  .dark-a .card-type-label { color: #6b6258; }
+  .dark-a .card-time { color: #4a4440; }
+  .dark-a .card-text { color: #a09890; }
+  .dark-a .tab-bar { border-color: rgba(255,255,255,0.06); }
+  .dark-a .tab-add { background: #b85c20; box-shadow: 0 3px 8px rgba(184,92,32,0.3); }
+
+  /* DARK B — Deep Ink */
+  .dark-b { background: #100f0d; border-color: rgba(255,255,255,0.05); }
+  .dark-b .phone-mode-label { color: #5a5248; }
+  .dark-b .eyebrow { color: #5a5248; }
+  .dark-b .h1 { color: #f4f0eb; }
+  .dark-b .prompt-bar { background: #181510; border-color: #2a2520; color: #3a3530; }
+  .dark-b .sec-label { color: #4a4440; }
+  .dark-b .card { background: #181510; border-color: #242018; }
+  .dark-b .card-type-label { color: #5a5248; }
+  .dark-b .card-time { color: #3a3530; }
+  .dark-b .card-text { color: #908880; }
+  .dark-b .tab-bar { border-color: #242018; }
+  .dark-b .tab-add { background: #b85c20; box-shadow: 0 3px 8px rgba(184,92,32,0.35); }
+
+  /* DARK C — Warm Slate */
+  .dark-c { background: #16151a; border-color: rgba(255,255,255,0.07); }
+  .dark-c .phone-mode-label { color: #605c68; }
+  .dark-c .eyebrow { color: #605c68; }
+  .dark-c .h1 { color: #eeeaf8; }
+  .dark-c .prompt-bar { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: #40404a; }
+  .dark-c .sec-label { color: #504c58; }
+  .dark-c .card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.07); }
+  .dark-c .card-type-label { color: #605c68; }
+  .dark-c .card-time { color: #40404a; }
+  .dark-c .card-text { color: #9890a8; }
+  .dark-c .tab-bar { border-color: rgba(255,255,255,0.06); }
+  .dark-c .tab-add { background: #b85c20; box-shadow: 0 3px 8px rgba(184,92,32,0.3); }
+
+  .pair-desc {
+    font-size: 11px;
+    color: #888;
+    max-width: 310px;
+    text-align: center;
+    margin: 0;
+    line-height: 1.5;
+  }
+</style>
+
+<div class="pair-row">
+
+  <!-- Pair A: Warm Charcoal -->
+  <div class="pair-wrap">
+    <div class="pair-label">A — Warm Charcoal</div>
+    <div class="pair-phones">
+      <div class="phone light">
+        <div class="phone-mode-label">Light</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+      <div class="phone dark-a">
+        <div class="phone-mode-label">Dark</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">Dark bg is <strong>#1c1814</strong> — very dark warm brown. Feels like the light mode dimmed. Cohesive pair.</p>
+  </div>
+
+  <!-- Pair B: Deep Ink -->
+  <div class="pair-wrap">
+    <div class="pair-label">B — Deep Ink</div>
+    <div class="pair-phones">
+      <div class="phone light">
+        <div class="phone-mode-label">Light</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+      <div class="phone dark-b">
+        <div class="phone-mode-label">Dark</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">Dark bg is <strong>#100f0d</strong> — near-black with warm undertone. More contrast, easier to read at night.</p>
+  </div>
+
+  <!-- Pair C: Warm Slate -->
+  <div class="pair-wrap">
+    <div class="pair-label">C — Warm Slate</div>
+    <div class="pair-phones">
+      <div class="phone light">
+        <div class="phone-mode-label">Light</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+      <div class="phone dark-c">
+        <div class="phone-mode-label">Dark</div>
+        <div class="eyebrow">Evening</div>
+        <div class="h1">What's on<br>your mind?</div>
+        <div class="prompt-bar">Capture...</div>
+        <div class="sec-label">Resurfaced</div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Text</span><span class="card-time">2d</span></div>
+          <div class="card-text">Meeting notes: product launch timeline</div>
+        </div>
+        <div class="card">
+          <div class="card-meta"><span class="card-type-label">Link</span><span class="card-time">1y</span></div>
+          <div class="card-text">Article on design systems</div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-icon active">⌂</div>
+          <div class="tab-icon">☰</div>
+          <div class="tab-add">+</div>
+          <div class="tab-icon">◈</div>
+          <div class="tab-icon">○</div>
+        </div>
+      </div>
+    </div>
+    <p class="pair-desc">Dark bg is <strong>#16151a</strong> — very dark purple-warm. Slightly cooler, more modern, still pairs with cream.</p>
+  </div>
+
+</div>
+
+<div class="options" style="margin-top:12px">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Warm Charcoal dark</h3>
+      <p>#1c1814 — the most cohesive with light mode, warmest feel</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Deep Ink dark</h3>
+      <p>#100f0d — near-black, most legible at night, still warm</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Warm Slate dark</h3>
+      <p>#16151a — slightly cooler/purple undertone, more contemporary</p>
+    </div>
+  </div>
+</div>

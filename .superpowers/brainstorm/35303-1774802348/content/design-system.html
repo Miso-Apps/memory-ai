@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System — Memory AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #1a1a1a;
+    color: #e0e0e0;
+    padding: 32px 24px 60px;
+    min-height: 100vh;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.4px; margin-bottom: 6px; }
+  .page-sub { font-size: 13px; color: #666; margin-bottom: 36px; }
+
+  h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #555; font-weight: 600; margin-bottom: 16px; }
+
+  section { margin-bottom: 40px; }
+
+  /* Palette */
+  .palette { display: flex; gap: 0; border-radius: 12px; overflow: hidden; height: 64px; }
+  .swatch { flex: 1; display: flex; align-items: flex-end; padding: 6px 8px; }
+  .swatch-label { font-size: 9px; font-weight: 600; letter-spacing: 0.3px; }
+
+  .palette-sub { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .swatch-small { display: flex; align-items: center; gap: 8px; }
+  .swatch-dot { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; }
+  .swatch-info { }
+  .swatch-name { font-size: 11px; font-weight: 600; color: #ccc; }
+  .swatch-hex { font-size: 10px; color: #555; font-family: monospace; }
+
+  /* Type scale */
+  .type-row { display: flex; align-items: baseline; gap: 16px; padding: 12px 0; border-bottom: 1px solid #252525; }
+  .type-row:last-child { border-bottom: none; }
+  .type-sample { flex: 1; }
+  .type-meta { font-size: 10px; color: #555; font-family: monospace; white-space: nowrap; }
+
+  /* Phone mockups */
+  .phones { display: flex; gap: 20px; flex-wrap: wrap; justify-content: flex-start; }
+  .phone-col { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .phone-col-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #555; font-weight: 600; }
+
+  .phone {
+    width: 220px;
+    border-radius: 36px;
+    overflow: hidden;
+    border: 1.5px solid;
+    display: flex;
+    flex-direction: column;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── Light phone ── */
+  .phone-light { background: #f7f4f0; border-color: #d8d3cc; }
+  .phone-light .safe-area { padding: 20px 16px 0; flex: 1; }
+  .phone-light .eyebrow { font-size: 10px; color: #b8b0a7; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+  .phone-light .screen-title { font-size: 26px; font-weight: 700; color: #1c1814; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 14px; }
+  .phone-light .capture-bar {
+    background: #fff;
+    border: 1px solid #e8e3dc;
+    border-radius: 12px;
+    padding: 10px 13px;
+    font-size: 13px;
+    color: #c0b8b0;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .phone-light .capture-icon { font-size: 14px; opacity: 0.5; }
+  .phone-light .sec-label { font-size: 10px; color: #c0b8b0; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600; }
+  .phone-light .card {
+    background: #fff;
+    border: 1px solid #ede8e2;
+    border-radius: 13px;
+    padding: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 0 0 0 transparent;
+  }
+  .phone-light .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .phone-light .card-tag { font-size: 9px; font-weight: 600; color: #b85c20; background: rgba(184,92,32,0.1); padding: 2px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .phone-light .card-type { font-size: 9px; color: #c0b8b0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .phone-light .card-text { font-size: 13px; color: #5a5248; line-height: 1.5; }
+  .phone-light .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .phone-light .card-time { font-size: 10px; color: #c0b8b0; }
+  .phone-light .card-open { font-size: 10px; color: #b85c20; font-weight: 600; }
+  .phone-light .tab-pill-wrap { padding: 0 12px 14px; }
+  .phone-light .tab-pill {
+    display: flex; justify-content: space-around; align-items: center;
+    background: rgba(247,244,240,0.97);
+    border: 1px solid #d8d3cc;
+    border-radius: 22px;
+    padding: 10px 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .phone-light .tab-icon { font-size: 18px; opacity: 0.22; }
+  .phone-light .tab-icon.on { opacity: 1; }
+  .phone-light .tab-add-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: #b85c20;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 300;
+    box-shadow: 0 3px 10px rgba(184,92,32,0.3);
+    margin-top: -4px;
+  }
+
+  /* ── Dark phone ── */
+  .phone-dark { background: #1c1814; border-color: rgba(255,255,255,0.07); }
+  .phone-dark .safe-area { padding: 20px 16px 0; flex: 1; }
+  .phone-dark .eyebrow { font-size: 10px; color: #6b6258; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 3px; }
+  .phone-dark .screen-title { font-size: 26px; font-weight: 700; color: #f0ede8; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 14px; }
+  .phone-dark .capture-bar {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px 13px;
+    font-size: 13px;
+    color: #4a4440;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .phone-dark .capture-icon { font-size: 14px; opacity: 0.4; }
+  .phone-dark .sec-label { font-size: 10px; color: #5a5248; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; font-weight: 600; }
+  .phone-dark .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 13px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+  .phone-dark .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .phone-dark .card-tag { font-size: 9px; font-weight: 600; color: #b85c20; background: rgba(184,92,32,0.12); padding: 2px 7px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .phone-dark .card-type { font-size: 9px; color: #5a5248; text-transform: uppercase; letter-spacing: 0.5px; }
+  .phone-dark .card-text { font-size: 13px; color: #a09890; line-height: 1.5; }
+  .phone-dark .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+  .phone-dark .card-time { font-size: 10px; color: #5a5248; }
+  .phone-dark .card-open { font-size: 10px; color: #b85c20; font-weight: 600; }
+  .phone-dark .tab-pill-wrap { padding: 0 12px 14px; }
+  .phone-dark .tab-pill {
+    display: flex; justify-content: space-around; align-items: center;
+    background: rgba(28,24,20,0.97);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 22px;
+    padding: 10px 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+  .phone-dark .tab-icon { font-size: 18px; opacity: 0.2; }
+  .phone-dark .tab-icon.on { opacity: 1; }
+  .phone-dark .tab-add-btn {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: #b85c20;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 20px; font-weight: 300;
+    box-shadow: 0 3px 10px rgba(184,92,32,0.35);
+    margin-top: -4px;
+  }
+
+  /* Library screen additions */
+  .search-bar {
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    margin-bottom: 10px;
+    border: 1px solid;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .phone-light .search-bar { background: #fff; border-color: #e8e3dc; color: #c0b8b0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .phone-dark .search-bar { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); color: #3a3530; }
+
+  .filter-pills { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .fpill { font-size: 9px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .phone-light .fpill { background: #fff; border: 1px solid #e0dbd4; color: #b8b0a7; }
+  .phone-light .fpill.active { background: rgba(184,92,32,0.1); border-color: rgba(184,92,32,0.2); color: #b85c20; }
+  .phone-dark .fpill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); color: #5a5248; }
+  .phone-dark .fpill.active { background: rgba(184,92,32,0.12); border-color: rgba(184,92,32,0.2); color: #b85c20; }
+
+  /* Token table */
+  .token-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .token-group { }
+  .token-group-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: #444; margin-bottom: 8px; font-weight: 600; }
+  .token-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .token-swatch { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08); }
+  .token-name { font-size: 11px; color: #888; font-family: monospace; }
+  .token-val { font-size: 10px; color: #444; font-family: monospace; margin-left: auto; }
+</style>
+</head>
+<body>
+
+<h1>Memory AI — New Design System</h1>
+<p class="page-sub">Warm Editorial direction · Light + Warm Charcoal dark · DM Sans · Orange accent</p>
+
+<!-- SECTION 1: Palette -->
+<section>
+  <h2>Color Palette</h2>
+  <div class="palette">
+    <div class="swatch" style="background:#f7f4f0"><span class="swatch-label" style="color:#8a8480">bg</span></div>
+    <div class="swatch" style="background:#ffffff"><span class="swatch-label" style="color:#c0b8b0">card</span></div>
+    <div class="swatch" style="background:#ede8e2"><span class="swatch-label" style="color:#9a9490">border</span></div>
+    <div class="swatch" style="background:#b8b0a7"><span class="swatch-label" style="color:#f7f4f0">muted</span></div>
+    <div class="swatch" style="background:#5a5248"><span class="swatch-label" style="color:#f0ede8">2°</span></div>
+    <div class="swatch" style="background:#1c1814"><span class="swatch-label" style="color:#f0ede8">1°</span></div>
+    <div class="swatch" style="background:#b85c20"><span class="swatch-label" style="color:#fff">accent</span></div>
+    <div class="swatch" style="background:#e8763a"><span class="swatch-label" style="color:#fff">hover</span></div>
+  </div>
+
+  <div class="token-grid" style="margin-top:20px">
+    <div class="token-group">
+      <div class="token-group-label">Light mode</div>
+      <div class="token-row"><div class="token-swatch" style="background:#f7f4f0"></div><span class="token-name">bg</span><span class="token-val">#f7f4f0</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#ffffff;border-color:#e0dbd4"></div><span class="token-name">cardBg</span><span class="token-val">#ffffff</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#f2efe9"></div><span class="token-name">inputBg</span><span class="token-val">#f2efe9</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#1c1814"></div><span class="token-name">textPrimary</span><span class="token-val">#1c1814</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#5a5248"></div><span class="token-name">textSecondary</span><span class="token-val">#5a5248</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#b8b0a7"></div><span class="token-name">textMuted</span><span class="token-val">#b8b0a7</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#ede8e2"></div><span class="token-name">border</span><span class="token-val">#ede8e2</span></div>
+    </div>
+    <div class="token-group">
+      <div class="token-group-label">Dark mode</div>
+      <div class="token-row"><div class="token-swatch" style="background:#1c1814"></div><span class="token-name">bg</span><span class="token-val">#1c1814</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#241e18"></div><span class="token-name">cardBg</span><span class="token-val">rgba(255,255,255,0.04)</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#2a2420"></div><span class="token-name">inputBg</span><span class="token-val">rgba(255,255,255,0.04)</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#f0ede8"></div><span class="token-name">textPrimary</span><span class="token-val">#f0ede8</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#a09890"></div><span class="token-name">textSecondary</span><span class="token-val">#a09890</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#5a5248"></div><span class="token-name">textMuted</span><span class="token-val">#5a5248</span></div>
+      <div class="token-row"><div class="token-swatch" style="background:#2a2420"></div><span class="token-name">border</span><span class="token-val">rgba(255,255,255,0.07)</span></div>
+    </div>
+  </div>
+  <div style="margin-top:12px">
+    <div class="token-row"><div class="token-swatch" style="background:#b85c20"></div><span class="token-name">brandAccent</span><span class="token-val">#b85c20 (was #C56A3A — slightly richer)</span></div>
+    <div class="token-row"><div class="token-swatch" style="background:rgba(184,92,32,0.1)"></div><span class="token-name">brandAccentLight</span><span class="token-val">rgba(184,92,32,0.10)</span></div>
+  </div>
+</section>
+
+<!-- SECTION 2: Typography -->
+<section>
+  <h2>Typography — DM Sans only (serif italic removed)</h2>
+  <div class="type-row">
+    <div class="type-sample" style="font-size:28px;font-weight:700;color:#f0ede8;letter-spacing:-0.5px;line-height:1.2">What's on your mind?</div>
+    <div class="type-meta">DM Sans 700 · 28px · -0.5px</div>
+  </div>
+  <div class="type-row">
+    <div class="type-sample" style="font-size:22px;font-weight:700;color:#f0ede8;letter-spacing:-0.3px">Library</div>
+    <div class="type-meta">DM Sans 700 · 22px · -0.3px</div>
+  </div>
+  <div class="type-row">
+    <div class="type-sample" style="font-size:16px;font-weight:600;color:#f0ede8">Section heading</div>
+    <div class="type-meta">DM Sans 600 · 16px</div>
+  </div>
+  <div class="type-row">
+    <div class="type-sample" style="font-size:14px;font-weight:400;color:#a09890;line-height:1.55">Meeting notes: discuss product launch timeline with the team — a longer line of body text at reading size.</div>
+    <div class="type-meta">DM Sans 400 · 14px · 1.55lh</div>
+  </div>
+  <div class="type-row">
+    <div class="type-sample" style="font-size:10px;font-weight:600;color:#6b6258;text-transform:uppercase;letter-spacing:0.7px">Resurfaced</div>
+    <div class="type-meta">DM Sans 600 · 10px · uppercase · 0.7px</div>
+  </div>
+</section>
+
+<!-- SECTION 3: Screens -->
+<section>
+  <h2>Screens — Home + Library</h2>
+  <div class="phones">
+
+    <!-- Home light -->
+    <div class="phone-col">
+      <div class="phone-col-label">Home · Light</div>
+      <div class="phone phone-light" style="min-height:520px">
+        <div class="safe-area">
+          <div class="eyebrow">Good evening</div>
+          <div class="screen-title">What's on<br>your mind?</div>
+          <div class="capture-bar">
+            <span class="capture-icon">✏</span>
+            <span>Capture a thought...</span>
+          </div>
+          <div class="sec-label">Resurfaced</div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-tag">Resurfaced</span>
+              <span class="card-type">Text</span>
+            </div>
+            <div class="card-text">Meeting notes: discuss product launch timeline with the team.</div>
+            <div class="card-footer">
+              <span class="card-time">2 days ago</span>
+              <span class="card-open">Open →</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-tag" style="background:rgba(184,92,32,0.08)">On this day</span>
+              <span class="card-type">Link</span>
+            </div>
+            <div class="card-text">Article on design systems and component libraries</div>
+            <div class="card-footer">
+              <span class="card-time">1 year ago</span>
+              <span class="card-open">Open →</span>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-icon on">⌂</div>
+            <div class="tab-icon">☰</div>
+            <div class="tab-add-btn">+</div>
+            <div class="tab-icon">◈</div>
+            <div class="tab-icon">○</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home dark -->
+    <div class="phone-col">
+      <div class="phone-col-label">Home · Dark</div>
+      <div class="phone phone-dark" style="min-height:520px">
+        <div class="safe-area">
+          <div class="eyebrow">Good evening</div>
+          <div class="screen-title">What's on<br>your mind?</div>
+          <div class="capture-bar">
+            <span class="capture-icon">✏</span>
+            <span>Capture a thought...</span>
+          </div>
+          <div class="sec-label">Resurfaced</div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-tag">Resurfaced</span>
+              <span class="card-type">Text</span>
+            </div>
+            <div class="card-text">Meeting notes: discuss product launch timeline with the team.</div>
+            <div class="card-footer">
+              <span class="card-time">2 days ago</span>
+              <span class="card-open">Open →</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-top">
+              <span class="card-tag">On this day</span>
+              <span class="card-type">Link</span>
+            </div>
+            <div class="card-text">Article on design systems and component libraries</div>
+            <div class="card-footer">
+              <span class="card-time">1 year ago</span>
+              <span class="card-open">Open →</span>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-icon on">⌂</div>
+            <div class="tab-icon">☰</div>
+            <div class="tab-add-btn">+</div>
+            <div class="tab-icon">◈</div>
+            <div class="tab-icon">○</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Library light -->
+    <div class="phone-col">
+      <div class="phone-col-label">Library · Light</div>
+      <div class="phone phone-light" style="min-height:520px">
+        <div class="safe-area">
+          <div class="screen-title">Library</div>
+          <div class="search-bar">
+            <span style="opacity:0.4;font-size:13px">🔍</span>
+            <span>Search memories...</span>
+          </div>
+          <div class="filter-pills">
+            <span class="fpill active">All</span>
+            <span class="fpill">Text</span>
+            <span class="fpill">Voice</span>
+            <span class="fpill">Links</span>
+            <span class="fpill">Photos</span>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Text</span></div>
+            <div class="card-text">Meeting notes: discuss product launch timeline</div>
+            <div class="card-footer"><span class="card-time">Yesterday</span><span class="card-open">Open →</span></div>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Voice</span></div>
+            <div class="card-text">Voice memo about project ideas and brainstorming</div>
+            <div class="card-footer"><span class="card-time">2 days ago</span><span class="card-open">Open →</span></div>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Link</span></div>
+            <div class="card-text">Article on design systems and component libraries</div>
+            <div class="card-footer"><span class="card-time">3 days ago</span><span class="card-open">Open →</span></div>
+          </div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-icon">⌂</div>
+            <div class="tab-icon on">☰</div>
+            <div class="tab-add-btn">+</div>
+            <div class="tab-icon">◈</div>
+            <div class="tab-icon">○</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Library dark -->
+    <div class="phone-col">
+      <div class="phone-col-label">Library · Dark</div>
+      <div class="phone phone-dark" style="min-height:520px">
+        <div class="safe-area">
+          <div class="screen-title">Library</div>
+          <div class="search-bar">
+            <span style="opacity:0.3;font-size:13px">🔍</span>
+            <span>Search memories...</span>
+          </div>
+          <div class="filter-pills">
+            <span class="fpill active">All</span>
+            <span class="fpill">Text</span>
+            <span class="fpill">Voice</span>
+            <span class="fpill">Links</span>
+            <span class="fpill">Photos</span>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Text</span></div>
+            <div class="card-text">Meeting notes: discuss product launch timeline</div>
+            <div class="card-footer"><span class="card-time">Yesterday</span><span class="card-open">Open →</span></div>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Voice</span></div>
+            <div class="card-text">Voice memo about project ideas and brainstorming</div>
+            <div class="card-footer"><span class="card-time">2 days ago</span><span class="card-open">Open →</span></div>
+          </div>
+          <div class="card">
+            <div class="card-top"><span></span><span class="card-type">Link</span></div>
+            <div class="card-text">Article on design systems and component libraries</div>
+            <div class="card-footer"><span class="card-time">3 days ago</span><span class="card-open">Open →</span></div>
+          </div>
+        </div>
+        <div class="tab-pill-wrap">
+          <div class="tab-pill">
+            <div class="tab-icon">⌂</div>
+            <div class="tab-icon on">☰</div>
+            <div class="tab-add-btn">+</div>
+            <div class="tab-icon">◈</div>
+            <div class="tab-icon">○</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>Key changes from current design</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div style="background:#1e1c18;border:1px solid #2a2520;border-radius:10px;padding:14px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#b85c20;margin-bottom:8px;font-weight:600">Removed</div>
+      <div style="font-size:12px;color:#888;line-height:1.8">
+        DM Serif Display italic headers<br>
+        Near-black #0c0c10 bg (too cold)<br>
+        Off-white #f0ede8 text on dark<br>
+        Warm glow on FAB<br>
+        Emoji type labels (✏ 🎙 🔗 📷)<br>
+      </div>
+    </div>
+    <div style="background:#1e1c18;border:1px solid #2a2520;border-radius:10px;padding:14px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:#5a8a50;margin-bottom:8px;font-weight:600">Added</div>
+      <div style="font-size:12px;color:#888;line-height:1.8">
+        DM Sans 700 bold headers<br>
+        Warm charcoal #1c1814 dark bg<br>
+        Cream #f7f4f0 light bg<br>
+        Soft card shadows (light mode)<br>
+        Smaller square add button<br>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+// No interactions needed — this is a design system reference page
+</script>
+</body>
+</html>
