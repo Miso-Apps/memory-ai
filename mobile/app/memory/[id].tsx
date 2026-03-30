@@ -110,13 +110,17 @@ const TYPE_CONFIG: Record<string, { icon: string; labelKey: string; color: strin
 };
 
 // ─── Audio Player ───────────────────────────────────────────────────────────
-const AudioPlayer = React.memo(function AudioPlayer({
-  audioUrl,
-  audioDuration,
-}: {
+interface AudioPlayerHandle {
+  togglePlayback: () => void;
+}
+
+const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
   audioUrl?: string;
   audioDuration?: number;
-}) {
+}>(function AudioPlayer({
+  audioUrl,
+  audioDuration,
+}, ref) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -124,6 +128,10 @@ const AudioPlayer = React.memo(function AudioPlayer({
   const [isLoading, setIsLoading] = useState(false);
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState((audioDuration ?? 0) * 1000);
+
+  React.useImperativeHandle(ref, () => ({
+    togglePlayback,
+  }));
 
   // Cleanup on unmount
   useEffect(() => {
@@ -214,7 +222,7 @@ const AudioPlayer = React.memo(function AudioPlayer({
       </View>
     </View>
   );
-});
+}));
 
 // ─── Inline Edit Panel ─────────────────────────────────────────────────────
 const EditPanel = React.memo(function EditPanel({
@@ -277,6 +285,7 @@ export default function MemoryDetailScreen() {
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [related, setRelated] = useState<RelatedMemory[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
   useEffect(() => {
     loadMemory();
@@ -518,7 +527,7 @@ export default function MemoryDetailScreen() {
 
         {/* Audio player */}
         {memory.type === 'voice' && (
-          <AudioPlayer audioUrl={memory.audioUrl} audioDuration={memory.audioDuration} />
+          <AudioPlayer ref={audioPlayerRef} audioUrl={memory.audioUrl} audioDuration={memory.audioDuration} />
         )}
 
         {/* Transcription */}
