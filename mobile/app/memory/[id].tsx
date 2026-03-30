@@ -895,8 +895,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   relatedTitle: {
+    fontFamily: 'DMSans_700Bold',
     fontSize: 14,
-    fontWeight: '700',
     marginBottom: 10,
   },
   relatedLoadingRow: {
