@@ -615,22 +615,77 @@ export default function MemoryDetailScreen() {
       </ScrollView>
 
       {/* ── Bottom actions ── */}
-      <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
-        <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={() => setIsEditing(true)} activeOpacity={0.7}>
-          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>
-            {t('memory.actionEdit')}
+      <View style={[styles.actionBar, { borderTopColor: colors.border }]}>
+        {/* Primary CTA — adapts by type */}
+        <TouchableOpacity
+          style={[styles.primaryActionBtn, { backgroundColor: colors.brandAccent }]}
+          onPress={() => {
+            if (memory.type === 'voice') {
+              audioPlayerRef.current?.togglePlayback();
+            } else if (memory.type === 'link') {
+              WebBrowser.openBrowserAsync(memory.content, {
+                dismissButtonStyle: 'close',
+                presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+                controlsColor: '#6366F1',
+              }).catch(() => {});
+            }
+            // text/photo: Reflect — no-op until reflect flow is built
+          }}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.primaryActionBtnText}>
+            {memory.type === 'voice'
+              ? t('memory.actionPlay')
+              : memory.type === 'link'
+              ? t('memory.actionOpenLink')
+              : t('memory.actionReflect')}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { borderColor: colors.border }]} onPress={handleShare} activeOpacity={0.7}>
-          <Text style={[styles.actionBtnText, { color: colors.textSecondary }]}>
-            {t('memory.actionShare')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { borderColor: 'rgba(197,106,58,0.25)' }]} activeOpacity={0.7}>
-          <Text style={[styles.actionBtnText, { color: colors.brandAccent }]}>
-            {t('memory.actionReflect')}
-          </Text>
-        </TouchableOpacity>
+        {/* Secondary row */}
+        <View style={styles.secondaryActionRow}>
+          {memory.type === 'text' || memory.type === 'photo' ? (
+            <>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                onPress={() => setIsEditing(true)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionEdit')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                onPress={handleShare}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionShare')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionReflect')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                onPress={handleShare}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionShare')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -914,21 +969,37 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
 
-  // Action row
-  actionRow: {
-    flexDirection: 'row',
+  // Action bar
+  actionBar: {
+    padding: 12,
+    paddingBottom: 14,
     gap: 8,
-    padding: 16,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  actionBtn: {
+  primaryActionBtn: {
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryActionBtnText: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
+  },
+  secondaryActionRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryActionBtn: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 9,
     borderWidth: 1,
   },
-  actionBtnText: {
+  secondaryActionBtnText: {
     fontFamily: 'DMSans_500Medium',
     fontSize: 13,
   },
