@@ -471,7 +471,17 @@ export default function LibraryScreen() {
 
       {/* ── Search bar + Category filter button ── */}
       <View style={styles.searchBarRow}>
-        <View style={[styles.searchInputWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+        <View style={[styles.searchInputWrap, {
+          backgroundColor: colors.cardBg,
+          borderColor: colors.border,
+          borderWidth: 1,
+          borderRadius: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 3,
+          elevation: 1,
+        }]}>
           <Text style={styles.searchMagnifier}>🔍</Text>
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
@@ -542,8 +552,8 @@ export default function LibraryScreen() {
             <TouchableOpacity
               key={key}
               style={filter === key
-                ? [styles.chip, styles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(197,106,58,0.3)' }]
-                : [styles.chip, { borderColor: colors.border }]}
+                ? [styles.chip, styles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccentLight }]
+                : [styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
               onPress={() => setFilter(key)}
               activeOpacity={0.7}
             >
