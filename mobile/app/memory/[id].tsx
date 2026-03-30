@@ -437,22 +437,19 @@ export default function MemoryDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* AI Summary card */}
+        {/* AI Summary — pull-quote */}
         {memory?.aiSummary ? (
-          <View style={[
-            styles.aiSummaryCard,
-            {
-              backgroundColor: colors.brandAccentLight,
-              borderColor: 'rgba(184,92,32,0.14)',
-            },
-          ]}>
-            <Text style={[styles.aiSummaryLabel, { color: colors.brandAccent }]}>
-              {t('memory.aiSummaryLabel')}
-            </Text>
-            <Text style={[styles.aiSummaryText, { color: colors.textSecondary }]}>
-              {memory.aiSummary}
-            </Text>
-          </View>
+          <>
+            <View style={[styles.pullQuote, { backgroundColor: colors.brandAccentLight, borderLeftColor: colors.brandAccent }]}>
+              <Text style={[styles.pullQuoteLabel, { color: colors.brandAccent }]}>
+                {t('memory.aiSummaryLabel')}
+              </Text>
+              <Text style={[styles.pullQuoteText, { color: colors.textSecondary }]}>
+                {memory.aiSummary}
+              </Text>
+            </View>
+            <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
+          </>
         ) : null}
 
         {/* Photo image */}
@@ -477,9 +474,6 @@ export default function MemoryDetailScreen() {
         {/* Original content — skip for voice (transcription section below covers it) */}
         {memory.type !== 'voice' && (
           <View style={styles.contentSection}>
-            {memory.aiSummary && (
-              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.original')}</Text>
-            )}
             {memory.type === 'link' ? (
               <TouchableOpacity
                 onPress={() => WebBrowser.openBrowserAsync(memory.content, {
@@ -688,26 +682,31 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingVertical: 16 },
 
-  // AI Summary card
-  aiSummaryCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    marginHorizontal: 20,
-    marginTop: 16,
+  // AI Summary — pull-quote
+  pullQuote: {
+    borderLeftWidth: 3,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    paddingVertical: 10,
+    paddingLeft: 14,
+    paddingRight: 12,
   },
-  aiSummaryLabel: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 10,
+  pullQuoteLabel: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 9,
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
+    letterSpacing: 0.6,
+    marginBottom: 4,
   },
-  aiSummaryText: {
+  pullQuoteText: {
     fontFamily: 'DMSans_400Regular',
     fontSize: 13,
     fontStyle: 'italic',
     lineHeight: 20,
+  },
+  sectionDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 12,
   },
   sectionLabel: {
     fontSize: 11,
