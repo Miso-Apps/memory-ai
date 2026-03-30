@@ -633,7 +633,7 @@ export default function MemoryDetailScreen() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={styles.primaryActionBtnText}>
+          <Text style={[styles.primaryActionBtnText, { color: colors.buttonText }]}>
             {memory.type === 'voice'
               ? t('memory.actionPlay')
               : memory.type === 'link'
@@ -985,7 +985,6 @@ const styles = StyleSheet.create({
   primaryActionBtnText: {
     fontFamily: 'DMSans_700Bold',
     fontSize: 15,
-    color: '#FFFFFF',
     letterSpacing: 0.1,
   },
   secondaryActionRow: {
