@@ -129,10 +129,6 @@ const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
   const [positionMs, setPositionMs] = useState(0);
   const [durationMs, setDurationMs] = useState((audioDuration ?? 0) * 1000);
 
-  React.useImperativeHandle(ref, () => ({
-    togglePlayback,
-  }));
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -151,7 +147,7 @@ const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
     }
   }, []);
 
-  const togglePlayback = async () => {
+  const togglePlayback = useCallback(async () => {
     if (!audioUrl) {
       Alert.alert(t('memory.noAudioAlert'), t('memory.noAudioMessage'));
       return;
@@ -187,7 +183,11 @@ const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
       Alert.alert(t('memory.playbackError'), t('memory.playbackErrorMessage'));
       console.error('AudioPlayer error:', err);
     }
-  };
+  }, [audioUrl, onPlaybackStatus, t]);
+
+  React.useImperativeHandle(ref, () => ({
+    togglePlayback,
+  }), [togglePlayback]);
 
   const progressRatio = durationMs > 0 ? positionMs / durationMs : 0;
 
