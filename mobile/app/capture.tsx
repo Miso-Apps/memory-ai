@@ -24,7 +24,6 @@ import * as Haptics from 'expo-haptics';
 import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
 import { useSettingsStore } from '../store/settingsStore';
-import { useAuthStore } from '../store/authStore';
 import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
 import {
   FileText,
@@ -37,16 +36,6 @@ const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', defaul
 
 type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
 
-// ── Avatar initials helper ─────────────────────────────────────────────────
-function getInitials(name?: string, email?: string): string {
-  if (name) {
-    const parts = name.trim().split(' ');
-    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    return name[0].toUpperCase();
-  }
-  if (email) return email[0].toUpperCase();
-  return '?';
-}
 
 const MODE_META: Record<CaptureMode, {
   labelKey: string;
@@ -90,6 +79,14 @@ const MODE_DEFINITIONS: { key: CaptureMode }[] = [
   { key: 'voice' },
   { key: 'link' },
   { key: 'photo' },
+];
+
+const HINT_CHIPS: { labelKey: string; bg: string; border: string; text: string }[] = [
+  { labelKey: 'capture.hintIdea',         bg: '#fff8f2', border: '#f5dfc8', text: '#c47a3a' },
+  { labelKey: 'capture.hintMeeting',      bg: '#f2f8ff', border: '#d0e8ff', text: '#4a7ab5' },
+  { labelKey: 'capture.hintDecision',     bg: '#f0fff4', border: '#b8e8c8', text: '#2e7d52' },
+  { labelKey: 'capture.hintConversation', bg: '#fff0f8', border: '#f0c0dc', text: '#a0456a' },
+  { labelKey: 'capture.hintLearning',     bg: '#f5f0ff', border: '#d8c8f8', text: '#6a4ab5' },
 ];
 
 function BottomModeBar({
@@ -576,8 +573,6 @@ export default function CaptureScreen() {
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
-  const user = useAuthStore((s) => s.user);
-
   // Smart default: explicit param > user preference > 'text'
   const resolveInitialMode = (): CaptureMode => {
     const validModes: CaptureMode[] = ['text', 'voice', 'link', 'photo'];
@@ -759,8 +754,6 @@ export default function CaptureScreen() {
       mode === 'photo' ? isImageReady :
         content.trim().length > 0;
 
-  const initials = getInitials(user?.name, user?.email);
-  const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'You';
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -827,63 +820,47 @@ export default function CaptureScreen() {
         )}
 
         {mode === 'text' || mode === 'link' ? (
-          /* Threads-like composer */
           <View style={styles.composerScreenWrap}>
-              <View style={[styles.composerRow, { borderColor: colors.border }]}> 
-              <View style={[styles.avatar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
-                <Text style={[styles.avatarText, { color: colors.textPrimary }]}>{initials}</Text>
-              </View>
-              <View style={styles.inputWrap}>
-                <Text style={[styles.authorName, { color: colors.textPrimary }]}>{displayName}</Text>
-                <TextInput
-                  style={[styles.composerInput, {
-                    color: colors.textPrimary,
-                    fontFamily: 'DMSans_400Regular',
-                    fontSize: 15,
-                  }]}
-                  placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                  placeholderTextColor={colors.textPlaceholder}
-                  multiline={mode === 'text'}
-                  autoFocus
-                  value={content}
-                  onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
-                  textAlignVertical="top"
-                  keyboardType={mode === 'link' ? 'url' : 'default'}
-                  autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
-                  autoCorrect={mode !== 'link'}
-                />
-                {mode === 'link' && linkError ? (
-                  <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
-                ) : null}
-              </View>
+            <View style={[styles.inputCard, { backgroundColor: colors.cardBg }]}>
+              <TextInput
+                style={[styles.composerInput, {
+                  color: colors.textPrimary,
+                  fontFamily: 'DMSans_400Regular',
+                  fontSize: 15,
+                }]}
+                placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
+                placeholderTextColor={colors.textPlaceholder}
+                multiline={mode === 'text'}
+                autoFocus
+                value={content}
+                onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
+                textAlignVertical="top"
+                keyboardType={mode === 'link' ? 'url' : 'default'}
+                autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
+                autoCorrect={mode !== 'link'}
+              />
+              {mode === 'link' && linkError ? (
+                <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
+              ) : null}
+              <View style={[styles.inputDivider, { borderColor: '#f2d5b8' }]} />
+              {mode === 'text' && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.hintsScroll}
+                >
+                  {HINT_CHIPS.map((chip) => (
+                    <TouchableOpacity
+                      key={chip.labelKey}
+                      onPress={() => setContent((prev) => (prev ? `${t(chip.labelKey)} ${prev}` : `${t(chip.labelKey)} `))}
+                      style={[styles.hintChip, { backgroundColor: chip.bg, borderColor: chip.border }]}
+                    >
+                      <Text style={[styles.hintChipText, { color: chip.text }]}>{t(chip.labelKey)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
             </View>
-
-            {/* Quick-tag hints */}
-            {mode === 'text' && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.hintsScroll}
-              >
-                {[
-                  t('capture.hintIdea'),
-                  t('capture.hintMeeting'),
-                  t('capture.hintDecision'),
-                  t('capture.hintConversation'),
-                  t('capture.hintLearning'),
-                ].map((hint) => (
-                  <TouchableOpacity
-                    key={hint}
-                    onPress={() => {
-                      setContent((prev) => (prev ? `${hint} ${prev}` : `${hint} `));
-                    }}
-                    style={[styles.hintChip, { borderColor: colors.border }]}
-                  >
-                    <Text style={[styles.hintChipText, { color: colors.textMuted }]}>{hint}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
           </View>
         ) : mode === 'voice' ? (
           <View style={styles.modePanel}>
@@ -969,42 +946,29 @@ const styles = StyleSheet.create({
   // ── Composer (text / link) ──
   composerScreenWrap: {
     flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 14,
   },
-  composerRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginHorizontal: 16,
-    marginTop: 10,
-    paddingHorizontal: 4,
-    paddingTop: 4,
-    paddingBottom: 8,
-    gap: 12,
-    minHeight: 180,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  avatarText: { fontSize: 16, fontWeight: '700', fontFamily: SANS_FONT },
-  inputWrap: { flex: 1 },
-  authorName: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 2,
-    marginBottom: 8,
-    fontFamily: SANS_FONT,
+  inputCard: {
+    borderRadius: 22,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
+    elevation: 3,
+    flex: 1,
   },
   composerInput: {
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 24,
-    minHeight: 140,
+    minHeight: 80,
     fontFamily: SANS_FONT,
+  },
+  inputDivider: {
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
+    marginVertical: 12,
   },
   errorText: { marginTop: 6, fontSize: 13, fontFamily: SANS_FONT },
 
@@ -1051,20 +1015,20 @@ const styles = StyleSheet.create({
 
   // ── Quick-tag hints ──
   hintsScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
+    gap: 6,
     flexDirection: 'row',
+    paddingVertical: 2,
   },
   hintChip: {
     borderRadius: 100,
-    borderWidth: 1,
-    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 10,
     paddingVertical: 5,
   },
   hintChipText: {
     fontFamily: 'DMSans_400Regular',
     fontSize: 12,
+    fontWeight: '600',
   },
 
   // ── Success overlay ──
