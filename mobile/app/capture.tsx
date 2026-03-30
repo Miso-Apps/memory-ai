@@ -81,6 +81,13 @@ const MODE_DEFINITIONS: { key: CaptureMode }[] = [
   { key: 'photo' },
 ];
 
+const MODE_EMOJI: Record<CaptureMode, string> = {
+  text: '✍️',
+  voice: '🎤',
+  link: '🔗',
+  photo: '📷',
+};
+
 const HINT_CHIPS: { labelKey: string; bg: string; border: string; text: string }[] = [
   { labelKey: 'capture.hintIdea',         bg: '#fff8f2', border: '#f5dfc8', text: '#c47a3a' },
   { labelKey: 'capture.hintMeeting',      bg: '#f2f8ff', border: '#d0e8ff', text: '#4a7ab5' },
@@ -100,34 +107,30 @@ function BottomModeBar({
   const { colors } = useTheme();
 
   return (
-    <View style={[modeBarStyles.wrap, { borderTopColor: colors.border, backgroundColor: colors.bg }]}>
-      <View style={[modeBarStyles.barShell, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+    <View style={[modeBarStyles.wrap, { backgroundColor: colors.bg }]}>
+      <View style={modeBarStyles.barShell}>
         {MODE_DEFINITIONS.map(({ key }) => {
-          const modeMeta = MODE_META[key];
-          const Icon = modeMeta.icon;
           const active = key === mode;
-
           return (
             <TouchableOpacity
               key={key}
-              style={modeBarStyles.chipHitArea}
+              style={[
+                modeBarStyles.slot,
+                active && { backgroundColor: colors.brandAccent, borderRadius: 12 },
+              ]}
               onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityState={{ selected: active }}
-              accessibilityLabel={t(modeMeta.labelKey)}
+              accessibilityLabel={t(MODE_META[key].labelKey)}
             >
-              {active ? (
-                <View style={[modeBarStyles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: `rgba(184, 92, 32, 0.25)` }]}>
-                  <Icon size={17} color={colors.brandAccent} strokeWidth={2.5} />
-                </View>
-              ) : (
-                <View style={[modeBarStyles.chipInactive, { borderColor: colors.border }]}>
-                  <Icon size={17} color={colors.textMuted} strokeWidth={2.4} />
-                </View>
-              )}
-              <Text style={[modeBarStyles.modeTabText, { color: active ? colors.brandAccent : colors.textMuted }]}>
-                {t(modeMeta.labelKey)}
+              <Text style={modeBarStyles.emoji}>{MODE_EMOJI[key]}</Text>
+              <Text style={[
+                modeBarStyles.modeTabText,
+                { color: active ? '#FFFFFF' : colors.textMuted },
+                !active && { opacity: 0.45 },
+              ]}>
+                {t(MODE_META[key].labelKey)}
               </Text>
             </TouchableOpacity>
           );
@@ -140,48 +143,31 @@ function BottomModeBar({
 const modeBarStyles = StyleSheet.create({
   wrap: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 4,
     paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
   },
   barShell: {
     flexDirection: 'row',
-    borderWidth: 0,
-    borderRadius: 999,
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    gap: 10,
-    justifyContent: 'space-between',
+    backgroundColor: '#efe9df',
+    borderRadius: 16,
+    padding: 5,
+    gap: 3,
   },
-  chipHitArea: {
+  slot: {
     flex: 1,
     alignItems: 'center',
-    flexDirection: 'column',
+    paddingVertical: 7,
+    paddingHorizontal: 3,
   },
-  chipActive: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-  },
-  chipInactive: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+  emoji: {
+    fontSize: 18,
   },
   modeTabText: {
     fontFamily: 'DMSans_600SemiBold',
-    fontSize: 11,
+    fontSize: 9,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginTop: 3,
+    marginTop: 2,
   },
 });
 
