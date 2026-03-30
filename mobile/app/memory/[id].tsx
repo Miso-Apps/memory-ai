@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { ChevronRight, Folder } from 'lucide-react-native';
+import { ChevronRight, Folder, Share2 } from 'lucide-react-native';
 
 interface Memory {
   id: string;
@@ -401,42 +401,34 @@ export default function MemoryDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       {/* ── Header ── */}
       <View style={[styles.detailHeader, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={[styles.backLink, { color: colors.brandAccent }]}>
-            {t('memory.backToLibrary')}
+        {/* Nav row */}
+        <View style={styles.navRow}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={[styles.backLink, { color: colors.brandAccent }]}>
+              {'‹ '}{t('memory.backToLibrary')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Share2 size={18} color={colors.textMuted} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        {/* Identity row */}
+        <View style={styles.eyebrowRow}>
+          <View style={[styles.typeBadge, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(184,92,32,0.22)' }]}>
+            <Text style={[styles.typeBadgeText, { color: colors.brandAccent }]}>
+              {TYPE_CONFIG[memory.type]?.icon} {memory.type?.toUpperCase()}
+            </Text>
+          </View>
+          <Text style={[styles.eyebrowDate, { color: colors.textMuted }]}>
+            {new Date(memory.createdAt).toLocaleDateString(undefined, {
+              weekday: 'short', month: 'short', day: 'numeric',
+            })} · {formatRelativeDate(memory.createdAt, t)}
           </Text>
-        </TouchableOpacity>
-        {memory ? (
-          <>
-            <Text style={[styles.dateEyebrow, { color: colors.brandAccent }]}>
-              {new Date(memory.createdAt).toLocaleDateString(undefined, {
-                weekday: 'long', month: 'long', day: 'numeric',
-              }).toUpperCase()}
-            </Text>
-            <Text
-              style={{
-                fontFamily: 'DMSans_700Bold',
-                fontSize: 22,
-                letterSpacing: -0.3,
-                lineHeight: 28,
-                color: colors.textPrimary,
-                marginBottom: 6,
-              }}
-            >
-              {deriveTitle(memory.aiSummary, memory.content)}
-            </Text>
-            <View style={styles.metaRow}>
-              <View style={[styles.typeChip, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-                <Text style={[styles.typeChipText, { color: colors.textMuted }]}>
-                  {memory.type?.toLowerCase()}
-                </Text>
-              </View>
-              <Text style={[styles.metaTime, { color: colors.textMuted }]}>
-                {formatRelativeDate(memory.createdAt, t)}
-              </Text>
-            </View>
-          </>
-        ) : null}
+        </View>
+        {/* Title */}
+        <Text style={[styles.detailTitle, { color: colors.textPrimary }]}>
+          {deriveTitle(memory.aiSummary, memory.content)}
+        </Text>
       </View>
 
       {/* ── Content ────────────────────────────────────────── */}
@@ -653,37 +645,43 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backLink: {
-    fontFamily: 'DMSans_500Medium',
-    fontSize: 12,
-    marginBottom: 14,
-  },
-  dateEyebrow: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  metaRow: {
+  navRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  typeChip: {
-    borderRadius: 100,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-  },
-  typeChipText: {
+  backLink: {
     fontFamily: 'DMSans_600SemiBold',
-    fontSize: 10,
+    fontSize: 13,
+  },
+  eyebrowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 6,
+  },
+  typeBadge: {
+    borderRadius: 4,
+    borderWidth: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  typeBadgeText: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 9,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  metaTime: {
+  eyebrowDate: {
     fontFamily: 'DMSans_400Regular',
     fontSize: 11,
+  },
+  detailTitle: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 20,
+    letterSpacing: -0.4,
+    lineHeight: 26,
   },
 
   // Scroll
