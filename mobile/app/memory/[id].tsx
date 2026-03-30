@@ -20,7 +20,6 @@ import { useTranslation } from 'react-i18next';
 import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 import { ChevronRight, Folder } from 'lucide-react-native';
-import { SerifTitle } from '../../components/SerifTitle';
 
 interface Memory {
   id: string;
@@ -414,9 +413,18 @@ export default function MemoryDetailScreen() {
                 weekday: 'long', month: 'long', day: 'numeric',
               }).toUpperCase()}
             </Text>
-            <SerifTitle size={24} style={{ paddingHorizontal: 0, marginBottom: 6 }}>
+            <Text
+              style={{
+                fontFamily: 'DMSans_700Bold',
+                fontSize: 22,
+                letterSpacing: -0.3,
+                lineHeight: 28,
+                color: colors.textPrimary,
+                marginBottom: 6,
+              }}
+            >
               {deriveTitle(memory.aiSummary, memory.content)}
-            </SerifTitle>
+            </Text>
             <View style={styles.metaRow}>
               <View style={[styles.typeChip, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <Text style={[styles.typeChipText, { color: colors.textMuted }]}>
