@@ -761,9 +761,6 @@ export default function CaptureScreen() {
 
   const initials = getInitials(user?.name, user?.email);
   const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'You';
-  const modeMeta = MODE_META[mode];
-  const ActiveModeIcon = modeMeta.icon;
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
@@ -781,7 +778,9 @@ export default function CaptureScreen() {
           </TouchableOpacity>
 
           <View style={styles.titleWrap}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>{t('capture.title')}</Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              🧠 {t('capture.title').toLowerCase()}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -830,14 +829,7 @@ export default function CaptureScreen() {
         {mode === 'text' || mode === 'link' ? (
           /* Threads-like composer */
           <View style={styles.composerScreenWrap}>
-            <View style={styles.modePillWrap}>
-              <View style={[styles.modePill, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
-                <ActiveModeIcon size={14} color={colors.textSecondary} strokeWidth={2.4} />
-                <Text style={[styles.modePillText, { color: colors.textSecondary }]}>{t(modeMeta.labelKey)}</Text>
-              </View>
-            </View>
-
-            <View style={[styles.composerRow, { borderColor: colors.border }]}> 
+              <View style={[styles.composerRow, { borderColor: colors.border }]}> 
               <View style={[styles.avatar, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
                 <Text style={[styles.avatarText, { color: colors.textPrimary }]}>{initials}</Text>
               </View>
@@ -977,26 +969,6 @@ const styles = StyleSheet.create({
   // ── Composer (text / link) ──
   composerScreenWrap: {
     flex: 1,
-  },
-  modePillWrap: {
-    marginHorizontal: 16,
-    marginTop: 10,
-  },
-  modePill: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
-    alignSelf: 'flex-start',
-    minHeight: 32,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  modePillText: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: SANS_FONT,
   },
   composerRow: {
     flexDirection: 'row',
