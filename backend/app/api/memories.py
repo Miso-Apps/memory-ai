@@ -214,6 +214,32 @@ async def _generate_and_save_embedding(memory_id: uuid.UUID, content: str) -> No
         log.warning("Failed to save embedding for memory %s: %s", memory_id, exc)
 
 
+async def _extract_and_save_intention(
+    memory_id: uuid.UUID, user_id: uuid.UUID, content: str
+) -> None:
+    """Background task: extract intention from memory content and persist silently."""
+    from app.models.intention import Intention
+    from app.services import agent_service
+
+    extracted = await agent_service.extract_intention(content)
+    if not extracted:
+        return
+
+    async with AsyncSessionLocal() as db:
+        try:
+            intention = Intention(
+                user_id=user_id,
+                memory_id=memory_id,
+                extracted=extracted,
+                follow_up_at=datetime.now(timezone.utc) + timedelta(days=21),
+            )
+            db.add(intention)
+            await db.commit()
+            log.info("Intention stored for memory %s: %.60s", memory_id, extracted)
+        except Exception as exc:
+            log.warning("Failed to store intention for memory %s: %s", memory_id, exc)
+
+
 @router.post("/", response_model=dict)
 async def create_memory(
     memory: MemoryCreate,
@@ -329,6 +355,11 @@ async def create_memory(
     # Fire-and-forget auto-classification
     background_tasks.add_task(
         _classify_and_save_category, m.id, current_user.id, summary_content, mem_type
+    )
+
+    # Fire-and-forget intention extraction
+    background_tasks.add_task(
+        _extract_and_save_intention, m.id, current_user.id, summary_content
     )
 
     return _to_dict(m)
