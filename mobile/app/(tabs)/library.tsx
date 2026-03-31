@@ -12,13 +12,16 @@ import {
   Modal,
   Pressable,
   Image,
+  PanResponder,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { memoriesApi, categoriesApi, Memory as ApiMemory, Category } from '../../services/api';
-import { useTheme } from '../../constants/ThemeContext';
+import { useTheme, ThemeColors } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
 import { FileText, Mic, Link2, Image as ImageIcon, Search, Sparkles, X } from 'lucide-react-native';
@@ -77,6 +80,34 @@ const TYPE_META: Record<Memory['type'], { icon: React.ComponentType<any> }> = {
   link: { icon: Link2 },
   photo: { icon: ImageIcon },
 };
+
+// ── Date grouping utilities ──────────────────────────────────────────────────
+
+type ListItem =
+  | { type: 'separator'; label: string; key: string }
+  | { type: 'memory'; data: Memory; key: string };
+
+function getDateLabel(date: Date): string {
+  const now = new Date();
+  const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Hôm nay';
+  if (diffDays === 1) return 'Hôm qua';
+  return date.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric' });
+}
+
+function groupMemoriesByDate(memories: Memory[]): ListItem[] {
+  const items: ListItem[] = [];
+  let lastLabel = '';
+  for (const mem of memories) {
+    const label = getDateLabel(mem.createdAt);
+    if (label !== lastLabel) {
+      items.push({ type: 'separator', label, key: `sep-${label}-${mem.id}` });
+      lastLabel = label;
+    }
+    items.push({ type: 'memory', data: mem, key: mem.id });
+  }
+  return items;
+}
 
 // Theme-aware type colors are resolved inside MemoryListItem via `colors.typeBgXxx`
 
@@ -150,6 +181,63 @@ function getDomain(url?: string): string | null {
   } catch {
     return null;
   }
+}
+
+// ── DateSeparator ────────────────────────────────────────────────────────────
+
+function DateSeparator({ label, colors }: { label: string; colors: ThemeColors }) {
+  return (
+    <Text style={[styles.dateSep, { color: colors.textMuted }]}>{label}</Text>
+  );
+}
+
+// ── SwipeableMemoryCard ──────────────────────────────────────────────────────
+
+function SwipeableMemoryCard({
+  memory,
+  colors,
+  onDelete,
+  children,
+}: {
+  memory: Memory;
+  colors: ThemeColors;
+  onDelete: (id: string) => void;
+  children: React.ReactNode;
+}) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const SWIPE_THRESHOLD = 80;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > 10 && Math.abs(gs.dy) < Math.abs(gs.dx),
+      onPanResponderMove: (_, gs) => {
+        translateX.setValue(gs.dx);
+      },
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -SWIPE_THRESHOLD) {
+          // Swipe left → pin to recall queue
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+          const store = useRecallBadgeStore.getState();
+          store.setCount(store.count + 1);
+        } else if (gs.dx > SWIPE_THRESHOLD) {
+          // Swipe right → delete
+          onDelete(memory.id);
+        } else {
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+        }
+      },
+    }),
+  ).current;
+
+  return (
+    <Animated.View
+      style={{ transform: [{ translateX }] }}
+      {...panResponder.panHandlers}
+    >
+      {children}
+    </Animated.View>
+  );
 }
 
 export default function LibraryScreen() {
@@ -414,6 +502,21 @@ export default function LibraryScreen() {
     return filterMemoriesByType(source, filter);
   }, [allMemories, searchResults, filter]);
 
+  const listData = useMemo(
+    () => groupMemoriesByDate(memories),
+    [memories],
+  );
+
+  const handleDelete = useCallback((id: string) => {
+    setAllMemories((prev) => prev.filter((m) => m.id !== id));
+    setSearchResults((prev) => prev ? prev.filter((m) => m.id !== id) : null);
+    try {
+      memoriesApi.delete(id);
+    } catch {
+      // best-effort
+    }
+  }, []);
+
   const onRefresh = async () => {
     setRefreshing(true);
     setOffset(0);
@@ -427,28 +530,34 @@ export default function LibraryScreen() {
     loadMemories(false);
   }, [hasSearched, hasMore, loadMemories, loading, loadingMore, searching]);
 
-  const renderItem = useCallback(({ item }: { item: Memory }) => {
+  const renderItem = useCallback(({ item }: { item: ListItem }) => {
+    if (item.type === 'separator') {
+      return <DateSeparator label={item.label} colors={colors} />;
+    }
+    const memory = item.data;
     const mem: MemoryCardMemory = {
-      id: item.id,
-      content: item.content,
-      type: item.type,
-      createdAt: item.createdAt,
-      imageUrl: item.imageUrl,
-      thumbnailUrl: item.thumbnailUrl,
-      linkPreviewUrl: item.linkPreviewUrl,
-      sourceUrl: item.sourceUrl,
-      aiSummary: item.aiSummary,
+      id: memory.id,
+      content: memory.content,
+      type: memory.type,
+      createdAt: memory.createdAt,
+      imageUrl: memory.imageUrl,
+      thumbnailUrl: memory.thumbnailUrl,
+      linkPreviewUrl: memory.linkPreviewUrl,
+      sourceUrl: memory.sourceUrl,
+      aiSummary: memory.aiSummary,
     };
     return (
-      <View style={styles.cardWrapper}>
-        <MemoryCard
-          memory={mem}
-          timeAgo={formatDate(item.createdAt, t)}
-          onPress={() => router.push({ pathname: '/memory/[id]', params: { id: item.id } })}
-        />
-      </View>
+      <SwipeableMemoryCard memory={memory} colors={colors} onDelete={handleDelete}>
+        <View style={styles.cardWrapper}>
+          <MemoryCard
+            memory={mem}
+            timeAgo={formatDate(memory.createdAt, t)}
+            onPress={() => router.push({ pathname: '/memory/[id]', params: { id: memory.id } })}
+          />
+        </View>
+      </SwipeableMemoryCard>
     );
-  }, [t]);
+  }, [colors, handleDelete, t]);
 
   const FILTERS: { key: FilterType; label: string; icon?: React.ComponentType<any> }[] = [
     { key: 'all', label: `${t('library.filterAll')}  ${counts.all}` },
@@ -611,8 +720,8 @@ export default function LibraryScreen() {
       <FlatList
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        data={memories}
-        keyExtractor={(item) => item.id}
+        data={listData}
+        keyExtractor={(item) => item.key}
         renderItem={renderItem}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.35}
@@ -851,6 +960,17 @@ const styles = StyleSheet.create({
   insightText: {
     fontSize: 15,
     lineHeight: 22,
+  },
+
+  // ── Date separator ──────────────────────────────────────
+  dateSep: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
 
   // ── Result count ────────────────────────────────────────
