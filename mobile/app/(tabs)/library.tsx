@@ -21,7 +21,7 @@ import { useTheme } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
-import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
+import { FileText, Mic, Link2, Image as ImageIcon, Search, Sparkles, X } from 'lucide-react-native';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { MemoryCard, type MemoryCardMemory } from '../../components/MemoryCard';
 
@@ -173,7 +173,7 @@ export default function LibraryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const categoryEffectInitialized = useRef(false);
-  const loadMemoriesRef = useRef<(reset?: boolean) => Promise<void>>(async () => {});
+  const loadMemoriesRef = useRef<(reset?: boolean) => Promise<void>>(async () => { });
   // Tracks whether a streaming search is still in-flight so we can cancel on re-search
   const streamAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
 
@@ -482,7 +482,7 @@ export default function LibraryScreen() {
           shadowRadius: 3,
           elevation: 1,
         }]}>
-          <Text style={styles.searchMagnifier}>🔍</Text>
+          <Search size={15} color={colors.textMuted} strokeWidth={2.2} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder={t('library.searchPlaceholder')}
@@ -507,7 +507,7 @@ export default function LibraryScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={[styles.clearBtn, { backgroundColor: colors.textMuted }]}
             >
-              <Text style={styles.clearBtnText}>×</Text>
+              <X size={11} color="#FFFFFF" strokeWidth={2.6} />
             </TouchableOpacity>
           )}
         </View>
@@ -579,7 +579,9 @@ export default function LibraryScreen() {
       {/* ── AI Insight card (shown after search + while streaming) ── */}
       {hasSearched && (searchSummary != null || summaryStreaming) && (
         <View style={[styles.insightCard, { backgroundColor: colors.cardBg, borderColor: colors.accent }]}>
-          <Text style={styles.insightIcon}>✨</Text>
+          <View style={[styles.insightIconWrap, { backgroundColor: colors.accentSubtle }]}>
+            <Sparkles size={13} color={colors.accent} strokeWidth={2.5} />
+          </View>
           <View style={{ flex: 1 }}>
             <View style={styles.insightHeader}>
               <Text style={[styles.insightLabel, { color: colors.accent }]}>{t('library.aiInsight')}</Text>
@@ -745,9 +747,6 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     gap: 8,
   },
-  searchMagnifier: {
-    fontSize: 15,
-  },
   searchInput: {
     flex: 1,
     fontFamily: 'DMSans_400Regular',
@@ -829,8 +828,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 10,
   },
-  insightIcon: {
-    fontSize: 16,
+  insightIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 1,
   },
   insightHeader: {

@@ -1,0 +1,172 @@
+<h2>Current "New Memory" screen — what are we working with?</h2>
+<p class="subtitle">A mockup of the capture screen as it exists today. Take a look and tell me in the terminal what feels off to you.</p>
+
+<div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; margin-top:20px;">
+
+  <!-- Phone frame -->
+  <div style="flex:1; min-width:280px; max-width:360px;">
+    <div style="
+      background:#f7f4f0;
+      border-radius:36px;
+      border:2px solid #ddd;
+      overflow:hidden;
+      box-shadow:0 12px 40px rgba(0,0,0,0.15);
+      font-family: -apple-system, 'Helvetica Neue', sans-serif;
+    ">
+      <!-- Status bar -->
+      <div style="background:#f7f4f0; padding:12px 20px 4px; display:flex; justify-content:space-between; font-size:11px; color:#888;">
+        <span>9:41</span><span>●●●</span>
+      </div>
+
+      <!-- Header -->
+      <div style="
+        background:#f7f4f0;
+        padding:8px 16px 10px;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        border-bottom:1px solid #e8e4dc;
+      ">
+        <span style="font-size:14px; color:#5a5248; font-weight:500;">Cancel</span>
+        <span style="font-size:17px; font-weight:600; color:#1c1814;">New Memory</span>
+        <span style="
+          background:#c97d3a;
+          color:#fff;
+          font-size:15px;
+          font-weight:600;
+          padding:7px 16px;
+          border-radius:12px;
+        ">Save</span>
+      </div>
+
+      <!-- Mode pill -->
+      <div style="padding:10px 16px 0;">
+        <span style="
+          background:#f2efe9;
+          border:1px solid #e8e4dc;
+          border-radius:999px;
+          padding:5px 10px;
+          font-size:12px;
+          font-weight:600;
+          color:#5a5248;
+          display:inline-flex;
+          align-items:center;
+          gap:5px;
+        ">✍ Text</span>
+      </div>
+
+      <!-- Composer row -->
+      <div style="
+        display:flex;
+        gap:12px;
+        padding:10px 16px 8px;
+        border-top:1px solid #e8e4dc;
+        margin:8px 16px 0;
+        min-height:160px;
+        align-items:flex-start;
+      ">
+        <!-- Avatar -->
+        <div style="
+          width:42px; height:42px;
+          border-radius:21px;
+          background:#f2efe9;
+          border:1px solid #e8e4dc;
+          display:flex; align-items:center; justify-content:center;
+          font-size:16px; font-weight:700; color:#1c1814;
+          flex-shrink:0;
+        ">B</div>
+
+        <!-- Input area -->
+        <div style="flex:1;">
+          <div style="font-size:15px; font-weight:600; color:#1c1814; margin-bottom:8px;">Brian</div>
+          <div style="font-size:15px; color:#b8b0a7; line-height:24px;">
+            What's on your mind?
+          </div>
+        </div>
+      </div>
+
+      <!-- Hint chips -->
+      <div style="display:flex; gap:8px; padding:8px 16px; overflow:hidden;">
+        <span style="border:1px solid #e8e4dc; border-radius:100px; padding:5px 12px; font-size:12px; color:#b8b0a7; white-space:nowrap;">💡 Idea</span>
+        <span style="border:1px solid #e8e4dc; border-radius:100px; padding:5px 12px; font-size:12px; color:#b8b0a7; white-space:nowrap;">📅 Meeting</span>
+        <span style="border:1px solid #e8e4dc; border-radius:100px; padding:5px 12px; font-size:12px; color:#b8b0a7; white-space:nowrap;">✅ Decision</span>
+      </div>
+
+      <!-- Spacer -->
+      <div style="height: 60px;"></div>
+
+      <!-- Bottom mode bar -->
+      <div style="
+        background:#f7f4f0;
+        padding:8px 16px 16px;
+        border-top:1px solid #e8e4dc;
+      ">
+        <div style="
+          background:#f2efe9;
+          border-radius:999px;
+          padding:4px;
+          display:flex;
+          justify-content:space-between;
+          gap:8px;
+        ">
+          <!-- Text - active -->
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <div style="
+              width:44px; height:44px; border-radius:22px;
+              background:rgba(201,125,58,0.12);
+              border:1px solid rgba(184,92,32,0.25);
+              display:flex; align-items:center; justify-content:center;
+              font-size:16px;
+            ">✍</div>
+            <span style="font-size:11px; font-weight:600; color:#c97d3a; text-transform:uppercase; letter-spacing:0.5px;">Text</span>
+          </div>
+          <!-- Voice -->
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <div style="
+              width:44px; height:44px; border-radius:22px;
+              border:1px solid #e8e4dc;
+              display:flex; align-items:center; justify-content:center;
+              font-size:16px;
+            ">🎤</div>
+            <span style="font-size:11px; font-weight:600; color:#b8b0a7; text-transform:uppercase; letter-spacing:0.5px;">Voice</span>
+          </div>
+          <!-- Link -->
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <div style="
+              width:44px; height:44px; border-radius:22px;
+              border:1px solid #e8e4dc;
+              display:flex; align-items:center; justify-content:center;
+              font-size:16px;
+            ">🔗</div>
+            <span style="font-size:11px; font-weight:600; color:#b8b0a7; text-transform:uppercase; letter-spacing:0.5px;">Link</span>
+          </div>
+          <!-- Photo -->
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;">
+            <div style="
+              width:44px; height:44px; border-radius:22px;
+              border:1px solid #e8e4dc;
+              display:flex; align-items:center; justify-content:center;
+              font-size:16px;
+            ">📷</div>
+            <span style="font-size:11px; font-weight:600; color:#b8b0a7; text-transform:uppercase; letter-spacing:0.5px;">Photo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Annotations -->
+  <div style="flex:1; min-width:240px;">
+    <h3 style="margin-top:0;">Known issues to consider</h3>
+    <ul style="line-height:1.8; color:#555; padding-left:20px;">
+      <li><strong>Mode pill + header</strong> — "Text" badge above the composer feels redundant with the mode bar below</li>
+      <li><strong>Composer pattern</strong> — Twitter/Threads avatar+name layout may feel like overkill for a personal capture tool</li>
+      <li><strong>Bottom mode bar</strong> — 4 uniform circles in a pill shell all the same size; active state is subtle</li>
+      <li><strong>Hint chips</strong> — row of tag suggestions that overflow and feel disconnected from the input</li>
+      <li><strong>No visual personality</strong> — flat, generic; doesn't feel like a "memory" app</li>
+      <li><strong>Hierarchy</strong> — Save button up top while the mode controls are down bottom creates tension</li>
+    </ul>
+    <p style="color:#888; font-size:13px;">Tell me in the terminal what bothers you most, or what you'd like to feel different.</p>
+  </div>
+
+</div>

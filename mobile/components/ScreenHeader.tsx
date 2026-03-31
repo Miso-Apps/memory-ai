@@ -15,7 +15,7 @@ export function ScreenHeader({
   title,
   subtitle,
   titleSize = 26,
-  paddingHorizontal = 20,
+  paddingHorizontal = 16,
 }: ScreenHeaderProps) {
   const { colors } = useTheme();
 

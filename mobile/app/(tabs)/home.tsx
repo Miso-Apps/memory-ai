@@ -264,10 +264,10 @@ function FocusCard({
   ];
 
   return (
-    <View style={[styles.focusCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}> 
+    <View style={[styles.focusCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
       <View style={styles.focusSurface}>
         <View style={styles.focusHeader}>
-          <View style={[styles.focusIconWrap, { borderColor: colors.brandAccent }]}> 
+          <View style={[styles.focusIconWrap, { borderColor: colors.brandAccent }]}>
             <BrandMark size={24} backgroundColor={colors.brandAccent} foregroundColor="#FFF8F2" />
           </View>
           <Text style={[styles.focusTitle, { color: colors.textSecondary }]}>{t('home.focusTitle')}</Text>
@@ -275,7 +275,7 @@ function FocusCard({
         <Text style={[styles.focusMessage, { color: colors.textPrimary }]}>{message}</Text>
         <View style={styles.focusHighlightsRow}>
           {highlights.map((item) => (
-            <View key={item.key} style={[styles.focusHighlightTile, { backgroundColor: colors.inputBg }]}> 
+            <View key={item.key} style={[styles.focusHighlightTile, { backgroundColor: colors.inputBg }]}>
               <Text style={[styles.focusHighlightValue, { color: colors.textPrimary }]}>{item.value}</Text>
               <Text style={[styles.focusHighlightLabel, { color: colors.textMuted }]} numberOfLines={1}>{item.label}</Text>
             </View>
@@ -353,7 +353,7 @@ function QuickCaptureRow({ t }: { t: Function }) {
                   pressed && styles.quickBtnPressed,
                 ]}
               >
-                <View style={[styles.quickIconWrap, { borderColor: colors.borderMed }]}> 
+                <View style={[styles.quickIconWrap, { borderColor: colors.borderMed }]}>
                   <Icon size={18} color={colors.textSecondary} strokeWidth={2.4} />
                 </View>
               </View>
@@ -404,7 +404,7 @@ function ConnectedIdeaCard({ group, t }: { group: MemoryGroup; t: Function }) {
               {hasPreviewThumb ? (
                 <SmartThumbnail uri={thumbUri!} type={m.type} style={styles.connectedThumb} />
               ) : (
-                <View style={[styles.connectedIconWrap, { borderColor: colors.textMuted }]}> 
+                <View style={[styles.connectedIconWrap, { borderColor: colors.textMuted }]}>
                   <Icon size={14} color={colors.textPrimary} strokeWidth={2.4} />
                 </View>
               )}
@@ -446,7 +446,7 @@ function RevisitCard({ memory, t }: { memory: ReminderMemory; t: Function }) {
           {hasPreviewThumb ? (
             <SmartThumbnail uri={thumbUri!} type={memory.type} style={styles.revisitThumb} />
           ) : (
-            <View style={[styles.revisitIconWrap, { borderColor: colors.textMuted }]}> 
+            <View style={[styles.revisitIconWrap, { borderColor: colors.textMuted }]}>
               <Icon size={15} color={colors.textPrimary} strokeWidth={2.4} />
             </View>
           )}
@@ -505,7 +505,7 @@ function EmptyState({ t }: { t: Function }) {
   const { colors } = useTheme();
   return (
     <View style={styles.emptyState}>
-      <View style={[styles.emptyIconWrap, { borderColor: colors.textMuted }]}> 
+      <View style={[styles.emptyIconWrap, { borderColor: colors.textMuted }]}>
         <Brain size={32} color={colors.accent} strokeWidth={2.5} />
       </View>
       <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('home.noMemories')}</Text>
@@ -661,9 +661,9 @@ export default function HomeScreen() {
               eyebrow={eyebrow}
               title={title}
               titleSize={30}
-              paddingHorizontal={20}
+              paddingHorizontal={16}
             />
-            <View style={{ paddingHorizontal: 20, paddingBottom: 14 }}>
+            <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
               <CapturePrompt />
             </View>
           </View>

@@ -19,7 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { ChevronRight, Folder, Share2 } from 'lucide-react-native';
+import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles } from 'lucide-react-native';
 
 interface Memory {
   id: string;
@@ -102,12 +102,56 @@ function deriveTitle(aiSummary?: string, content?: string): string {
   return '';
 }
 
-const TYPE_CONFIG: Record<string, { icon: string; labelKey: string; color: string }> = {
-  text: { icon: '📝', labelKey: 'memory.typeText', color: '#5B7FA6' },
-  voice: { icon: '🎤', labelKey: 'memory.typeVoice', color: '#C2410C' },
-  link: { icon: '🔗', labelKey: 'memory.typeLink', color: '#2D7D63' },
-  photo: { icon: '📷', labelKey: 'memory.typePhoto', color: '#B45309' },
+const TYPE_CONFIG: Record<string, { Icon: React.ComponentType<any>; labelKey: string; color: string }> = {
+  text: { Icon: FileText, labelKey: 'memory.typeText', color: '#5B7FA6' },
+  voice: { Icon: Mic, labelKey: 'memory.typeVoice', color: '#C2410C' },
+  link: { Icon: Link2, labelKey: 'memory.typeLink', color: '#2D7D63' },
+  photo: { Icon: ImageIcon, labelKey: 'memory.typePhoto', color: '#B45309' },
 };
+
+function parseHexColor(input?: string): { r: number; g: number; b: number } | null {
+  if (!input) return null;
+  const raw = input.trim().replace('#', '');
+  const hex = raw.length === 3
+    ? raw.split('').map((c) => c + c).join('')
+    : raw;
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return null;
+  return {
+    r: parseInt(hex.slice(0, 2), 16),
+    g: parseInt(hex.slice(2, 4), 16),
+    b: parseInt(hex.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function mixHex(base: string, target: string, weight: number): string {
+  const a = parseHexColor(base);
+  const b = parseHexColor(target);
+  if (!a || !b) return base;
+  const w = Math.max(0, Math.min(1, weight));
+  return rgbToHex(
+    a.r + (b.r - a.r) * w,
+    a.g + (b.g - a.g) * w,
+    a.b + (b.b - a.b) * w,
+  );
+}
+
+function hexWithAlpha(input: string, alpha: number): string {
+  const rgb = parseHexColor(input);
+  if (!rgb) return `rgba(107,114,128,${alpha})`;
+  return `rgba(${rgb.r},${rgb.g},${rgb.b},${Math.max(0, Math.min(1, alpha))})`;
+}
+
+function getCategoryTone(color: string | undefined, isDark: boolean) {
+  const base = parseHexColor(color || '') ? (color as string) : '#6B7280';
+  const text = isDark ? mixHex(base, '#ffffff', 0.34) : mixHex(base, '#111827', 0.2);
+  const bg = hexWithAlpha(base, isDark ? 0.2 : 0.12);
+  const border = hexWithAlpha(base, isDark ? 0.34 : 0.24);
+  return { text, bg, border };
+}
 
 // ─── Audio Player ───────────────────────────────────────────────────────────
 interface AudioPlayerHandle {
@@ -194,7 +238,7 @@ const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
   return (
     <View style={[styles.audioPlayer, { backgroundColor: colors.inputBg }]}>
       <TouchableOpacity
-        style={[styles.playButton, { backgroundColor: colors.accent }]}
+        style={[styles.playButton, { backgroundColor: colors.brandAccent }]}
         onPress={togglePlayback}
         activeOpacity={0.8}
         disabled={isLoading}
@@ -210,7 +254,7 @@ const AudioPlayer = React.memo(React.forwardRef<AudioPlayerHandle, {
         <View style={[styles.audioProgressTrack, { backgroundColor: colors.border }]}>
           <View
             style={[
-              styles.audioProgressFill, { backgroundColor: colors.accent },
+              styles.audioProgressFill, { backgroundColor: colors.brandAccent },
               { width: `${Math.max(0, Math.min(100, Math.round(progressRatio * 100)))}%` },
             ]}
           />
@@ -278,7 +322,7 @@ const EditPanel = React.memo(function EditPanel({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function MemoryDetailScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [memory, setMemory] = useState<Memory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -423,11 +467,19 @@ export default function MemoryDetailScreen() {
         </View>
         {/* Identity row */}
         <View style={styles.eyebrowRow}>
-          <View style={[styles.typeBadge, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(184,92,32,0.22)' }]}>
-            <Text style={[styles.typeBadgeText, { color: colors.brandAccent }]}>
-              {TYPE_CONFIG[memory.type]?.icon} {memory.type?.toUpperCase()}
-            </Text>
-          </View>
+          {(() => {
+            const typeConf = TYPE_CONFIG[memory.type] || TYPE_CONFIG.text;
+            return (
+              <View style={[styles.typeBadge, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(184,92,32,0.22)' }]}>
+                <View style={styles.typeBadgeInner}>
+                  <typeConf.Icon size={11} color={colors.brandAccent} strokeWidth={2.2} />
+                  <Text style={[styles.typeBadgeText, { color: colors.brandAccent }]}>
+                    {memory.type?.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+            );
+          })()}
           <Text style={[styles.eyebrowDate, { color: colors.textMuted }]}>
             {new Date(memory.createdAt).toLocaleDateString(undefined, {
               weekday: 'short', month: 'short', day: 'numeric',
@@ -520,7 +572,9 @@ export default function MemoryDetailScreen() {
                 <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
               </View>
             ) : (
-              <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
+              <View style={[styles.contentCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
+              </View>
             )}
           </View>
         )}
@@ -546,7 +600,10 @@ export default function MemoryDetailScreen() {
         {/* Connected Ideas */}
         {(loadingRelated || related.length > 0) && (
           <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
-            <Text style={[styles.relatedTitle, { color: colors.textPrimary }]}>{t('memory.relatedMemories')}</Text>
+            <View style={styles.relatedTitleRow}>
+              <Sparkles size={13} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={[styles.relatedTitle, { color: colors.textPrimary }]}>{t('memory.relatedMemories')}</Text>
+            </View>
 
             {loadingRelated ? (
               <View style={styles.relatedLoadingRow}>
@@ -557,6 +614,7 @@ export default function MemoryDetailScreen() {
               <View style={styles.relatedList}>
                 {related.map((item) => {
                   const typeConf = TYPE_CONFIG[item.type] || TYPE_CONFIG.text;
+                  const categoryTone = getCategoryTone(item.category_color, isDark);
                   const score = item.similarity != null ? `${Math.round(item.similarity * 100)}% ${t('memory.match')}` : t('memory.relatedViaCategory');
                   const preview = (item.content || '').trim();
                   const relatedAt = formatRelativeDate(new Date(item.created_at), t);
@@ -568,7 +626,7 @@ export default function MemoryDetailScreen() {
                       activeOpacity={0.75}
                     >
                       <View style={[styles.relatedTypeDot, { backgroundColor: `${typeConf.color}22` }]}>
-                        <Text style={styles.relatedTypeEmoji}>{typeConf.icon}</Text>
+                        <typeConf.Icon size={14} color={typeConf.color} strokeWidth={2.2} />
                       </View>
                       <View style={styles.relatedBody}>
                         <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
@@ -585,18 +643,17 @@ export default function MemoryDetailScreen() {
                           <View
                             style={[
                               styles.relatedCategoryPill,
-                              { backgroundColor: `${item.category_color || '#6B7280'}18` },
+                              {
+                                backgroundColor: categoryTone.bg,
+                                borderColor: categoryTone.border,
+                              },
                             ]}
                           >
-                            {item.category_icon ? (
-                              <Text style={styles.relatedCategoryIcon}>{item.category_icon}</Text>
-                            ) : (
-                              <Folder size={11} color={item.category_color || '#6B7280'} strokeWidth={2} />
-                            )}
+                            <Folder size={11} color={categoryTone.text} strokeWidth={2.1} />
                             <Text
                               style={[
                                 styles.relatedCategoryText,
-                                { color: item.category_color || '#6B7280' },
+                                { color: categoryTone.text },
                               ]}
                             >
                               {item.category_name}
@@ -627,7 +684,7 @@ export default function MemoryDetailScreen() {
                 dismissButtonStyle: 'close',
                 presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
                 controlsColor: '#6366F1',
-              }).catch(() => {});
+              }).catch(() => { });
             }
             // text/photo: Reflect — no-op until reflect flow is built
           }}
@@ -637,8 +694,8 @@ export default function MemoryDetailScreen() {
             {memory.type === 'voice'
               ? t('memory.actionPlay')
               : memory.type === 'link'
-              ? t('memory.actionOpenLink')
-              : t('memory.actionReflect')}
+                ? t('memory.actionOpenLink')
+                : t('memory.actionReflect')}
           </Text>
         </TouchableOpacity>
         {/* Secondary row */}
@@ -721,9 +778,14 @@ const styles = StyleSheet.create({
   },
   typeBadge: {
     borderRadius: 4,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 7,
     paddingVertical: 2,
+  },
+  typeBadgeInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   typeBadgeText: {
     fontFamily: 'DMSans_700Bold',
@@ -751,7 +813,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderTopRightRadius: 10,
     borderBottomRightRadius: 10,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingLeft: 14,
     paddingRight: 12,
   },
@@ -774,7 +836,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: 'DMSans_600SemiBold',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 6,
@@ -787,7 +849,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderRadius: 12,
     padding: 12,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 10,
   },
   linkCardLeft: { flex: 1, gap: 3 },
@@ -821,7 +883,12 @@ const styles = StyleSheet.create({
 
   // Content
   contentSection: { marginBottom: 16 },
-  contentText: { fontSize: 16, lineHeight: 25 },
+  contentCard: {
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  contentText: { fontFamily: 'DMSans_400Regular', fontSize: 16, lineHeight: 26 },
 
   // Photo
   photoSection: { marginBottom: 14, borderRadius: 14, overflow: 'hidden' },
@@ -833,7 +900,7 @@ const styles = StyleSheet.create({
   photoDescriptionBox: {
     borderRadius: 12,
     padding: 12,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 6,
   },
   photoDescriptionLabel: {
@@ -844,7 +911,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 14,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 6,
   },
 
@@ -876,28 +943,33 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 14,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   transcriptionText: { fontSize: 14, lineHeight: 21 },
 
   // Date info
   dateSection: {
     paddingTop: 12,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
-  dateText: { fontSize: 12 },
+  dateText: { fontFamily: 'DMSans_400Regular', fontSize: 12 },
 
   // Related memories
   relatedSection: {
     marginTop: 16,
     paddingTop: 14,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  relatedTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
   },
   relatedTitle: {
     fontFamily: 'DMSans_700Bold',
     fontSize: 14,
-    marginBottom: 10,
   },
   relatedLoadingRow: {
     flexDirection: 'row',
@@ -911,7 +983,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   relatedItem: {
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 12,
     padding: 10,
     flexDirection: 'row',
@@ -919,14 +991,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   relatedTypeDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  relatedTypeEmoji: {
-    fontSize: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   relatedBody: {
     flex: 1,
@@ -953,12 +1024,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 8,
     paddingVertical: 3,
     gap: 4,
-  },
-  relatedCategoryIcon: {
-    fontSize: 10,
   },
   relatedCategoryText: {
     fontSize: 10,
@@ -1011,7 +1080,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   editTitle: { fontSize: 17, fontWeight: '600' },
   editCancel: { fontSize: 16 },

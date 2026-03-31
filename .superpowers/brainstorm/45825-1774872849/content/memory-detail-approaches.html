@@ -1,0 +1,412 @@
+<style>
+  :root {
+    --cream: #f7f4f0;
+    --card: #ffffff;
+    --input-bg: #f2efe9;
+    --border: #ede8e2;
+    --border-med: #d8d3cc;
+    --text: #1c1814;
+    --text-sec: #5a5248;
+    --text-muted: #b8b0a7;
+    --brand: #b85c20;
+    --brand-light: rgba(184,92,32,0.10);
+    --accent: #4F46E5;
+    --accent-light: rgba(79,70,229,0.1);
+  }
+  body { background: #e8e4de; }
+  .question { text-align: center; margin-bottom: 8px; }
+  .question h2 { color: var(--text); margin-bottom: 6px; }
+  .question p { color: var(--text-sec); }
+
+  .phones-row {
+    display: flex;
+    gap: 28px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 20px 0;
+  }
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+  }
+  .phone-wrap .label-area {
+    text-align: center;
+  }
+  .phone-wrap .option-letter {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  .phone-wrap h3 { font-size: 15px; color: var(--text); margin: 0 0 2px; }
+  .phone-wrap p { font-size: 12px; color: var(--text-sec); margin: 0; max-width: 180px; line-height: 1.4; }
+
+  /* Phone shell */
+  .phone {
+    width: 200px;
+    height: 420px;
+    background: var(--cream);
+    border-radius: 32px;
+    border: 3px solid #2a2520;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: -apple-system, 'DM Sans', sans-serif;
+  }
+  .phone-wrap.selected .phone {
+    box-shadow: 0 8px 32px rgba(184,92,32,0.35), 0 0 0 3px #b85c20;
+  }
+
+  /* ── OPTION A — Current (problem showcase) ── */
+  .phone-a .pheader {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phone-a .back { font-size: 9px; color: var(--brand); margin-bottom: 8px; }
+  .phone-a .eyebrow { font-size: 7px; font-weight: 700; letter-spacing: 0.8px; color: var(--brand); text-transform: uppercase; margin-bottom: 4px; }
+  .phone-a .ptitle { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; margin-bottom: 4px; }
+  .phone-a .meta-row { display: flex; gap: 5px; align-items: center; }
+  .phone-a .chip { border: 1px solid var(--border); border-radius: 20px; padding: 1px 6px; font-size: 7px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
+  .phone-a .meta-time { font-size: 8px; color: var(--text-muted); }
+  .phone-a .scroll { flex: 1; overflow: hidden; padding: 0; }
+  .phone-a .ai-card {
+    margin: 10px 12px 0;
+    border-radius: 8px;
+    border: 1px solid rgba(197,106,58,0.14);
+    background: rgba(197,106,58,0.06);
+    padding: 8px;
+  }
+  .phone-a .ai-label { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--brand); margin-bottom: 3px; }
+  .phone-a .ai-text { font-size: 9px; line-height: 1.4; color: var(--text-sec); font-style: italic; }
+  .phone-a .section-pad { padding: 10px 12px; }
+  .phone-a .section-lbl { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); margin-bottom: 4px; }
+  .phone-a .body-text { font-size: 9px; line-height: 1.55; color: var(--text); }
+  .phone-a .actions {
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 5px;
+    padding: 8px 10px;
+  }
+  .phone-a .action-btn {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 2px;
+    text-align: center;
+    font-size: 8px;
+    color: var(--text-sec);
+  }
+  .phone-a .action-btn.accent { border-color: rgba(184,92,32,0.25); color: var(--brand); }
+  .problem-badge {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  /* ── OPTION B — Editorial Hierarchy ── */
+  .phone-b .pheader {
+    padding: 8px 12px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .phone-b .nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .phone-b .back-btn {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 8px; color: var(--brand); font-weight: 500;
+  }
+  .phone-b .share-btn { font-size: 9px; color: var(--text-muted); }
+  .phone-b .eyebrow-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+  }
+  .phone-b .type-badge {
+    background: var(--brand-light);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 7px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--brand);
+  }
+  .phone-b .eyebrow { font-size: 7px; color: var(--text-muted); letter-spacing: 0.3px; }
+  .phone-b .ptitle {
+    font-size: 14px; font-weight: 800; color: var(--text);
+    line-height: 1.25; letter-spacing: -0.3px;
+  }
+  .phone-b .scroll { flex: 1; overflow: hidden; }
+  .phone-b .pull-quote {
+    margin: 10px 12px 0;
+    padding: 10px 10px 10px 13px;
+    border-left: 3px solid var(--brand);
+    background: var(--brand-light);
+    border-radius: 0 8px 8px 0;
+  }
+  .phone-b .pq-label { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--brand); margin-bottom: 3px; }
+  .phone-b .pq-text { font-size: 9px; line-height: 1.5; color: var(--text-sec); font-style: italic; }
+  .phone-b .divider { height: 1px; background: var(--border); margin: 10px 12px; }
+  .phone-b .section-pad { padding: 0 12px 8px; }
+  .phone-b .body-text { font-size: 9px; line-height: 1.6; color: var(--text); }
+  .phone-b .actions {
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .phone-b .primary-btn {
+    background: var(--brand);
+    border-radius: 10px;
+    padding: 8px;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.2px;
+  }
+  .phone-b .secondary-row { display: flex; gap: 5px; }
+  .phone-b .secondary-btn {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    text-align: center;
+    font-size: 8px;
+    color: var(--text-sec);
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+  }
+
+  /* ── OPTION C — Immersive ── */
+  .phone-c {
+    background: var(--cream);
+  }
+  .phone-c .hero {
+    height: 90px;
+    background: linear-gradient(160deg, #2d1f14 0%, #4a2e1a 50%, #6b3d1e 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 10px 12px;
+  }
+  .phone-c .hero-back {
+    position: absolute;
+    top: 10px; left: 12px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    display: flex; align-items: center; gap: 2px;
+  }
+  .phone-c .hero-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 7px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 5px;
+    align-self: flex-start;
+  }
+  .phone-c .hero-title {
+    font-size: 13px; font-weight: 800; color: #fff;
+    line-height: 1.2; letter-spacing: -0.2px;
+  }
+  .phone-c .hero-date {
+    font-size: 7.5px; color: rgba(255,255,255,0.55); margin-top: 3px;
+  }
+  .phone-c .scroll { flex: 1; overflow: hidden; }
+  .phone-c .ai-card {
+    margin: 10px 12px 0;
+    padding: 9px 10px;
+    background: var(--input-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .phone-c .ai-header { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+  .phone-c .ai-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+  .phone-c .ai-lbl { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--brand); }
+  .phone-c .ai-text { font-size: 9px; line-height: 1.5; color: var(--text-sec); }
+  .phone-c .section-pad { padding: 8px 12px; }
+  .phone-c .body-text { font-size: 9px; line-height: 1.6; color: var(--text); }
+  .phone-c .actions {
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .phone-c .action-btn {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 5px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .phone-c .action-icon { font-size: 12px; }
+  .phone-c .action-label { font-size: 7px; color: var(--text-sec); }
+  .phone-c .action-btn.primary {
+    background: var(--brand);
+    border-color: var(--brand);
+    grid-column: 1 / -1;
+    padding: 8px;
+    flex-direction: row;
+    gap: 5px;
+    justify-content: center;
+  }
+  .phone-c .action-btn.primary .action-icon { font-size: 11px; }
+  .phone-c .action-btn.primary .action-label { font-size: 9px; color: #fff; font-weight: 700; }
+</style>
+
+<div class="question">
+  <h2>Which direction feels right for the memory detail screen?</h2>
+  <p class="subtitle">Each approach solves the current design issues differently. Click to select.</p>
+</div>
+
+<div class="options" style="flex-wrap:wrap; gap: 24px;">
+
+  <!-- CURRENT (problems highlighted) -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)" style="flex-direction: column; align-items: center; padding: 20px; min-width: 220px;">
+    <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+      <div class="letter">A</div>
+      <div>
+        <h3 style="margin:0; font-size:14px;">Current Design</h3>
+        <p style="margin:0; font-size:11px; color: var(--text-sec);">Crowded header, generic actions</p>
+      </div>
+    </div>
+    <div class="phone phone-a">
+      <div class="problem-badge">Issues</div>
+      <div class="pheader">
+        <div class="back">← Back to Library</div>
+        <div class="eyebrow">MONDAY, MARCH 30</div>
+        <div class="ptitle">A thought about the nature of creative work</div>
+        <div class="meta-row">
+          <div class="chip">text</div>
+          <div class="meta-time">2 hours ago</div>
+        </div>
+      </div>
+      <div class="scroll">
+        <div class="ai-card">
+          <div class="ai-label">AI INSIGHT</div>
+          <div class="ai-text">Creative work requires embracing uncertainty as a feature, not a flaw.</div>
+        </div>
+        <div class="section-pad">
+          <div class="section-lbl">ORIGINAL</div>
+          <div class="body-text">I've been thinking about how the best creative work often comes from not knowing exactly where you're going…</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="action-btn">Edit</div>
+        <div class="action-btn">Share</div>
+        <div class="action-btn accent">Reflect</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B — Editorial -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)" style="flex-direction: column; align-items: center; padding: 20px; min-width: 220px;">
+    <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+      <div class="letter">B</div>
+      <div>
+        <h3 style="margin:0; font-size:14px;">Editorial Hierarchy</h3>
+        <p style="margin:0; font-size:11px; color: var(--text-sec);">Pull-quote AI summary, icon action bar</p>
+      </div>
+    </div>
+    <div class="phone phone-b">
+      <div class="pheader">
+        <div class="nav-row">
+          <div class="back-btn">‹ Library</div>
+          <div class="share-btn">⬆</div>
+        </div>
+        <div class="eyebrow-row">
+          <div class="type-badge">📝 Text</div>
+          <div class="eyebrow">Mon, March 30 · 2h ago</div>
+        </div>
+        <div class="ptitle">A thought about the nature of creative work</div>
+      </div>
+      <div class="scroll">
+        <div class="pull-quote">
+          <div class="pq-label">AI Insight</div>
+          <div class="pq-text">Creative work requires embracing uncertainty as a feature, not a flaw.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="section-pad">
+          <div class="body-text">I've been thinking about how the best creative work often comes from not knowing exactly where you're going…</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="primary-btn">✦ Reflect on this memory</div>
+        <div class="secondary-row">
+          <div class="secondary-btn">✏ Edit</div>
+          <div class="secondary-btn">⬆ Share</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C — Immersive -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)" style="flex-direction: column; align-items: center; padding: 20px; min-width: 220px;">
+    <div style="display:flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+      <div class="letter">C</div>
+      <div>
+        <h3 style="margin:0; font-size:14px;">Immersive Header</h3>
+        <p style="margin:0; font-size:11px; color: var(--text-sec);">Dark hero zone, grid action bar</p>
+      </div>
+    </div>
+    <div class="phone phone-c">
+      <div class="hero">
+        <div class="hero-back">‹ Library</div>
+        <div class="hero-badge">📝 Text</div>
+        <div class="hero-title">A thought about the nature of creative work</div>
+        <div class="hero-date">Monday, March 30 · 2 hours ago</div>
+      </div>
+      <div class="scroll">
+        <div class="ai-card">
+          <div class="ai-header">
+            <div class="ai-dot"></div>
+            <div class="ai-lbl">AI Insight</div>
+          </div>
+          <div class="ai-text">Creative work requires embracing uncertainty as a feature, not a flaw.</div>
+        </div>
+        <div class="section-pad" style="padding-top: 10px;">
+          <div class="body-text">I've been thinking about how the best creative work often comes from not knowing exactly where you're going…</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="action-btn primary">
+          <div class="action-icon">✦</div>
+          <div class="action-label">Reflect on this memory</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-icon">✏</div>
+          <div class="action-label">Edit</div>
+        </div>
+        <div class="action-btn">
+          <div class="action-icon">⬆</div>
+          <div class="action-label">Share</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -30,6 +30,7 @@ import {
   Mic,
   Link2,
   Image as ImageIcon,
+  X,
 } from 'lucide-react-native';
 
 const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
@@ -81,19 +82,62 @@ const MODE_DEFINITIONS: { key: CaptureMode }[] = [
   { key: 'photo' },
 ];
 
-const MODE_EMOJI: Record<CaptureMode, string> = {
-  text: '✍️',
-  voice: '🎤',
-  link: '🔗',
-  photo: '📷',
-};
+const TEXT_WARN_THRESHOLD = 300;
 
-const HINT_CHIPS: { labelKey: string; bg: string; border: string; text: string }[] = [
-  { labelKey: 'capture.hintIdea',         bg: '#fff8f2', border: '#f5dfc8', text: '#c47a3a' },
-  { labelKey: 'capture.hintMeeting',      bg: '#f2f8ff', border: '#d0e8ff', text: '#4a7ab5' },
-  { labelKey: 'capture.hintDecision',     bg: '#f0fff4', border: '#b8e8c8', text: '#2e7d52' },
-  { labelKey: 'capture.hintConversation', bg: '#fff0f8', border: '#f0c0dc', text: '#a0456a' },
-  { labelKey: 'capture.hintLearning',     bg: '#f5f0ff', border: '#d8c8f8', text: '#6a4ab5' },
+const HINT_CHIPS: {
+  labelKey: string;
+  bg: string;
+  border: string;
+  text: string;
+  darkBg: string;
+  darkBorder: string;
+  darkText: string;
+}[] = [
+  {
+    labelKey: 'capture.hintIdea',
+    bg: '#fff8f2',
+    border: '#f5dfc8',
+    text: '#c47a3a',
+    darkBg: 'rgba(184,92,32,0.16)',
+    darkBorder: 'rgba(184,92,32,0.28)',
+    darkText: '#f0b182',
+  },
+  {
+    labelKey: 'capture.hintMeeting',
+    bg: '#f2f8ff',
+    border: '#d0e8ff',
+    text: '#4a7ab5',
+    darkBg: 'rgba(73,115,163,0.22)',
+    darkBorder: 'rgba(123,168,222,0.32)',
+    darkText: '#b9d8ff',
+  },
+  {
+    labelKey: 'capture.hintDecision',
+    bg: '#f0fff4',
+    border: '#b8e8c8',
+    text: '#2e7d52',
+    darkBg: 'rgba(53,120,84,0.22)',
+    darkBorder: 'rgba(93,171,129,0.34)',
+    darkText: '#a7e5c1',
+  },
+  {
+    labelKey: 'capture.hintConversation',
+    bg: '#fff0f8',
+    border: '#f0c0dc',
+    text: '#a0456a',
+    darkBg: 'rgba(132,65,97,0.26)',
+    darkBorder: 'rgba(191,114,153,0.34)',
+    darkText: '#ebb3ce',
+  },
+  {
+    labelKey: 'capture.hintLearning',
+    bg: '#f5f0ff',
+    border: '#d8c8f8',
+    text: '#6a4ab5',
+    darkBg: 'rgba(100,79,155,0.24)',
+    darkBorder: 'rgba(145,120,208,0.34)',
+    darkText: '#cab8f7',
+  },
 ];
 
 function BottomModeBar({
@@ -108,16 +152,21 @@ function BottomModeBar({
 
   return (
     <View style={[modeBarStyles.wrap, { backgroundColor: colors.bg }]}>
-      <View style={modeBarStyles.barShell}>
+      <View style={[modeBarStyles.barShell, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
         {MODE_DEFINITIONS.map(({ key }) => {
           const active = key === mode;
+          const Icon = MODE_META[key].icon;
           return (
             <TouchableOpacity
               key={key}
               style={[
                 modeBarStyles.slot,
-                active && { backgroundColor: colors.brandAccent, borderRadius: 12 },
-                !active && { opacity: 0.55 },
+                active && {
+                  backgroundColor: colors.brandAccentLight,
+                  borderColor: colors.brandAccent,
+                  borderRadius: 12,
+                },
+                !active && { opacity: 0.75 },
               ]}
               onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
               activeOpacity={0.85}
@@ -125,12 +174,16 @@ function BottomModeBar({
               accessibilityState={{ selected: active }}
               accessibilityLabel={t(MODE_META[key].labelKey)}
             >
-              <Text style={modeBarStyles.emoji}>{MODE_EMOJI[key]}</Text>
+              <Icon
+                size={17}
+                color={active ? colors.brandAccent : colors.textSecondary}
+                strokeWidth={active ? 2.4 : 2.1}
+              />
               <Text style={[
                 modeBarStyles.modeTabText,
-                { color: active ? '#FFFFFF' : colors.textSecondary },
+                { color: active ? colors.brandAccent : colors.textSecondary },
               ]}>
-                {t(MODE_META[key].labelKey)}
+                {t(MODE_META[key].navLabelKey)}
               </Text>
             </TouchableOpacity>
           );
@@ -148,7 +201,7 @@ const modeBarStyles = StyleSheet.create({
   },
   barShell: {
     flexDirection: 'row',
-    backgroundColor: '#efe9df',
+    borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 16,
     padding: 5,
     gap: 3,
@@ -158,9 +211,8 @@ const modeBarStyles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 7,
     paddingHorizontal: 3,
-  },
-  emoji: {
-    fontSize: 18,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   modeTabText: {
     fontFamily: 'DMSans_600SemiBold',
@@ -610,7 +662,7 @@ const imageStyles = StyleSheet.create({
 
 export default function CaptureScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
   // Smart default: explicit param > user preference > 'text'
@@ -793,6 +845,8 @@ export default function CaptureScreen() {
     mode === 'voice' ? isVoiceReady :
       mode === 'photo' ? isImageReady :
         content.trim().length > 0;
+  const helperTextColor = isDark ? colors.textSecondary : colors.textMuted;
+  const textModePlaceholderColor = isDark ? colors.textSecondary : colors.textPlaceholder;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -800,19 +854,19 @@ export default function CaptureScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Header (LinkedIn-style) ── */}
+        {/* ── Header ── */}
         <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.bg }]}>
           <TouchableOpacity
             onPress={handleCancel}
             style={styles.closeBtn}
             activeOpacity={0.7}
           >
-            <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>{t('common.cancel')}</Text>
+            <X size={20} color={colors.textSecondary} strokeWidth={2.2} />
           </TouchableOpacity>
 
           <View style={styles.titleWrap}>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
-              🧠 {t('capture.title').toLowerCase()}
+              {t('capture.title')}
             </Text>
           </View>
 
@@ -835,15 +889,30 @@ export default function CaptureScreen() {
 
         {mode === 'text' || mode === 'link' ? (
           <View style={styles.composerScreenWrap}>
-            <View style={[styles.inputCard, { backgroundColor: colors.cardBg }]}>
+            <View style={[styles.inputCard, {
+              backgroundColor: colors.cardBg,
+              borderColor: isDark ? colors.borderMed : colors.border,
+              borderWidth: 1,
+            }]}> 
+              {/* ── Composer header (text mode) ── */}
+              {mode === 'text' && (
+                <View style={styles.composerHeaderRow}>
+                  <View style={[styles.composerBadge, { backgroundColor: colors.brandAccentLight }]}>
+                    <FileText size={16} color={colors.brandAccent} strokeWidth={2.3} />
+                  </View>
+                  <Text style={[styles.composerHeaderLabel, { color: helperTextColor }]}> 
+                    {t('capture.modeTextDesc')}
+                  </Text>
+                </View>
+              )}
               <TextInput
                 style={[styles.composerInput, {
                   color: colors.textPrimary,
                   fontFamily: 'DMSans_400Regular',
-                  fontSize: 15,
+                  fontSize: 16,
                 }]}
                 placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                placeholderTextColor={colors.textPlaceholder}
+                placeholderTextColor={mode === 'text' ? textModePlaceholderColor : colors.textPlaceholder}
                 multiline={mode === 'text'}
                 autoFocus
                 value={content}
@@ -867,7 +936,7 @@ export default function CaptureScreen() {
                   <View style={styles.clipInCardLeft}>
                     <Link2 size={13} color={colors.brandAccent} strokeWidth={2.4} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.clipTitle, { color: colors.textMuted }]}>{t('capture.clipboardDetected')}</Text>
+                      <Text style={[styles.clipTitle, { color: helperTextColor }]}>{t('capture.clipboardDetected')}</Text>
                       <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
                     </View>
                   </View>
@@ -879,30 +948,46 @@ export default function CaptureScreen() {
                       <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={[styles.clipDismiss, { color: colors.textMuted }]}>✕</Text>
+                      <Text style={[styles.clipDismiss, { color: helperTextColor }]}>✕</Text>
                     </TouchableOpacity>
                   </View>
                 </Animated.View>
               ) : null}
               {mode === 'text' && (
-                <>
-                  <View style={[styles.inputDivider, { borderColor: '#f2d5b8' }]} />
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.hintsScroll}
-                  >
-                    {HINT_CHIPS.map((chip) => (
-                      <TouchableOpacity
-                        key={chip.labelKey}
-                        onPress={() => setContent((prev) => (prev ? `${t(chip.labelKey)} ${prev}` : `${t(chip.labelKey)} `))}
-                        style={[styles.hintChip, { backgroundColor: chip.bg, borderColor: chip.border }]}
-                      >
-                        <Text style={[styles.hintChipText, { color: chip.text }]}>{t(chip.labelKey)}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </>
+                <View>
+                  <View style={[styles.inputDivider, { borderColor: colors.border }]} />
+                  <View style={styles.composerFooterRow}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.hintsScroll}
+                      style={styles.composerHintsScroll}
+                    >
+                      {HINT_CHIPS.map((chip) => (
+                        <TouchableOpacity
+                          key={chip.labelKey}
+                          onPress={() => {
+                            const label = t(chip.labelKey);
+                            setContent((prev) => (prev ? `${label} ${prev}` : `${label} `));
+                          }}
+                          style={[styles.hintChip, {
+                            backgroundColor: isDark ? chip.darkBg : chip.bg,
+                            borderColor: isDark ? chip.darkBorder : chip.border,
+                          }]}
+                        >
+                          <Text style={[styles.hintChipText, { color: isDark ? chip.darkText : chip.text }]}>{t(chip.labelKey)}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                    {content.length > 0 && (
+                      <Text style={[styles.charCounter, {
+                        color: content.length > TEXT_WARN_THRESHOLD ? colors.warning : helperTextColor,
+                      }]}>
+                        {content.length}
+                      </Text>
+                    )}
+                  </View>
+                </View>
               )}
             </View>
           </View>
@@ -965,9 +1050,8 @@ const styles = StyleSheet.create({
     minWidth: 56,
     minHeight: 32,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
   },
-  closeBtnText: { fontSize: 14, fontWeight: '500', fontFamily: SANS_FONT },
   titleWrap: {
     alignItems: 'center',
   },
@@ -1004,15 +1088,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   composerInput: {
-    fontSize: 15,
-    lineHeight: 24,
-    minHeight: 80,
+    fontSize: 16,
+    lineHeight: 26,
+    minHeight: 120,
     fontFamily: SANS_FONT,
   },
   inputDivider: {
-    borderTopWidth: 1.5,
-    borderStyle: 'dashed',
-    marginVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginVertical: 10,
+  },
+
+  // ── Composer header ──
+  composerHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 14,
+  },
+  composerBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  composerHeaderLabel: {
+    fontSize: 13,
+    fontFamily: 'DMSans_500Medium',
+  },
+
+  // ── Composer footer (hints + char counter) ──
+  composerHintsScroll: { flex: 1 },
+  composerFooterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 2,
+  },
+  charCounter: {
+    fontSize: 12,
+    fontFamily: SANS_FONT,
+    fontWeight: '500',
+    minWidth: 32,
+    textAlign: 'right',
+    paddingLeft: 8,
   },
   errorText: { marginTop: 6, fontSize: 13, fontFamily: SANS_FONT },
 

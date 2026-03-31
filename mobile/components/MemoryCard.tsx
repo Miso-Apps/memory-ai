@@ -47,11 +47,11 @@ function extractDomain(url?: string): string | undefined {
   }
 }
 
-const TYPE_LABEL: Record<MemoryCardMemory['type'], string> = {
-  text: 'text',
-  voice: 'voice',
-  link: 'link',
-  photo: 'photo',
+const TYPE_LABEL_KEY: Record<MemoryCardMemory['type'], string> = {
+  text: 'memory.typeText',
+  voice: 'memory.typeVoice',
+  link: 'memory.typeLink',
+  photo: 'memory.typePhoto',
 };
 
 export function MemoryCard({ memory, tag, timeAgo, onPress, onDismiss }: MemoryCardProps) {
@@ -108,7 +108,7 @@ export function MemoryCard({ memory, tag, timeAgo, onPress, onDismiss }: MemoryC
           </View>
         ) : null}
         <Text style={[styles.typeLabel, { color: colors.textMuted }]}>
-          {TYPE_LABEL[memory.type]}
+          {t(TYPE_LABEL_KEY[memory.type])}
         </Text>
       </View>
 

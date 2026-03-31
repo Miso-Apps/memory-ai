@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Image
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { ArrowRight, Brain, CircleAlert, RefreshCw } from 'lucide-react-native';
 import { useTheme } from '../../constants/ThemeContext';
 import { aiApi, RadarItem } from '../../services/api';
+import { ScreenHeader } from '../../components/ScreenHeader';
 
 function pickPreviewUrl(item: RadarItem): string | undefined {
   const metadata = item.memory.metadata ?? {};
@@ -88,12 +90,12 @@ export default function RecallScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={[styles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('recall.title')}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {t('recall.subtitle')}
-          </Text>
-        </View>
+        <ScreenHeader
+          title={t('recall.title')}
+          subtitle={t('recall.subtitle')}
+          titleSize={30}
+          paddingHorizontal={16}
+        />
 
         {loading ? (
           <View style={styles.loadingWrap}>
@@ -104,6 +106,9 @@ export default function RecallScreen() {
 
         {error ? (
           <View style={styles.errorWrap}>
+            <View style={[styles.inlineStatusIcon, { backgroundColor: colors.warningBg }]}>
+              <CircleAlert size={14} color={colors.warning} strokeWidth={2.4} />
+            </View>
             <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
             <Pressable
               onPress={() => loadRadar(true)}
@@ -143,9 +148,12 @@ export default function RecallScreen() {
                   </Pressable>
                   <Pressable
                     onPress={() => onOpen(item)}
-                    style={[styles.actionButtonPrimary, { backgroundColor: colors.accent }]}
+                    style={[styles.actionButtonPrimary, { backgroundColor: colors.brandAccent }]}
                   >
-                    <Text style={styles.actionButtonPrimaryText}>{t('recall.open')}</Text>
+                    <View style={styles.primaryActionInner}>
+                      <Text style={styles.actionButtonPrimaryText}>{t('recall.open')}</Text>
+                      <ArrowRight size={12} color="#FFFFFF" strokeWidth={2.8} />
+                    </View>
                   </Pressable>
                 </View>
               </View>
@@ -156,9 +164,12 @@ export default function RecallScreen() {
               disabled={refreshing}
               style={[styles.refreshButton, { borderColor: colors.border }]}
             >
-              <Text style={[styles.refreshButtonText, { color: colors.textSecondary }]}>
-                {refreshing ? t('recall.refreshing') : t('recall.refresh')}
-              </Text>
+              <View style={styles.refreshInner}>
+                <RefreshCw size={12} color={colors.textSecondary} strokeWidth={2.5} />
+                <Text style={[styles.refreshButtonText, { color: colors.textSecondary }]}>
+                  {refreshing ? t('recall.refreshing') : t('recall.refresh')}
+                </Text>
+              </View>
             </Pressable>
           </View>
         ) : null}
@@ -166,7 +177,7 @@ export default function RecallScreen() {
         {isEmpty ? (
           <View style={styles.emptyState}>
             <View style={[styles.emptyIcon, { backgroundColor: colors.inputBg }]}>
-              <View style={[styles.emptyIconInner, { backgroundColor: colors.border }]} />
+              <Brain size={28} color={colors.textMuted} strokeWidth={2.2} />
             </View>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               {t('recall.empty')}
@@ -191,21 +202,6 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  title: {
-    fontSize: 27,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
@@ -220,11 +216,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
-  },
-  emptyIconInner: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
   },
   emptyText: {
     fontSize: 15,
@@ -245,6 +236,13 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     alignItems: 'center',
     gap: 12,
+  },
+  inlineStatusIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   errorText: {
     fontSize: 14,
@@ -316,6 +314,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
+  primaryActionInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
   actionButtonText: {
     fontSize: 12,
     fontWeight: '600',
@@ -333,6 +336,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: 2,
     marginBottom: 20,
+  },
+  refreshInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   refreshButtonText: {
     fontSize: 12,

@@ -58,7 +58,7 @@ function TabIcon({
         <Icon
           size={size}
           color={focused ? colors.textPrimary : colors.textMuted}
-          strokeWidth={focused ? 2.5 : 1.8}
+          strokeWidth={focused ? 2.3 : 2}
         />
       </View>
     </Animated.View>
@@ -145,13 +145,14 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.textPrimary,
-        tabBarInactiveTintColor: '#2a2a2a',
+        tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
-          borderTopWidth: 0,
+          borderTopWidth: 1,
+          borderColor: colors.tabBarBorder,
           borderRadius: 24,
-          marginHorizontal: 14,
+          marginHorizontal: 12,
           marginBottom: Platform.OS === 'ios' ? 16 : 12,
           height: Platform.OS === 'ios' ? 84 : 78,
           paddingTop: 8,
@@ -227,17 +228,17 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   iconBackground: {
     position: 'absolute',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -257,9 +258,9 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   createBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

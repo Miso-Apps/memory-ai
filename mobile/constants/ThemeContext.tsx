@@ -82,10 +82,10 @@ export const LightColors: ThemeColors = {
   buttonText: '#FFFFFF',
 
   // Accent
-  accent: '#4F46E5',
-  accentLight: 'rgba(79,70,229,0.1)',
-  accentMid: 'rgba(79,70,229,0.18)',
-  accentSubtle: 'rgba(79,70,229,0.05)',
+  accent: '#b85c20',
+  accentLight: 'rgba(184,92,32,0.10)',
+  accentMid: 'rgba(184,92,32,0.18)',
+  accentSubtle: 'rgba(184,92,32,0.05)',
   brandAccent: '#b85c20',
   brandAccentLight: 'rgba(184,92,32,0.10)',
 
@@ -97,7 +97,7 @@ export const LightColors: ThemeColors = {
   successBg: 'rgba(5,150,105,0.08)',
   warning: '#D97706',
   warningBg: 'rgba(217,119,6,0.08)',
-  infoBg: 'rgba(79,70,229,0.06)',
+  infoBg: 'rgba(184,92,32,0.06)',
 
   // Borders
   border: '#ede8e2',
@@ -134,16 +134,16 @@ export const DarkColors: ThemeColors = {
   // Text
   textPrimary: '#f0ede8',
   textSecondary: '#a09890',
-  textTertiary: '#7a7268',
-  textMuted: '#5a5248',
-  textPlaceholder: '#4a4440',
+  textTertiary: '#8b837a',
+  textMuted: '#7b736b',
+  textPlaceholder: '#716a62',
   buttonText: '#FFFFFF',
 
   // Accent
-  accent: '#818CF8',
-  accentLight: 'rgba(129,140,248,0.14)',
-  accentMid: 'rgba(129,140,248,0.22)',
-  accentSubtle: 'rgba(129,140,248,0.06)',
+  accent: '#d1804a',
+  accentLight: 'rgba(209,128,74,0.16)',
+  accentMid: 'rgba(209,128,74,0.24)',
+  accentSubtle: 'rgba(209,128,74,0.10)',
   brandAccent: '#b85c20',
   brandAccentLight: 'rgba(184,92,32,0.10)',
 
@@ -155,7 +155,7 @@ export const DarkColors: ThemeColors = {
   successBg: 'rgba(52,211,153,0.1)',
   warning: '#FBBF24',
   warningBg: 'rgba(251,191,36,0.1)',
-  infoBg: 'rgba(129,140,248,0.1)',
+  infoBg: 'rgba(209,128,74,0.12)',
 
   // Borders
   border: 'rgba(255,255,255,0.07)',

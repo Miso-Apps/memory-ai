@@ -21,7 +21,17 @@ import {
   StreakDetails,
 } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { FileText, Mic, Link2, Image as ImageIcon } from 'lucide-react-native';
+import {
+  BarChart3,
+  CalendarDays,
+  Clock3,
+  FileText,
+  Flame,
+  Mic,
+  Link2,
+  Image as ImageIcon,
+  PieChart,
+} from 'lucide-react-native';
 import { ScreenHeader } from '../../components/ScreenHeader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -40,7 +50,7 @@ function heatmapCellColor(count: number, max: number, isDark: boolean): string {
   if (count === 0) return isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
   const ratio = count / Math.max(max, 1);
   if (ratio < 0.25) return 'rgba(184,92,32,0.20)';
-  if (ratio < 0.5)  return 'rgba(184,92,32,0.45)';
+  if (ratio < 0.5) return 'rgba(184,92,32,0.45)';
   if (ratio < 0.75) return 'rgba(184,92,32,0.70)';
   return '#b85c20';
 }
@@ -51,11 +61,13 @@ function formatHour(hour: number): string {
   return hour < 12 ? `${hour}am` : `${hour - 12}pm`;
 }
 
-function SectionHeader({ emoji, title }: { emoji: string; title: string }) {
+function SectionHeader({ Icon, title }: { Icon: React.ComponentType<any>; title: string }) {
   const { colors } = useTheme();
   return (
     <View style={s.sectionHeader}>
-      <Text style={s.sectionEmoji}>{emoji}</Text>
+      <View style={[s.sectionIconWrap, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+        <Icon size={13} color={colors.textSecondary} strokeWidth={2.2} />
+      </View>
       <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
     </View>
   );
@@ -100,7 +112,7 @@ function RecapCard({ recap, t }: { recap: WeeklyRecap; t: Function }) {
         )}
       </View>
       {recap.highlights && recap.highlights.length > 0 && (
-        <View style={[s.recapHighlights, { borderTopColor: colors.border }]}> 
+        <View style={[s.recapHighlights, { borderTopColor: colors.border }]}>
           <Text style={[s.recapHighlightsTitle, { color: colors.textMuted }]}>{t('insights.highlights')}</Text>
           {recap.highlights.map((h) => (
             <TouchableOpacity
@@ -385,7 +397,7 @@ function GrowthBadge({ growth, t }: { growth: number; t: Function }) {
 
   return (
     <View style={[s.growthBadge, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-      <Text style={[s.growthText, { color: positive ? colors.accent : colors.textSecondary }]}> 
+      <Text style={[s.growthText, { color: positive ? colors.accent : colors.textSecondary }]}>
         {positive ? '↑' : '↓'} {Math.abs(growth)}% {t('insights.vsPrevious')}
       </Text>
     </View>
@@ -629,17 +641,17 @@ export default function InsightsScreen() {
             )}
 
             {/* Stats overview */}
-            <SectionHeader emoji="📊" title={t('insights.overview')} />
+            <SectionHeader Icon={BarChart3} title={t('insights.overview')} />
             <StatsOverview dashboard={dashboard} streaks={streaks} t={t} />
 
             {/* Activity heatmap */}
-            <SectionHeader emoji="🗓️" title={t('insights.activity')} />
+            <SectionHeader Icon={CalendarDays} title={t('insights.activity')} />
             <ActivityHeatmap data={dashboard.activity_heatmap} t={t} />
 
             {/* Type breakdown */}
             {dashboard.type_breakdown.length > 0 && (
               <>
-                <SectionHeader emoji="🎯" title={t('insights.byType')} />
+                <SectionHeader Icon={FileText} title={t('insights.byType')} />
                 <TypeBreakdown data={dashboard.type_breakdown} t={t} />
               </>
             )}
@@ -647,7 +659,7 @@ export default function InsightsScreen() {
             {/* Category breakdown */}
             {dashboard.category_breakdown.length > 0 && (
               <>
-                <SectionHeader emoji="📂" title={t('insights.byCategory')} />
+                <SectionHeader Icon={PieChart} title={t('insights.byCategory')} />
                 <CategoryBreakdown data={dashboard.category_breakdown} t={t} />
               </>
             )}
@@ -655,7 +667,7 @@ export default function InsightsScreen() {
             {/* Hourly distribution */}
             {dashboard.hourly_distribution.some((h) => h.count > 0) && (
               <>
-                <SectionHeader emoji="⏰" title={t('insights.whenYouCapture')} />
+                <SectionHeader Icon={Clock3} title={t('insights.whenYouCapture')} />
                 <HourlyChart
                   data={dashboard.hourly_distribution}
                   peakHour={dashboard.peak_hour}
@@ -667,7 +679,7 @@ export default function InsightsScreen() {
             {/* Consistency */}
             {streaks && (
               <>
-                <SectionHeader emoji="🔥" title={t('insights.streakConsistency')} />
+                <SectionHeader Icon={Flame} title={t('insights.streakConsistency')} />
                 <ConsistencyCard streaks={streaks} t={t} />
               </>
             )}
@@ -685,7 +697,7 @@ export default function InsightsScreen() {
               {t('insights.emptySubtitle')}
             </Text>
             <TouchableOpacity
-              style={[s.emptyBtn, { backgroundColor: colors.accent }]}
+              style={[s.emptyBtn, { backgroundColor: colors.brandAccent }]}
               onPress={() => router.push('/capture')}
             >
               <Text style={s.emptyBtnText}>{t('insights.startCapturing')}</Text>
@@ -709,10 +721,10 @@ const s = StyleSheet.create({
   headerSubtitle: { fontSize: 15, fontFamily: SANS_FONT },
 
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 100, paddingTop: 8 },
 
   // Period selector
-  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  periodRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   periodChip: {
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -723,7 +735,14 @@ const s = StyleSheet.create({
 
   // Section header
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 16, marginBottom: 10 },
-  sectionEmoji: { fontSize: 16, opacity: 0.75 },
+  sectionIconWrap: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   sectionTitle: { fontSize: 14, fontWeight: '600', fontFamily: SANS_FONT },
 
   // Streak card
@@ -734,7 +753,6 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 16,
     marginBottom: 12,
   },
   streakValue: {
@@ -769,7 +787,6 @@ const s = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     padding: 14,
-    marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 12,
   },

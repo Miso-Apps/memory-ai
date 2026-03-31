@@ -267,7 +267,7 @@ export default function ProfileScreen() {
           eyebrow={t('profile.eyebrow')}
           title={user?.name?.split(' ')[0] ?? user?.email?.split('@')[0] ?? 'You'}
           titleSize={30}
-          paddingHorizontal={20}
+          paddingHorizontal={16}
         />
       </View>
 
