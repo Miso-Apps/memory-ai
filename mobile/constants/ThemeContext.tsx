@@ -62,34 +62,49 @@ export interface ThemeColors {
   streakBg: string;
   streakBorder: string;
   streakText: string;
+
+  // Recall banner
+  recallBannerBg: string;
+  recallBannerBorder: string;
+
+  // Capture dark modal
+  captureBg: string;
+  captureCard: string;
+  captureBorder: string;
+  captureText: string;
+  captureMuted: string;
+  captureAccent: string;
+
+  // Notification badge
+  badgeRed: string;
 }
 
 // ─── Light theme ───────────────────────────────────────────────────────────
 export const LightColors: ThemeColors = {
   // Backgrounds
-  bg: '#f7f4f0',
-  cardBg: '#ffffff',
-  inputBg: '#f2efe9',
-  subtleBg: '#f2efe9',
-  modalBg: '#ffffff',
+  bg: '#FBF7F2',
+  cardBg: '#FFFFFF',
+  inputBg: '#F5F0EA',
+  subtleBg: '#F5F0EA',
+  modalBg: '#FFFFFF',
 
   // Text
-  textPrimary: '#1c1814',
-  textSecondary: '#5a5248',
-  textTertiary: '#7a7268',
-  textMuted: '#b8b0a7',
-  textPlaceholder: '#c8c0b8',
+  textPrimary: '#2C1810',
+  textSecondary: '#5A4035',
+  textTertiary: '#8B5E3C',
+  textMuted: '#B89080',
+  textPlaceholder: '#C8B0A0',
   buttonText: '#FFFFFF',
 
   // Accent
-  accent: '#b85c20',
-  accentLight: 'rgba(184,92,32,0.10)',
-  accentMid: 'rgba(184,92,32,0.18)',
-  accentSubtle: 'rgba(184,92,32,0.05)',
-  brandAccent: '#b85c20',
-  brandAccentLight: 'rgba(184,92,32,0.10)',
+  accent: '#C2600A',
+  accentLight: '#FFF3E8',
+  accentMid: '#FFE5CB',
+  accentSubtle: 'rgba(194,96,10,0.06)',
+  brandAccent: '#C2600A',
+  brandAccentLight: 'rgba(194,96,10,0.10)',
 
-  // Semantic — unchanged
+  // Semantic
   error: '#EF4444',
   errorBg: 'rgba(239,68,68,0.06)',
   errorText: '#B91C1C',
@@ -97,11 +112,11 @@ export const LightColors: ThemeColors = {
   successBg: 'rgba(5,150,105,0.08)',
   warning: '#D97706',
   warningBg: 'rgba(217,119,6,0.08)',
-  infoBg: 'rgba(184,92,32,0.06)',
+  infoBg: 'rgba(194,96,10,0.06)',
 
   // Borders
-  border: '#ede8e2',
-  borderMed: '#d8d3cc',
+  border: '#E8DDD0',
+  borderMed: '#D4C4B0',
 
   // Type badges
   typeBgText: 'transparent',
@@ -110,16 +125,31 @@ export const LightColors: ThemeColors = {
   typeBgPhoto: 'transparent',
 
   // Tab bar
-  tabBarBg: 'rgba(247,244,240,0.97)',
-  tabBarBorder: '#d8d3cc',
+  tabBarBg: 'rgba(251,247,242,0.97)',
+  tabBarBorder: '#E8DDD0',
 
   // Switches
   switchTrackOff: '#E5E7EB',
 
   // Streak badge
-  streakBg: 'rgba(184,92,32,0.07)',
-  streakBorder: 'rgba(184,92,32,0.18)',
-  streakText: '#b85c20',
+  streakBg: 'rgba(194,96,10,0.07)',
+  streakBorder: 'rgba(194,96,10,0.18)',
+  streakText: '#C2600A',
+
+  // Recall banner
+  recallBannerBg: '#FFF3E8',
+  recallBannerBorder: '#F0C89A',
+
+  // Capture dark modal
+  captureBg: '#1C1108',
+  captureCard: 'rgba(255,255,255,0.06)',
+  captureBorder: 'rgba(255,255,255,0.10)',
+  captureText: '#F5EFE8',
+  captureMuted: 'rgba(245,239,232,0.45)',
+  captureAccent: '#E8844A',
+
+  // Notification badge
+  badgeRed: '#E8442A',
 };
 
 // ─── Dark theme ────────────────────────────────────────────────────────────
@@ -178,6 +208,21 @@ export const DarkColors: ThemeColors = {
   streakBg: 'rgba(184,92,32,0.08)',
   streakBorder: 'rgba(184,92,32,0.20)',
   streakText: '#b85c20',
+
+  // Recall banner
+  recallBannerBg: 'rgba(194,96,10,0.12)',
+  recallBannerBorder: 'rgba(194,96,10,0.30)',
+
+  // Capture dark modal (same in dark mode)
+  captureBg: '#1C1108',
+  captureCard: 'rgba(255,255,255,0.06)',
+  captureBorder: 'rgba(255,255,255,0.10)',
+  captureText: '#F5EFE8',
+  captureMuted: 'rgba(245,239,232,0.45)',
+  captureAccent: '#E8844A',
+
+  // Notification badge
+  badgeRed: '#E8442A',
 };
 
 // ─── Context ───────────────────────────────────────────────────────────────
