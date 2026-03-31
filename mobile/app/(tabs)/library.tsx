@@ -265,6 +265,9 @@ export default function LibraryScreen() {
   const [searching, setSearching] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
   const categoryEffectInitialized = useRef(false);
   const loadMemoriesRef = useRef<(reset?: boolean) => Promise<void>>(async () => { });
   // Tracks whether a streaming search is still in-flight so we can cancel on re-search
@@ -278,6 +281,35 @@ export default function LibraryScreen() {
       // ignore
     }
   }, []);
+
+  const toggleSelectMode = useCallback(() => {
+    setSelectMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const toggleMemorySelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSynthesize = useCallback(async () => {
+    if (selectedIds.size < 2 || isSynthesizing) return;
+    setIsSynthesizing(true);
+    try {
+      const ids = Array.from(selectedIds);
+      setSelectMode(false);
+      setSelectedIds(new Set());
+      router.push(`/chat?synthesis_ids=${ids.join(',')}`);
+    } finally {
+      setIsSynthesizing(false);
+    }
+  }, [selectedIds, isSynthesizing]);
 
   const loadMemories = useCallback(async (reset: boolean = true) => {
     if (!reset && (loading || loadingMore || !hasMore)) return;
@@ -553,16 +585,48 @@ export default function LibraryScreen() {
     };
     return (
       <SwipeableMemoryCard memory={memory} colors={colors} onDelete={handleDelete}>
-        <View style={styles.cardWrapper}>
-          <MemoryCard
-            memory={mem}
-            timeAgo={formatDate(memory.createdAt, t)}
-            onPress={() => router.push({ pathname: '/memory/[id]', params: { id: memory.id } })}
-          />
-        </View>
+        <TouchableOpacity
+          onPress={() => {
+            if (selectMode) {
+              toggleMemorySelection(memory.id);
+            } else {
+              router.push({ pathname: '/memory/[id]', params: { id: memory.id } });
+            }
+          }}
+          activeOpacity={0.85}
+        >
+          <View style={[
+            styles.cardWrapper,
+            styles.memoryCardWrapper,
+            selectMode && selectedIds.has(memory.id) && {
+              borderColor: colors.brandAccent,
+              borderWidth: 1.5,
+              borderRadius: 12,
+            },
+          ]}>
+            {selectMode && (
+              <View style={[
+                styles.checkbox,
+                selectedIds.has(memory.id) && { backgroundColor: colors.brandAccent, borderColor: colors.brandAccent },
+              ]}>
+                {selectedIds.has(memory.id) && (
+                  <Text style={styles.checkboxTick}>✓</Text>
+                )}
+              </View>
+            )}
+            <MemoryCard
+              memory={mem}
+              timeAgo={formatDate(memory.createdAt, t)}
+              onPress={() => {
+                if (selectMode) toggleMemorySelection(memory.id);
+                else router.push({ pathname: '/memory/[id]', params: { id: memory.id } });
+              }}
+            />
+          </View>
+        </TouchableOpacity>
       </SwipeableMemoryCard>
     );
-  }, [colors, handleDelete, t]);
+  }, [colors, handleDelete, selectMode, selectedIds, toggleMemorySelection, t]);
 
   const FILTERS: { key: FilterType; label: string; icon?: React.ComponentType<any> }[] = [
     { key: 'all', label: `${t('library.filterAll')}  ${counts.all}` },
@@ -687,6 +751,23 @@ export default function LibraryScreen() {
               </View>
             </TouchableOpacity>
           ))}
+          <TouchableOpacity
+            onPress={toggleSelectMode}
+            style={[
+              styles.synthesizeBtn,
+              { backgroundColor: colors.brandAccentLight, borderColor: selectMode ? colors.brandAccent : 'transparent' },
+            ]}
+            accessibilityLabel={selectMode ? t('library.cancelSelect') : t('library.synthesize')}
+          >
+            <Sparkles size={12} color={colors.brandAccent} />
+            <Text style={[styles.synthesizeBtnText, { color: colors.brandAccent }]}>
+              {selectMode
+                ? selectedIds.size > 0
+                  ? t('library.selectedCount', { count: selectedIds.size })
+                  : t('library.cancelSelect')
+                : t('library.synthesize')}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -755,6 +836,28 @@ export default function LibraryScreen() {
           </View>
         }
       />
+
+      {/* ── Synthesize action bar ── */}
+      {selectMode && selectedIds.size > 0 && (
+        <View style={[styles.actionBar, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccent }]}>
+          <Text style={[styles.actionBarText, { color: colors.textSecondary }]}>
+            {t('library.selectedCount', { count: selectedIds.size })}
+          </Text>
+          <TouchableOpacity
+            onPress={handleSynthesize}
+            disabled={selectedIds.size < 2 || isSynthesizing}
+            style={[
+              styles.synthesizeActionBtn,
+              { backgroundColor: colors.brandAccent },
+              (selectedIds.size < 2 || isSynthesizing) && { opacity: 0.5 },
+            ]}
+          >
+            <Text style={[styles.synthesizeActionBtnText, { color: colors.buttonText }]}>
+              {isSynthesizing ? t('library.synthesizing') : t('library.synthesizeAction')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* ── Category picker Modal ── */}
       <Modal
@@ -1137,6 +1240,69 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '400',
+  },
+
+  // ── Synthesis selection UI ───────────────────────────────
+  synthesizeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1.5,
+    marginLeft: 'auto',
+  },
+  synthesizeBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  memoryCardWrapper: {
+    position: 'relative',
+  },
+  checkbox: {
+    position: 'absolute',
+    top: 12,
+    left: -8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'transparent',
+    zIndex: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxTick: {
+    fontSize: 11,
+    color: 'white',
+    fontWeight: '700',
+  },
+  actionBar: {
+    position: 'absolute',
+    bottom: 90,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  actionBarText: {
+    fontSize: 13,
+  },
+  synthesizeActionBtn: {
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  synthesizeActionBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 
