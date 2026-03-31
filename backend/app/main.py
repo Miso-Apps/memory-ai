@@ -5,6 +5,11 @@ from app.api import auth, memories, ai, storage, categories, preferences, insigh
 from app.database import init_db
 from app.config import settings
 
+# Register new models so Base.metadata.create_all picks them up
+import app.models.intention  # noqa: F401
+import app.models.agent_insight  # noqa: F401
+import app.models.device_token  # noqa: F401
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
