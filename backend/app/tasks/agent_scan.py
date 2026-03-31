@@ -6,11 +6,9 @@ do not block the others.
 """
 import logging
 import math
-import uuid
 from datetime import datetime, timezone, timedelta
-from typing import Optional
 
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
@@ -303,6 +301,8 @@ async def _scan_intention_loop(db: AsyncSession, user_id) -> bool:
 
     memory_ids = [intention.memory_id] + [m.id for m in related[:3]]
 
+    intention.notified_at = now  # mark before commit inside _queue_and_send
+
     await _queue_and_send(
         db,
         user_id,
@@ -312,9 +312,6 @@ async def _scan_intention_loop(db: AsyncSession, user_id) -> bool:
         synthesis=synthesis_text,
         memory_ids=memory_ids,
     )
-
-    intention.notified_at = now
-    await db.commit()
     return True
 
 
