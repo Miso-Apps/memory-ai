@@ -1,71 +1,79 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform, Animated } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Platform,
+  Animated,
+  Text,
+} from 'react-native';
 import { Tabs, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../../constants/ThemeContext';
+import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import {
   Home,
   BookOpen,
-  Plus,
-  BarChart3,
+  Bell,
   User,
+  Plus,
   type LucideIcon,
 } from 'lucide-react-native';
 
-// ─── Floating dock icon with subtle active state ───────────────────────────────
+// ─── Tab icon: filled when active + amber dot, no background box ──────────────
 function TabIcon({
   Icon,
   focused,
-  size = 20,
+  size = 24,
 }: {
   Icon: LucideIcon;
   focused: boolean;
   size?: number;
 }) {
   const { colors } = useTheme();
-  const scaleAnim = React.useRef(new Animated.Value(focused ? 1 : 0.98)).current;
-  const opacityAnim = React.useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  React.useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: focused ? 1 : 0.98,
-        useNativeDriver: true,
-        tension: 260,
-        friction: 18,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: focused ? 1 : 0,
-        duration: 170,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [focused]);
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <View style={styles.iconContainer}>
-        <Animated.View
-          style={[
-            styles.iconBackground,
-            {
-              backgroundColor: colors.brandAccentLight,
-              opacity: opacityAnim,
-            },
-          ]}
-        />
-        <Icon
-          size={size}
-          color={focused ? colors.textPrimary : colors.textMuted}
-          strokeWidth={focused ? 2.3 : 2}
-        />
-      </View>
-    </Animated.View>
+    <View style={styles.iconWrap}>
+      <Icon
+        size={size}
+        color={focused ? colors.textPrimary : colors.textMuted}
+        strokeWidth={focused ? 2.2 : 1.6}
+        fill={focused ? colors.textPrimary : 'none'}
+      />
+      {focused && (
+        <View style={[styles.activeDot, { backgroundColor: colors.accent }]} />
+      )}
+    </View>
   );
 }
 
-// ─── Tab button with haptic feedback ────────────────────────────────────────────
+// ─── Recall tab with badge ────────────────────────────────────────────────────
+function RecallTabIcon({ focused }: { focused: boolean }) {
+  const { colors } = useTheme();
+  const count = useRecallBadgeStore((s) => s.count);
+
+  return (
+    <View style={styles.iconWrap}>
+      <Bell
+        size={24}
+        color={focused ? colors.textPrimary : colors.textMuted}
+        strokeWidth={focused ? 2.2 : 1.6}
+        fill={focused ? colors.textPrimary : 'none'}
+      />
+      {count > 0 && (
+        <View style={[styles.badge, { backgroundColor: colors.badgeRed }]}>
+          <Text style={styles.badgeText}>{count > 9 ? '9+' : count}</Text>
+        </View>
+      )}
+      {focused && (
+        <View style={[styles.activeDot, { backgroundColor: colors.accent }]} />
+      )}
+    </View>
+  );
+}
+
+// ─── Tab button with haptic feedback ─────────────────────────────────────────
 function EnhancedTabButton({ children, onPress, ...rest }: any) {
   const handlePress = (e: any) => {
     if (Platform.OS === 'ios') {
@@ -75,7 +83,6 @@ function EnhancedTabButton({ children, onPress, ...rest }: any) {
     }
     onPress?.(e);
   };
-
   return (
     <TouchableOpacity {...rest} onPress={handlePress} activeOpacity={0.7}>
       {children}
@@ -83,10 +90,8 @@ function EnhancedTabButton({ children, onPress, ...rest }: any) {
   );
 }
 
-// ─── Center add button integrated with label ───────────────────────────────────
+// ─── Circular dark FAB ────────────────────────────────────────────────────────
 function CreateTabButton({ style, ...rest }: any) {
-  const { colors } = useTheme();
-  const { t } = useTranslation();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
   const handlePress = () => {
@@ -100,7 +105,7 @@ function CreateTabButton({ style, ...rest }: any) {
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 0.95,
+      toValue: 0.93,
       useNativeDriver: true,
       tension: 280,
       friction: 14,
@@ -119,62 +124,53 @@ function CreateTabButton({ style, ...rest }: any) {
   return (
     <TouchableOpacity
       {...rest}
-      style={[style, styles.createTabWrapper]}
+      style={[style, styles.fabWrapper]}
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       activeOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel={t('tabs.capture')}
+      accessibilityLabel="Lưu nhanh"
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-        <View style={[styles.createBtn, { backgroundColor: colors.brandAccent }]}>
-          <Plus size={18} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
+      <Animated.View style={[styles.fab, { transform: [{ scale: scaleAnim }] }]}>
+        <Plus size={22} color="#FFFFFF" strokeWidth={2.2} />
       </Animated.View>
     </TouchableOpacity>
   );
 }
 
 export default function TabsLayout() {
-  const { t } = useTranslation();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
       screenOptions={{
+        headerShown: false,
+        tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
         tabBarActiveTintColor: colors.textPrimary,
         tabBarInactiveTintColor: colors.textMuted,
-        headerShown: false,
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
           borderTopWidth: 1,
           borderColor: colors.tabBarBorder,
-          borderRadius: 24,
-          marginHorizontal: 12,
-          marginBottom: Platform.OS === 'ios' ? 16 : 12,
-          height: Platform.OS === 'ios' ? 84 : 78,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? 8 : 7,
+          height: Platform.OS === 'ios' ? 82 : 72,
+          paddingTop: 4,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 10,
           position: 'absolute',
           ...Platform.select({
             ios: {
               shadowColor: '#000',
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.12,
-              shadowRadius: 16,
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
             },
-            android: {
-              elevation: 10,
-            },
+            android: { elevation: 8 },
           }),
         },
-        tabBarItemStyle: {
-          paddingTop: 6,
-        },
-        tabBarShowLabel: false,
-        tabBarHideOnKeyboard: true,
+        tabBarItemStyle: { paddingTop: 4 },
       }}
     >
       <Tabs.Screen
@@ -193,7 +189,6 @@ export default function TabsLayout() {
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
       />
-      {/* ─── Center Create tab ─── */}
       <Tabs.Screen
         name="create"
         options={{
@@ -203,10 +198,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="insights"
+        name="recall"
         options={{
-          title: t('tabs.insights'),
-          tabBarIcon: ({ focused }) => <TabIcon Icon={BarChart3} focused={focused} />,
+          title: 'Nhắc',
+          tabBarIcon: ({ focused }) => <RecallTabIcon focused={focused} />,
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
       />
@@ -218,55 +213,69 @@ export default function TabsLayout() {
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
       />
-      {/* Hidden screens */}
+      {/* Hidden screens — not shown in tab bar */}
+      <Tabs.Screen name="insights" options={{ href: null }} />
       <Tabs.Screen name="chat" options={{ href: null }} />
-      <Tabs.Screen name="recall" options={{ href: null }} />
       <Tabs.Screen name="archive" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
-  iconContainer: {
-    width: 36,
-    height: 36,
+  iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
-  },
-  iconBackground: {
-    position: 'absolute',
     width: 32,
     height: 32,
-    borderRadius: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.07,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    position: 'relative',
   },
-  createTabWrapper: {
+  activeDot: {
+    position: 'absolute',
+    bottom: -6,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+  },
+  badge: {
+    position: 'absolute',
+    top: -3,
+    right: -5,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: '#FBF7F2',
+  },
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    lineHeight: 12,
+  },
+  fabWrapper: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -8,
+    marginTop: -10,
   },
-  createBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
+  fab: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#2C1810',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#2C1810',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.28,
+        shadowRadius: 10,
+      },
+      android: { elevation: 6 },
+    }),
   },
 });
