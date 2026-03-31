@@ -174,8 +174,8 @@ export const DarkColors: ThemeColors = {
   accentLight: 'rgba(209,128,74,0.16)',
   accentMid: 'rgba(209,128,74,0.24)',
   accentSubtle: 'rgba(209,128,74,0.10)',
-  brandAccent: '#b85c20',
-  brandAccentLight: 'rgba(184,92,32,0.10)',
+  brandAccent: '#C2600A',
+  brandAccentLight: 'rgba(194,96,10,0.10)',
 
   // Semantic — unchanged
   error: '#EF4444',
@@ -205,9 +205,9 @@ export const DarkColors: ThemeColors = {
   switchTrackOff: '#2A2A2E',
 
   // Streak badge
-  streakBg: 'rgba(184,92,32,0.08)',
-  streakBorder: 'rgba(184,92,32,0.20)',
-  streakText: '#b85c20',
+  streakBg: 'rgba(194,96,10,0.08)',
+  streakBorder: 'rgba(194,96,10,0.20)',
+  streakText: '#C2600A',
 
   // Recall banner
   recallBannerBg: 'rgba(194,96,10,0.12)',
