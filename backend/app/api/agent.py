@@ -119,6 +119,7 @@ async def dismiss_insight(
     if not insight:
         raise HTTPException(status_code=404, detail="Insight not found")
 
-    insight.dismissed_at = datetime.now(timezone.utc)
-    await db.commit()
+    if not insight.dismissed_at:
+        insight.dismissed_at = datetime.now(timezone.utc)
+        await db.commit()
     return {"ok": True}

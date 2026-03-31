@@ -44,3 +44,4 @@ async def test_extract_and_save_intention_skips_when_none():
             await _extract_and_save_intention(memory_id, user_id, "The weather was nice")
 
             mock_db.add.assert_not_called()
+            mock_db.commit.assert_not_awaited()
