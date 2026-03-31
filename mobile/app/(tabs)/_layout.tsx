@@ -14,7 +14,7 @@ import { useTheme } from '../../constants/ThemeContext';
 import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import {
   Home,
-  BookOpen,
+  Grid2x2,
   Bell,
   User,
   Plus,
@@ -185,7 +185,7 @@ export default function TabsLayout() {
         name="library"
         options={{
           title: t('tabs.library'),
-          tabBarIcon: ({ focused }) => <TabIcon Icon={BookOpen} focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon Icon={Grid2x2} focused={focused} />,
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
       />
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: '#2C1810',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.28,
-        shadowRadius: 10,
+        shadowOpacity: 0.22,
+        shadowRadius: 18,
       },
       android: { elevation: 6 },
     }),
