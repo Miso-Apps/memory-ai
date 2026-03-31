@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { chatApi, ChatMessage, ChatSource } from '../../services/api';
+import { chatApi, agentApi, ChatMessage, ChatSource } from '../../services/api';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
@@ -133,7 +133,13 @@ function TypingIndicator({ colors }: { colors: ThemeColors }) {
 export default function ChatScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const params = useLocalSearchParams<{ prefill?: string }>();
+  const { prefill, memory_id, agent_insight_id, synthesis_ids } = useLocalSearchParams<{
+    prefill?: string;
+    memory_id?: string;
+    agent_insight_id?: string;
+    synthesis_ids?: string;
+  }>();
+  const params = { prefill };
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const { preferences } = useSettingsStore();
@@ -146,6 +152,9 @@ export default function ChatScreen() {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [prefillApplied, setPrefillApplied] = useState(false);
+  const [agentOpening, setAgentOpening] = useState<string | null>(null);
+  const [agentInsightId, setAgentInsightId] = useState<string | null>(null);
+  const [isLoadingAgent, setIsLoadingAgent] = useState(false);
 
   const loadSuggestions = useCallback(async () => {
     try {
@@ -188,6 +197,40 @@ export default function ChatScreen() {
     setPrefillApplied(true);
     setTimeout(() => inputRef.current?.focus(), 150);
   }, [messages.length, params.prefill, prefillApplied]);
+
+  useEffect(() => {
+    if (agent_insight_id) {
+      loadAgentInsight(agent_insight_id);
+    } else if (synthesis_ids) {
+      loadSynthesis(synthesis_ids.split(','));
+    }
+  }, [agent_insight_id, synthesis_ids]);
+
+  async function loadAgentInsight(insightId: string) {
+    setIsLoadingAgent(true);
+    try {
+      const insight = await agentApi.getInsight(insightId);
+      setAgentInsightId(insightId);
+      setAgentOpening(insight.synthesis);
+      await agentApi.markOpened(insightId);
+    } catch (e) {
+      console.warn('Failed to load agent insight:', e);
+    } finally {
+      setIsLoadingAgent(false);
+    }
+  }
+
+  async function loadSynthesis(ids: string[]) {
+    setIsLoadingAgent(true);
+    try {
+      const result = await agentApi.synthesizeMemories(ids);
+      setAgentOpening(result.synthesis);
+    } catch (e) {
+      console.warn('Failed to load synthesis:', e);
+    } finally {
+      setIsLoadingAgent(false);
+    }
+  }
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -379,6 +422,39 @@ export default function ChatScreen() {
             </View>
           )}
 
+          {/* Agent opening state */}
+          {isLoadingAgent && (
+            <View style={styles.agentLoadingRow}>
+              <ActivityIndicator size="small" color={colors.brandAccent} />
+              <Text style={[styles.agentLoadingText, { color: colors.textMuted }]}>
+                {t('chat.agentThinking')}
+              </Text>
+            </View>
+          )}
+
+          {agentOpening && !isLoadingAgent && (
+            <View style={[styles.agentOpeningCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <View style={[styles.agentOpeningHeader, { borderLeftColor: colors.brandAccent }]}>
+                <Brain size={12} color={colors.brandAccent} />
+                <Text style={[styles.agentOpeningLabel, { color: colors.brandAccent }]}>
+                  {t('chat.agentLabel')}
+                </Text>
+              </View>
+              <SimpleMarkdown content={agentOpening} textColor={colors.textPrimary} colors={colors} />
+              <View style={styles.agentReplyChips}>
+                {(['chat.replyYes', 'chat.replyNo', 'chat.replyTellMore'] as const).map((key) => (
+                  <TouchableOpacity
+                    key={key}
+                    onPress={() => setInputText(t(key))}
+                    style={[styles.agentChip, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                  >
+                    <Text style={[styles.agentChipText, { color: colors.textSecondary }]}>{t(key)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
           {/* Chat messages */}
           {messages.map((msg) => (
             <ChatBubble key={msg.id} message={msg} colors={colors} t={t} />
@@ -540,6 +616,51 @@ const styles = StyleSheet.create({
   },
   dotDelay1: { opacity: 0.35 },
   dotDelay2: { opacity: 0.2 },
+
+  // Agent opening
+  agentLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 16,
+  },
+  agentLoadingText: {
+    fontSize: 13,
+  },
+  agentOpeningCard: {
+    margin: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 14,
+  },
+  agentOpeningHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderLeftWidth: 2,
+    paddingLeft: 8,
+    marginBottom: 10,
+  },
+  agentOpeningLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  agentReplyChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 12,
+  },
+  agentChip: {
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  agentChipText: {
+    fontSize: 12,
+  },
 
   // Input bar
   inputBar: {
