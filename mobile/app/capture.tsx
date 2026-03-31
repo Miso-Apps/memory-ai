@@ -14,6 +14,7 @@ import {
   ScrollView,
   AccessibilityInfo,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import * as ExpoClipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -151,8 +152,8 @@ function BottomModeBar({
   const { colors } = useTheme();
 
   return (
-    <View style={[modeBarStyles.wrap, { backgroundColor: colors.bg }]}>
-      <View style={[modeBarStyles.barShell, { backgroundColor: colors.inputBg, borderColor: colors.border }]}> 
+    <View style={[modeBarStyles.wrap, { backgroundColor: colors.captureBg }]}>
+      <View style={[modeBarStyles.barShell, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: colors.captureBorder }]}>
         {MODE_DEFINITIONS.map(({ key }) => {
           const active = key === mode;
           const Icon = MODE_META[key].icon;
@@ -162,8 +163,8 @@ function BottomModeBar({
               style={[
                 modeBarStyles.slot,
                 active && {
-                  backgroundColor: colors.brandAccentLight,
-                  borderColor: colors.brandAccent,
+                  backgroundColor: colors.captureAccent,
+                  borderColor: colors.captureAccent,
                   borderRadius: 12,
                 },
                 !active && { opacity: 0.75 },
@@ -176,12 +177,12 @@ function BottomModeBar({
             >
               <Icon
                 size={17}
-                color={active ? colors.brandAccent : colors.textSecondary}
+                color={active ? colors.captureBg : colors.captureMuted}
                 strokeWidth={active ? 2.4 : 2.1}
               />
               <Text style={[
                 modeBarStyles.modeTabText,
-                { color: active ? colors.brandAccent : colors.textSecondary },
+                { color: active ? colors.captureBg : colors.captureMuted },
               ]}>
                 {t(MODE_META[key].navLabelKey)}
               </Text>
@@ -349,22 +350,22 @@ function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
         </TouchableOpacity>
       </View>
 
-      <Text style={[voiceStyles.statusText, { color: colors.textPrimary }]}>
+      <Text style={[voiceStyles.statusText, { color: colors.captureText }]}>
         {status === 'idle' && t('capture.tapToRecord')}
         {status === 'recording' && `${t('capture.recording')} ${fmtDuration(duration)}`}
         {status === 'uploading' && t('capture.processingAudio')}
         {status === 'done' && (transcription ? t('capture.transcriptionReady') : t('capture.recordingSaved'))}
       </Text>
       {status === 'recording' && (
-        <Text style={[voiceStyles.hintText, { color: colors.textMuted }]}>{t('capture.tapToStop')}</Text>
+        <Text style={[voiceStyles.hintText, { color: colors.captureMuted }]}>{t('capture.tapToStop')}</Text>
       )}
 
       {/* Transcription card */}
-      <View style={[voiceStyles.txCard, { backgroundColor: colors.cardBg }]}>
-        <Text style={[voiceStyles.txLabel, { color: colors.textMuted }]}>{t('capture.modeVoice')}</Text>
+      <View style={[voiceStyles.txCard, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder, borderWidth: 1 }]}>
+        <Text style={[voiceStyles.txLabel, { color: colors.captureMuted }]}>{t('capture.modeVoice')}</Text>
         <Text style={[
           voiceStyles.txText,
-          { color: status === 'done' && transcription ? colors.textPrimary : colors.textPlaceholder },
+          { color: status === 'done' && transcription ? colors.captureText : colors.captureMuted },
           !transcription && { fontStyle: 'italic' },
         ]}>
           {transcription ?? t('capture.tapToRecord')}
@@ -662,7 +663,7 @@ const imageStyles = StyleSheet.create({
 
 export default function CaptureScreen() {
   const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
   // Smart default: explicit param > user preference > 'text'
@@ -845,27 +846,26 @@ export default function CaptureScreen() {
     mode === 'voice' ? isVoiceReady :
       mode === 'photo' ? isImageReady :
         content.trim().length > 0;
-  const helperTextColor = isDark ? colors.textSecondary : colors.textMuted;
-  const textModePlaceholderColor = isDark ? colors.textSecondary : colors.textPlaceholder;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.captureBg }]} edges={['top', 'bottom']}>
+      <StatusBar style="light" />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* ── Header ── */}
-        <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.bg }]}>
+        <View style={[styles.header, { borderBottomColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
           <TouchableOpacity
             onPress={handleCancel}
             style={styles.closeBtn}
             activeOpacity={0.7}
           >
-            <X size={20} color={colors.textSecondary} strokeWidth={2.2} />
+            <X size={20} color={colors.captureMuted} strokeWidth={2.2} />
           </TouchableOpacity>
 
           <View style={styles.titleWrap}>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>
+            <Text style={[styles.title, { color: colors.captureText }]}>
               {t('capture.title')}
             </Text>
           </View>
@@ -873,16 +873,13 @@ export default function CaptureScreen() {
           <TouchableOpacity
             onPress={handleSave}
             disabled={!canSave || isSaving}
-            style={[
-              styles.saveBtn,
-              { backgroundColor: colors.brandAccent, opacity: canSave && !isSaving ? 1 : 0.38 },
-            ]}
+            style={styles.saveBtn}
             activeOpacity={0.85}
           >
             {isSaving ? (
-              <ActivityIndicator color="#FFFFFF" size="small" />
+              <ActivityIndicator color={colors.captureAccent} size="small" />
             ) : (
-              <Text style={styles.saveBtnText}>{t('capture.save')}</Text>
+              <Text style={[styles.saveBtnText, { color: canSave && !isSaving ? colors.captureAccent : colors.captureMuted }]}>{t('capture.save')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -890,29 +887,29 @@ export default function CaptureScreen() {
         {mode === 'text' || mode === 'link' ? (
           <View style={styles.composerScreenWrap}>
             <View style={[styles.inputCard, {
-              backgroundColor: colors.cardBg,
-              borderColor: isDark ? colors.borderMed : colors.border,
+              backgroundColor: colors.captureCard,
+              borderColor: colors.captureBorder,
               borderWidth: 1,
-            }]}> 
+            }]}>
               {/* ── Composer header (text mode) ── */}
               {mode === 'text' && (
                 <View style={styles.composerHeaderRow}>
-                  <View style={[styles.composerBadge, { backgroundColor: colors.brandAccentLight }]}>
-                    <FileText size={16} color={colors.brandAccent} strokeWidth={2.3} />
+                  <View style={[styles.composerBadge, { backgroundColor: 'rgba(232,132,74,0.15)' }]}>
+                    <FileText size={16} color={colors.captureAccent} strokeWidth={2.3} />
                   </View>
-                  <Text style={[styles.composerHeaderLabel, { color: helperTextColor }]}> 
+                  <Text style={[styles.composerHeaderLabel, { color: colors.captureMuted }]}>
                     {t('capture.modeTextDesc')}
                   </Text>
                 </View>
               )}
               <TextInput
                 style={[styles.composerInput, {
-                  color: colors.textPrimary,
+                  color: colors.captureText,
                   fontFamily: 'DMSans_400Regular',
                   fontSize: 16,
                 }]}
                 placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                placeholderTextColor={mode === 'text' ? textModePlaceholderColor : colors.textPlaceholder}
+                placeholderTextColor={colors.captureMuted}
                 multiline={mode === 'text'}
                 autoFocus
                 value={content}
@@ -936,7 +933,7 @@ export default function CaptureScreen() {
                   <View style={styles.clipInCardLeft}>
                     <Link2 size={13} color={colors.brandAccent} strokeWidth={2.4} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.clipTitle, { color: helperTextColor }]}>{t('capture.clipboardDetected')}</Text>
+                      <Text style={[styles.clipTitle, { color: colors.captureMuted }]}>{t('capture.clipboardDetected')}</Text>
                       <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
                     </View>
                   </View>
@@ -948,14 +945,14 @@ export default function CaptureScreen() {
                       <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={[styles.clipDismiss, { color: helperTextColor }]}>✕</Text>
+                      <Text style={[styles.clipDismiss, { color: colors.captureMuted }]}>✕</Text>
                     </TouchableOpacity>
                   </View>
                 </Animated.View>
               ) : null}
               {mode === 'text' && (
                 <View>
-                  <View style={[styles.inputDivider, { borderColor: colors.border }]} />
+                  <View style={[styles.inputDivider, { borderColor: colors.captureBorder }]} />
                   <View style={styles.composerFooterRow}>
                     <ScrollView
                       horizontal
@@ -971,22 +968,25 @@ export default function CaptureScreen() {
                             setContent((prev) => (prev ? `${label} ${prev}` : `${label} `));
                           }}
                           style={[styles.hintChip, {
-                            backgroundColor: isDark ? chip.darkBg : chip.bg,
-                            borderColor: isDark ? chip.darkBorder : chip.border,
+                            backgroundColor: 'rgba(232,132,74,0.18)',
+                            borderColor: 'rgba(232,132,74,0.5)',
                           }]}
                         >
-                          <Text style={[styles.hintChipText, { color: isDark ? chip.darkText : chip.text }]}>{t(chip.labelKey)}</Text>
+                          <Text style={[styles.hintChipText, { color: colors.captureAccent }]}>{t(chip.labelKey)}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
                     {content.length > 0 && (
                       <Text style={[styles.charCounter, {
-                        color: content.length > TEXT_WARN_THRESHOLD ? colors.warning : helperTextColor,
+                        color: content.length > TEXT_WARN_THRESHOLD ? colors.warning : colors.captureMuted,
                       }]}>
                         {content.length}
                       </Text>
                     )}
                   </View>
+                  <Text style={[styles.aiHint, { color: colors.captureMuted }]}>
+                    AI sẽ tóm tắt sau khi lưu
+                  </Text>
                 </View>
               )}
             </View>
@@ -1001,9 +1001,9 @@ export default function CaptureScreen() {
             <ImageUpload onImageData={(data) => { setImageData(data); if (!data.picked) setPhotoNote(''); }} />
             {imageData.picked && !imageData.isUploading && (
               <TextInput
-                style={[styles.photoNoteInput, { color: colors.textPrimary, backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                style={[styles.photoNoteInput, { color: colors.captureText, backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
                 placeholder={t('capture.photoNotePlaceholder')}
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.captureMuted}
                 multiline
                 value={photoNote}
                 onChangeText={setPhotoNote}
@@ -1068,7 +1068,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontFamily: 'DMSans_600SemiBold',
     fontSize: 15,
-    color: '#FFFFFF',
   },
 
   // ── Composer (text / link) ──
@@ -1186,6 +1185,15 @@ const styles = StyleSheet.create({
     fontFamily: 'DMSans_600SemiBold',
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  // ── AI hint ──
+  aiHint: {
+    fontSize: 11,
+    opacity: 0.7,
+    marginTop: 6,
+    paddingHorizontal: 2,
+    fontFamily: SANS_FONT,
   },
 
   // ── Success overlay ──
