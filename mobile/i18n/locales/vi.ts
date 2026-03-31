@@ -200,6 +200,11 @@ const vi = {
     aiInsight: 'Gợi ý AI',
     filterCategory: 'Lọc theo danh mục',
     pressEnterToSearch: 'Nhấn return để tìm kiếm',
+    synthesize: '✦ Tổng hợp',
+    cancelSelect: 'Hủy',
+    selectedCount: 'Đã chọn {{count}}',
+    synthesizing: 'Đang tổng hợp...',
+    synthesizeAction: 'Tổng hợp →',
   },
 
   // System category names (used in library, memory badges)
@@ -544,6 +549,11 @@ const vi = {
     defaultSuggestion1: 'Tôi đã lưu gì tuần này?',
     defaultSuggestion2: 'Tóm tắt ghi chú gần đây của tôi',
     defaultSuggestion3: 'Chủ đề chính trong ký ức của tôi là gì?',
+    agentLabel: 'Tác nhân ký ức',
+    agentThinking: 'Đang phân tích...',
+    replyYes: 'Vẫn còn liên quan',
+    replyNo: 'Không còn liên quan nữa',
+    replyTellMore: 'Cho tôi biết thêm',
   },
 
   // Recall screen

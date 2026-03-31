@@ -201,6 +201,11 @@ const en = {
     aiInsight: 'AI Insight',
     filterCategory: 'Filter by category',
     pressEnterToSearch: 'Press return to search',
+    synthesize: '✦ Synthesize',
+    cancelSelect: 'Cancel',
+    selectedCount: '{{count}} selected',
+    synthesizing: 'Synthesizing...',
+    synthesizeAction: 'Synthesize →',
   },
 
   // System category names (used in library, memory badges)
@@ -561,6 +566,11 @@ const en = {
     defaultSuggestion1: 'What did I save this week?',
     defaultSuggestion2: 'Summarize my recent notes',
     defaultSuggestion3: 'What are the main themes in my memories?',
+    agentLabel: 'Memory Agent',
+    agentThinking: 'Agent is thinking...',
+    replyYes: 'Yes, still relevant',
+    replyNo: "It's no longer relevant",
+    replyTellMore: 'Tell me more',
   },
 
   // Recall screen
