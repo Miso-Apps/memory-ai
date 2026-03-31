@@ -5,6 +5,7 @@ const vi = {
     library: 'Ký ức',
     insights: 'Thống kê',
     chat: 'Hỏi AI',
+    recall: 'Nhắc',
     profile: 'Tài khoản',
     capture: 'Thêm',
   },
@@ -56,6 +57,14 @@ const vi = {
       label: 'Phản hồi theo luồng',
       description: 'Hiển thị câu trả lời AI từng từ khi được tạo',
     },
+
+    totalMemories: 'tổng cộng',
+    recallRate: 'recall rate',
+    insightThisWeek: 'INSIGHT TUẦN NÀY',
+    activity4Weeks: 'Hoạt động 4 tuần qua',
+    notificationsSettings: 'Cài đặt nhắc nhở',
+    appearance: 'Giao diện',
+    accountSecurity: 'Tài khoản & bảo mật',
   },
 
   // Account modal
@@ -161,6 +170,11 @@ const vi = {
     insightWeekSub: '{{count}} ký ức tuần này',
     capturePromptText: 'Bạn đang nghĩ gì hôm nay?',
     capturePromptA11y: 'Lưu một ký ức mới',
+    thisWeek: 'tuần này',
+    newRecalls: 'nhắc mới',
+    recallBannerLabel: 'Nhắc lại hôm nay',
+    recallBannerNew: '{{count}} mới',
+    recallBannerCta: 'Xem ngay →',
   },
 
   // Library screen
@@ -351,6 +365,7 @@ const vi = {
     hintDecision: '🎯 Quyết định',
     hintConversation: '💬 Cuộc trò chuyện',
     hintLearning: '📚 Học hỏi',
+    captureAction: 'Lưu nhanh',
   },
 
   // Language switcher
@@ -528,6 +543,11 @@ const vi = {
     confidence: 'Độ tin cậy: {{value}}%',
     dismiss: 'Bỏ qua',
     open: 'Mở',
+    viewAgain: 'Xem lại',
+    notReviewed: 'Chưa xem lại',
+    countLine: '{{count}} gợi ý hôm nay',
+    aiChatPrompt: '"Tôi đang nghĩ về gì nhiều nhất?"',
+    askAI: 'Hỏi AI:',
   },
 } as const;
 

@@ -5,6 +5,7 @@ const en = {
     library: 'Memories',
     insights: 'Insights',
     chat: 'Ask AI',
+    recall: 'Recall',
     profile: 'Account',
     capture: 'Add',
   },
@@ -56,6 +57,14 @@ const en = {
       label: 'Streaming responses',
       description: 'Show AI replies word-by-word as they are generated',
     },
+
+    totalMemories: 'total',
+    recallRate: 'recall rate',
+    insightThisWeek: 'INSIGHT THIS WEEK',
+    activity4Weeks: 'Activity past 4 weeks',
+    notificationsSettings: 'Notification settings',
+    appearance: 'Appearance',
+    accountSecurity: 'Account & security',
   },
 
   // Account modal
@@ -162,6 +171,11 @@ const en = {
     insightWeekSub: '{{count}} memories this week',
     capturePromptText: "What's on your mind today?",
     capturePromptA11y: 'Capture a new memory',
+    thisWeek: 'this week',
+    newRecalls: 'new recalls',
+    recallBannerLabel: 'Recall today',
+    recallBannerNew: '{{count}} new',
+    recallBannerCta: 'See now →',
   },
 
   // Library screen
@@ -352,6 +366,7 @@ const en = {
     hintDecision: '🎯 Decision',
     hintConversation: '💬 Conversation',
     hintLearning: '📚 Learning',
+    captureAction: 'Quick save',
   },
 
   // Language switcher
@@ -545,6 +560,11 @@ const en = {
     confidence: 'Confidence: {{value}}%',
     dismiss: 'Dismiss',
     open: 'Open',
+    viewAgain: 'Review',
+    notReviewed: 'Not reviewed',
+    countLine: '{{count}} suggestions today',
+    aiChatPrompt: '"What have I been thinking about most?"',
+    askAI: 'Ask AI:',
   },
 } as const;
 
