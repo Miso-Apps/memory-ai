@@ -45,3 +45,34 @@ async def test_extract_and_save_intention_skips_when_none():
 
             mock_db.add.assert_not_called()
             mock_db.commit.assert_not_awaited()
+
+
+def test_cosine_similarity_same_vector():
+    from app.tasks.agent_scan import _cosine_sim
+    v = [1.0, 0.0, 0.0]
+    assert abs(_cosine_sim(v, v) - 1.0) < 1e-6
+
+
+def test_cosine_similarity_orthogonal_vectors():
+    from app.tasks.agent_scan import _cosine_sim
+    assert abs(_cosine_sim([1.0, 0.0], [0.0, 1.0])) < 1e-6
+
+
+def test_cluster_embeddings_groups_similar():
+    from app.tasks.agent_scan import _cluster_embeddings
+    from unittest.mock import MagicMock
+
+    def make_mem(emb):
+        m = MagicMock()
+        m.embedding = emb
+        return m
+
+    # Two very similar, one orthogonal
+    m1 = make_mem([1.0, 0.01])
+    m2 = make_mem([1.0, 0.02])
+    m3 = make_mem([0.0, 1.0])
+    clusters = _cluster_embeddings([m1, m2, m3], threshold=0.95)
+    # m1 and m2 should be in one cluster; m3 in another
+    assert len(clusters) == 2
+    sizes = sorted(len(c) for c in clusters)
+    assert sizes == [1, 2]

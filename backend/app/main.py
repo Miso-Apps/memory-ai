@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.api import auth, memories, ai, storage, categories, preferences, insights, decisions, agent
 from app.database import init_db
 from app.config import settings
@@ -11,11 +12,18 @@ import app.models.agent_insight  # noqa: F401
 import app.models.device_token  # noqa: F401
 
 
+scheduler = AsyncIOScheduler(timezone="UTC")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Create database tables on startup."""
+    """Startup: create tables + start nightly agent scan scheduler."""
     await init_db()
+    from app.tasks.agent_scan import run_nightly_scan
+    scheduler.add_job(run_nightly_scan, "cron", hour=2, minute=0, id="nightly_agent_scan")
+    scheduler.start()
     yield
+    scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
