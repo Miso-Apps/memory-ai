@@ -47,6 +47,10 @@ class ReflectRequest(BaseModel):
     memory_id: Optional[str] = None
 
 
+class SynthesizeRequest(BaseModel):
+    memory_ids: List[str]
+
+
 def _memory_to_response_payload(m: Memory) -> dict:
     """Build a MemoryResponse-compatible payload without triggering lazy loads."""
     row = m.__dict__
@@ -1291,6 +1295,47 @@ async def chat_with_memories(
             for m in relevant
         ],
         "total_memories": total_memories,
+    }
+
+
+@router.post("/synthesize", response_model=dict)
+async def synthesize_memories(
+    body: SynthesizeRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Synthesize 2–20 user-selected memories into a single AI insight."""
+    if len(body.memory_ids) < 2 or len(body.memory_ids) > 20:
+        raise HTTPException(status_code=400, detail="Provide 2–20 memory IDs")
+
+    try:
+        ids = [uuid.UUID(mid) for mid in body.memory_ids]
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid memory ID format")
+
+    result = await db.execute(
+        select(Memory).where(
+            and_(
+                Memory.id.in_(ids),
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+            )
+        )
+    )
+    memories = result.scalars().all()
+    if len(memories) < 2:
+        raise HTTPException(status_code=404, detail="Not enough accessible memories found")
+
+    contents = [m.ai_summary or m.content for m in memories]
+    language = await _get_user_language(request, db, current_user.id)
+
+    from app.services import agent_service
+    synthesis = await agent_service.synthesize_memories(contents, language)
+
+    return {
+        "synthesis": synthesis,
+        "memory_ids": [str(m.id) for m in memories],
     }
 
 
