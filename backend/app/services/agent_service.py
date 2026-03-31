@@ -79,6 +79,8 @@ async def detect_tension(content1: str, content2: str) -> bool:
 
 async def synthesize_arc(summaries: list[str], language: str = "en") -> str:
     """Synthesize a narrative from a cluster of related memory summaries."""
+    if not _has_valid_key():
+        return "I noticed a recurring theme in your recent memories."
     lang_note = "Respond in Vietnamese." if language == "vi" else "Respond in English."
     bullets = "\n".join(f"- {s[:200]}" for s in summaries)
     try:
@@ -108,6 +110,8 @@ async def synthesize_arc(summaries: list[str], language: str = "en") -> str:
 
 async def synthesize_memories(contents: list[str], language: str = "en") -> str:
     """On-demand synthesis of user-selected memories."""
+    if not _has_valid_key():
+        return "Here's what connects these memories."
     lang_note = "Respond in Vietnamese." if language == "vi" else "Respond in English."
     bullets = "\n".join(f"- {c[:300]}" for c in contents)
     try:
