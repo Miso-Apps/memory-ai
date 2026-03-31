@@ -846,7 +846,7 @@ export default function MemoryDetailScreen() {
                   style={[styles.relatedItem, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
                 >
                   <View style={[styles.relatedTypeDot, { backgroundColor: `${colors.accent}20` }]}>
-                    <Text style={styles.relatedTypeEmoji}>🔗</Text>
+                    <Text>🔗</Text>
                   </View>
                   <View style={styles.relatedBody}>
                     <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
@@ -881,7 +881,7 @@ export default function MemoryDetailScreen() {
                   style={[styles.relatedItem, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
                 >
                   <View style={[styles.relatedTypeDot, { backgroundColor: `${colors.accent}16` }]}>
-                    <Text style={styles.relatedTypeEmoji}>➕</Text>
+                    <Text>➕</Text>
                   </View>
                   <View style={styles.relatedBody}>
                     <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
