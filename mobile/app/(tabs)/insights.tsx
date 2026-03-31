@@ -633,6 +633,15 @@ export default function InsightsScreen() {
           <RecapCard recap={recap} t={t} />
         ) : null}
 
+        <TouchableOpacity
+          style={[s.decisionCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => router.push('/decisions')}
+        >
+          <Text style={[s.decisionTitle, { color: colors.textPrimary }]}>{t('decision.title')}</Text>
+          <Text style={[s.decisionSubtitle, { color: colors.textSecondary }]}>{t('decision.subtitle')}</Text>
+        </TouchableOpacity>
+
         {dashboard && (
           <>
             {/* Growth badge */}
@@ -816,6 +825,16 @@ const s = StyleSheet.create({
   recapHighlight: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   recapHighlightIcon: { fontSize: 14 },
   recapHighlightText: { fontSize: 13, flex: 1, fontFamily: SANS_FONT },
+
+  decisionCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    marginBottom: 2,
+  },
+  decisionTitle: { fontSize: 15, fontWeight: '600', marginBottom: 3, fontFamily: SANS_FONT },
+  decisionSubtitle: { fontSize: 12, fontFamily: SANS_FONT },
 
   // Growth badge
   growthBadge: {

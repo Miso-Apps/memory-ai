@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screen Layouts</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #08080c; color: #f0ede8; font-family: 'DM Sans', sans-serif; padding: 32px 24px 80px; }
+
+  h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .page-sub { font-size: 14px; color: #555; margin-bottom: 36px; line-height: 1.5; }
+
+  .screens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
+
+  /* Phone frame */
+  .phone-frame {
+    background: #0c0c10;
+    border-radius: 32px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    position: relative;
+  }
+  .phone-notch { background: #0c0c10; padding: 14px 20px 0; display: flex; justify-content: space-between; align-items: center; }
+  .phone-time { font-size: 13px; font-weight: 600; color: #f0ede8; }
+  .phone-icons { font-size: 11px; color: #555; }
+  .phone-body { padding: 0; }
+
+  /* Shared atoms */
+  .eye { font-size: 10px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+  .serif-title { font-family: 'DM Serif Display', serif; font-style: italic; color: #f0ede8; line-height: 1.15; letter-spacing: -0.2px; }
+  .body-text { font-family: 'DM Sans'; font-size: 13px; color: #888; line-height: 1.5; }
+  .divider { height: 1px; background: rgba(255,255,255,0.05); }
+  .mcard { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 7px; }
+  .mcard-tag { font-size: 9px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px; }
+  .mcard-text { font-size: 12px; color: #888; line-height: 1.45; }
+  .mcard-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 7px; }
+  .mcard-time { font-size: 10px; color: #2e2e2e; }
+  .mcard-open { font-size: 10px; color: #C56A3A; font-weight: 500; }
+  .tab-bar { background: rgba(12,12,16,0.97); border-top: 1px solid rgba(255,255,255,0.04); padding: 10px 0 16px; display: flex; justify-content: space-around; align-items: center; }
+  .tab-icon { font-size: 17px; color: #222; }
+  .tab-icon.on { color: #f0ede8; }
+  .tab-fab { background: #C56A3A; width: 34px; height: 34px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: white; margin-top: -10px; box-shadow: 0 4px 14px rgba(197,106,58,0.4); }
+
+  /* Screen label */
+  .screen-label { margin-top: 14px; }
+  .screen-label h3 { font-size: 13px; font-weight: 600; color: #f0ede8; }
+  .screen-label p { font-size: 11px; color: #444; margin-top: 3px; line-height: 1.4; }
+
+  /* ─── HOME ─── */
+  .home-hdr { padding: 16px 16px 12px; }
+  .home-capture { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 11px 14px; margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+  .home-capture-dot { width: 6px; height: 6px; border-radius: 50%; background: #C56A3A; flex-shrink: 0; }
+  .home-capture-text { font-size: 13px; color: #2a2a2a; font-style: italic; font-family: 'DM Sans'; }
+  .home-section { padding: 10px 12px 0; }
+  .home-section-label { font-size: 9px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+  /* ─── CAPTURE ─── */
+  .capture-sheet { background: #131318; border-radius: 20px 20px 0 0; padding: 12px 0 0; }
+  .capture-handle { width: 32px; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; margin: 0 auto 14px; }
+  .capture-modes { display: flex; padding: 0 12px; gap: 6px; margin-bottom: 12px; overflow: hidden; }
+  .capture-mode { flex: 1; text-align: center; font-size: 10px; font-weight: 600; color: #333; padding: 7px 4px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .capture-mode.active { background: rgba(197,106,58,0.12); color: #C56A3A; border: 1px solid rgba(197,106,58,0.2); }
+  .capture-input { margin: 0 12px 10px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.07); padding: 12px; min-height: 80px; }
+  .capture-input-text { font-size: 13px; color: #333; font-style: italic; font-family: 'DM Sans'; }
+  .capture-hints { display: flex; gap: 6px; padding: 0 12px 10px; flex-wrap: wrap; }
+  .capture-hint { font-size: 10px; color: #333; background: rgba(255,255,255,0.04); border-radius: 100px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.05); }
+  .capture-actions { display: flex; gap: 8px; padding: 0 12px 16px; }
+  .capture-cancel { flex: 1; text-align: center; font-size: 13px; color: #444; font-weight: 500; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); }
+  .capture-save { flex: 2; text-align: center; font-size: 13px; color: #fff; font-weight: 600; padding: 10px; border-radius: 10px; background: #C56A3A; }
+
+  /* ─── LIBRARY ─── */
+  .lib-hdr { padding: 16px 16px 10px; }
+  .lib-search { background: rgba(255,255,255,0.04); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); padding: 9px 12px; margin: 0 12px 8px; display: flex; align-items: center; gap: 8px; }
+  .lib-search-icon { font-size: 12px; color: #333; }
+  .lib-search-text { font-size: 12px; color: #2a2a2a; font-style: italic; font-family: 'DM Sans'; }
+  .lib-filters { display: flex; gap: 6px; padding: 0 12px 8px; overflow: hidden; }
+  .lib-chip { font-size: 10px; font-weight: 600; padding: 5px 10px; border-radius: 100px; border: 1px solid rgba(255,255,255,0.07); color: #333; }
+  .lib-chip.active { background: rgba(197,106,58,0.1); border-color: rgba(197,106,58,0.25); color: #C56A3A; }
+  .lib-body { padding: 4px 12px 0; }
+
+  /* ─── MEMORY DETAIL ─── */
+  .detail-hdr { padding: 14px 14px 10px; }
+  .detail-back { font-size: 11px; color: #C56A3A; font-weight: 500; margin-bottom: 10px; display: flex; align-items: center; gap: 4px; }
+  .detail-meta-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+  .detail-type-chip { font-size: 9px; font-weight: 600; color: #444; background: rgba(255,255,255,0.04); border-radius: 100px; padding: 3px 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-time { font-size: 10px; color: #2e2e2e; }
+  .detail-body { padding: 0 14px 10px; }
+  .detail-text { font-size: 13px; color: #a8a4a0; line-height: 1.6; margin-bottom: 12px; }
+  .detail-ai { background: rgba(197,106,58,0.06); border: 1px solid rgba(197,106,58,0.12); border-radius: 12px; padding: 10px 12px; }
+  .detail-ai-label { font-size: 9px; font-weight: 600; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
+  .detail-ai-text { font-size: 11px; color: #6a5a50; line-height: 1.5; font-style: italic; }
+  .detail-actions { display: flex; gap: 6px; padding: 0 14px 12px; }
+  .detail-action { flex: 1; text-align: center; font-size: 11px; color: #444; padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); font-weight: 500; }
+
+  /* ─── INSIGHTS ─── */
+  .insights-hdr { padding: 16px 16px 10px; }
+  .insights-body { padding: 0 12px; }
+  .streak-card { background: rgba(197,106,58,0.07); border: 1px solid rgba(197,106,58,0.15); border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .streak-val { font-family: 'DM Serif Display', serif; font-size: 24px; color: #C56A3A; }
+  .streak-label { font-size: 9px; color: #C56A3A; text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; font-weight: 600; opacity: 0.6; }
+  .heatmap { display: flex; gap: 2px; flex-wrap: wrap; margin-bottom: 8px; }
+  .hcell { width: 10px; height: 10px; border-radius: 2px; background: rgba(255,255,255,0.05); }
+  .hcell.l1 { background: rgba(197,106,58,0.2); }
+  .hcell.l2 { background: rgba(197,106,58,0.45); }
+  .hcell.l3 { background: rgba(197,106,58,0.75); }
+  .hcell.l4 { background: #C56A3A; }
+  .recap-card { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.05); }
+  .recap-label { font-size: 9px; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+  .recap-text { font-size: 11px; color: #555; line-height: 1.5; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h2>Section 2 — Screen Layouts</h2>
+<p class="page-sub">All 6 screens applying the design system. Review each layout and tell me what you'd change.</p>
+
+<div class="screens-grid">
+
+  <!-- HOME -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body">
+        <div class="home-hdr">
+          <div class="eye">Good morning, Brian</div>
+          <div class="serif-title" style="font-size:27px;">What's on your mind?</div>
+          <div class="home-capture">
+            <div class="home-capture-dot"></div>
+            <div class="home-capture-text">Capture a thought...</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="home-section">
+          <div class="home-section-label">Recalled for you</div>
+          <div class="mcard">
+            <div class="mcard-tag">Resurfaced · text</div>
+            <div class="mcard-text">Decided to push launch to Q2 to focus on onboarding quality.</div>
+            <div class="mcard-foot"><span class="mcard-time">3 days ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-tag">On this day · voice</div>
+            <div class="mcard-text">Started learning Mandarin. First session overwhelming but exciting.</div>
+            <div class="mcard-foot"><span class="mcard-time">1 year ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+          <div class="mcard" style="opacity:0.5;">
+            <div class="mcard-tag">Unreviewed · link</div>
+            <div class="mcard-text">anthropic.com/research/scaling</div>
+            <div class="mcard-foot"><span class="mcard-time">5 days ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="tab-icon on">⌂</span>
+        <span class="tab-icon">☰</span>
+        <div class="tab-fab">+</div>
+        <span class="tab-icon">◈</span>
+        <span class="tab-icon">○</span>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Home</h3>
+      <p>Greeting + inline capture prompt → AI-recalled memories sectioned below</p>
+    </div>
+  </div>
+
+  <!-- CAPTURE -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body" style="background:#0c0c10;padding-bottom:0;">
+        <div style="padding:24px 16px 16px;opacity:0.25;">
+          <div class="eye">Good morning, Brian</div>
+          <div class="serif-title" style="font-size:24px;">What's on your mind?</div>
+        </div>
+        <div class="capture-sheet">
+          <div class="capture-handle"></div>
+          <div class="capture-modes">
+            <div class="capture-mode active">✏ Text</div>
+            <div class="capture-mode">🎙 Voice</div>
+            <div class="capture-mode">🔗 Link</div>
+            <div class="capture-mode">📷 Photo</div>
+          </div>
+          <div class="capture-input">
+            <div class="capture-input-text">What's on your mind...</div>
+          </div>
+          <div class="capture-hints">
+            <div class="capture-hint">💡 Idea</div>
+            <div class="capture-hint">📋 Meeting</div>
+            <div class="capture-hint">🎯 Decision</div>
+          </div>
+          <div class="capture-actions">
+            <div class="capture-cancel">Cancel</div>
+            <div class="capture-save">Save memory</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Capture sheet</h3>
+      <p>Bottom sheet over dimmed home. Mode tabs at top, input, quick-tag hints, save action.</p>
+    </div>
+  </div>
+
+  <!-- LIBRARY -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body">
+        <div class="lib-hdr">
+          <div class="eye">48 memories</div>
+          <div class="serif-title" style="font-size:27px;">Your archive</div>
+        </div>
+        <div class="lib-search">
+          <span class="lib-search-icon">🔍</span>
+          <span class="lib-search-text">Search memories...</span>
+        </div>
+        <div class="lib-filters">
+          <div class="lib-chip active">All</div>
+          <div class="lib-chip">✏</div>
+          <div class="lib-chip">🎙</div>
+          <div class="lib-chip">🔗</div>
+          <div class="lib-chip">📷</div>
+        </div>
+        <div class="lib-body">
+          <div class="mcard">
+            <div class="mcard-tag">✏ text · Mar 26</div>
+            <div class="mcard-text">Decided to push launch to Q2 to focus on onboarding quality.</div>
+            <div class="mcard-foot"><span class="mcard-time">3 days ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-tag">🎙 voice · Mar 22</div>
+            <div class="mcard-text">Pricing model — usage-based vs seat licensing discussion.</div>
+            <div class="mcard-foot"><span class="mcard-time">1 week ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+          <div class="mcard">
+            <div class="mcard-tag">🔗 link · Mar 15</div>
+            <div class="mcard-text">anthropic.com/research/scaling</div>
+            <div class="mcard-foot"><span class="mcard-time">2 weeks ago</span><span class="mcard-open">Open →</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="tab-icon">⌂</span>
+        <span class="tab-icon on">☰</span>
+        <div class="tab-fab">+</div>
+        <span class="tab-icon">◈</span>
+        <span class="tab-icon">○</span>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Library</h3>
+      <p>Search bar + type filter chips + memory card list. Count in eyebrow.</p>
+    </div>
+  </div>
+
+  <!-- MEMORY DETAIL -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body">
+        <div class="detail-hdr">
+          <div class="detail-back">← Library</div>
+          <div class="eye">Sunday, March 26</div>
+          <div class="serif-title" style="font-size:22px;">Product launch decision</div>
+          <div class="detail-meta-row">
+            <div class="detail-type-chip">✏ text</div>
+            <div class="detail-time">3 days ago · Work</div>
+          </div>
+        </div>
+        <div class="detail-body">
+          <div class="detail-text">Decided to push the launch to Q2 to focus on onboarding quality. The whole team aligned on this after Monday's retro. Main concern was churn from confused new users.</div>
+          <div class="detail-ai">
+            <div class="detail-ai-label">✦ AI summary</div>
+            <div class="detail-ai-text">Decision to delay launch for quality. Driven by onboarding concerns and team consensus post-retro.</div>
+          </div>
+        </div>
+        <div class="detail-actions">
+          <div class="detail-action">Edit</div>
+          <div class="detail-action">Share</div>
+          <div class="detail-action" style="color:#C56A3A;border-color:rgba(197,106,58,0.2);">Reflect</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="tab-icon">⌂</span>
+        <span class="tab-icon on">☰</span>
+        <div class="tab-fab">+</div>
+        <span class="tab-icon">◈</span>
+        <span class="tab-icon">○</span>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Memory detail</h3>
+      <p>Serif title pulled from content, full text, AI summary in a warm tinted card.</p>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body">
+        <div class="insights-hdr">
+          <div class="eye">March 2026</div>
+          <div class="serif-title" style="font-size:27px;">Your patterns</div>
+        </div>
+        <div class="insights-body">
+          <div class="streak-card">
+            <div>
+              <div class="streak-val">🔥 5</div>
+              <div class="streak-label">Day streak</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:18px;font-family:'DM Serif Display',serif;color:#f0ede8;">48</div>
+              <div style="font-size:9px;color:#444;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px;">Total memories</div>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div style="font-size:9px;color:#333;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600;">Activity — last 12 weeks</div>
+            <div class="heatmap">
+              <div class="hcell"></div><div class="hcell l1"></div><div class="hcell"></div><div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell"></div><div class="hcell l3"></div>
+              <div class="hcell l1"></div><div class="hcell"></div><div class="hcell l2"></div><div class="hcell l4"></div><div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell"></div>
+              <div class="hcell l1"></div><div class="hcell l3"></div><div class="hcell l2"></div><div class="hcell"></div><div class="hcell l1"></div><div class="hcell l4"></div><div class="hcell l3"></div>
+              <div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell l3"></div><div class="hcell l4"></div><div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell l4"></div>
+              <div class="hcell"></div><div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell"></div><div class="hcell l3"></div><div class="hcell l4"></div><div class="hcell l2"></div>
+              <div class="hcell l1"></div><div class="hcell l4"></div><div class="hcell l3"></div><div class="hcell l2"></div><div class="hcell l1"></div><div class="hcell"></div><div class="hcell l2"></div>
+            </div>
+          </div>
+          <div class="recap-card">
+            <div class="recap-label">✦ Weekly recap</div>
+            <div class="recap-text">"You captured 7 memories this week — mostly decisions and links. A recurring theme: clarity about what to slow down on."</div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="tab-icon">⌂</span>
+        <span class="tab-icon">☰</span>
+        <div class="tab-fab">+</div>
+        <span class="tab-icon on">◈</span>
+        <span class="tab-icon">○</span>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Insights</h3>
+      <p>Streak + total in warm card, activity heatmap in orange, AI weekly recap in italic quote style.</p>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div>
+    <div class="phone-frame">
+      <div class="phone-notch"><span class="phone-time">9:41</span><span class="phone-icons">●●● ▮</span></div>
+      <div class="phone-body">
+        <div style="padding:16px 16px 12px;">
+          <div class="eye">Signed in as</div>
+          <div class="serif-title" style="font-size:27px;">Brian</div>
+        </div>
+        <div class="divider"></div>
+        <div style="padding:10px 12px;">
+          <div style="font-size:9px;color:#333;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Preferences</div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <span style="font-size:12px;color:#888;">🌙 Appearance</span>
+              <span style="font-size:10px;color:#444;">Dark →</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <span style="font-size:12px;color:#888;">🔔 Notifications</span>
+              <span style="font-size:10px;color:#444;">On →</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
+              <span style="font-size:12px;color:#888;">🌐 Language</span>
+              <span style="font-size:10px;color:#444;">English →</span>
+            </div>
+          </div>
+          <div style="background:rgba(255,255,255,0.03);border-radius:12px;border:1px solid rgba(255,255,255,0.05);overflow:hidden;margin-top:8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(255,255,255,0.04);">
+              <span style="font-size:12px;color:#888;">📤 Export data</span>
+              <span style="font-size:10px;color:#444;">→</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;">
+              <span style="font-size:12px;color:#C56A3A;">Sign out</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <span class="tab-icon">⌂</span>
+        <span class="tab-icon">☰</span>
+        <div class="tab-fab">+</div>
+        <span class="tab-icon">◈</span>
+        <span class="tab-icon on">○</span>
+      </div>
+    </div>
+    <div class="screen-label">
+      <h3>Profile</h3>
+      <p>Serif name header, grouped settings rows, clean sign-out in orange.</p>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

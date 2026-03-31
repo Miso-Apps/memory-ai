@@ -17,7 +17,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { memoriesApi, insightsApi, RelatedMemory } from '../../services/api';
+import { memoriesApi, insightsApi, MemoryLink, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles } from 'lucide-react-native';
 
@@ -39,6 +39,11 @@ interface Memory {
   categoryColor?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface LinkedMemoryItem {
+  link: MemoryLink;
+  target: Memory | null;
 }
 
 function pickPreviewUrl(metadata?: Record<string, any>): string | undefined {
@@ -328,6 +333,13 @@ export default function MemoryDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingRelated, setLoadingRelated] = useState(false);
   const [related, setRelated] = useState<RelatedMemory[]>([]);
+  const [explicitLinks, setExplicitLinks] = useState<LinkedMemoryItem[]>([]);
+  const [loadingLinks, setLoadingLinks] = useState(false);
+  const [searchingLinkTargets, setSearchingLinkTargets] = useState(false);
+  const [linkQuery, setLinkQuery] = useState('');
+  const [linkTargets, setLinkTargets] = useState<Memory[]>([]);
+  const [savingLinkTargetId, setSavingLinkTargetId] = useState<string | null>(null);
+  const [deletingLinkTargetId, setDeletingLinkTargetId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
@@ -373,12 +385,118 @@ export default function MemoryDetailScreen() {
           setLoadingRelated(false);
         });
 
+      void loadExplicitLinks(response.id);
+
       // Mark as viewed
       memoriesApi.markViewed(response.id).catch(() => { });
     } catch {
       // no-op
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExplicitLinks = async (sourceMemoryId: string) => {
+    try {
+      setLoadingLinks(true);
+      const links = await memoriesApi.listLinks(sourceMemoryId);
+
+      const withTargets = await Promise.all(
+        links.map(async (link: MemoryLink) => {
+          try {
+            const target = await memoriesApi.get(link.target_memory_id);
+            return {
+              link,
+              target: {
+                id: target.id,
+                type: target.type,
+                content: target.content,
+                aiSummary: target.ai_summary,
+                createdAt: new Date(target.created_at),
+                updatedAt: new Date(target.updated_at),
+                categoryName: target.category_name,
+                categoryColor: target.category_color,
+                categoryIcon: target.category_icon,
+              },
+            } as LinkedMemoryItem;
+          } catch {
+            return { link, target: null } as LinkedMemoryItem;
+          }
+        })
+      );
+
+      setExplicitLinks(withTargets);
+    } catch {
+      setExplicitLinks([]);
+    } finally {
+      setLoadingLinks(false);
+    }
+  };
+
+  const searchLinkCandidates = async () => {
+    if (!memory || !linkQuery.trim()) {
+      setLinkTargets([]);
+      return;
+    }
+
+    try {
+      setSearchingLinkTargets(true);
+      const result = await memoriesApi.list({ search: linkQuery.trim(), limit: 8 });
+      const existingTargetIds = new Set(explicitLinks.map((item) => item.link.target_memory_id));
+      const mapped = result.memories
+        .filter((item) => item.id !== memory.id)
+        .filter((item) => !existingTargetIds.has(item.id))
+        .map((item) => ({
+          id: item.id,
+          type: item.type,
+          content: item.content,
+          aiSummary: item.ai_summary,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+          categoryName: item.category_name,
+          categoryColor: item.category_color,
+          categoryIcon: item.category_icon,
+        }))
+        .slice(0, 6);
+      setLinkTargets(mapped);
+    } catch {
+      setLinkTargets([]);
+    } finally {
+      setSearchingLinkTargets(false);
+    }
+  };
+
+  const addExplicitLink = async (targetMemoryId: string) => {
+    if (!memory) return;
+
+    try {
+      setSavingLinkTargetId(targetMemoryId);
+      await memoriesApi.createLink(memory.id, {
+        target_memory_id: targetMemoryId,
+        link_type: 'explicit',
+      });
+      setLinkTargets((prev) => prev.filter((item) => item.id !== targetMemoryId));
+      await Promise.all([loadExplicitLinks(memory.id), loadMemory()]);
+      Alert.alert(t('decision.title'), t('memory.linkAdded'));
+    } catch {
+      Alert.alert(t('common.error'), t('memory.linkActionFailed'));
+    } finally {
+      setSavingLinkTargetId(null);
+    }
+  };
+
+  const removeExplicitLink = async (targetMemoryId: string) => {
+    if (!memory) return;
+
+    try {
+      setDeletingLinkTargetId(targetMemoryId);
+      await memoriesApi.deleteLink(memory.id, targetMemoryId, 'explicit');
+      await Promise.all([loadExplicitLinks(memory.id), loadMemory()]);
+      Alert.alert(t('decision.title'), t('memory.linkRemoved'));
+    } catch {
+      Alert.alert(t('common.error'), t('memory.linkActionFailed'));
+    } finally {
+      setDeletingLinkTargetId(null);
     }
   };
 
@@ -412,11 +530,20 @@ export default function MemoryDetailScreen() {
   };
 
   const openRelatedMemory = useCallback((relatedMemoryId: string) => {
+    insightsApi
+      .trackRelatedEvent({
+        memory_id: relatedMemoryId,
+        event_type: 'related_click',
+        reason_code: 'related_memory',
+        context: { source_memory_id: id },
+      })
+      .catch(() => undefined);
+
     router.push({
       pathname: '/memory/[id]',
       params: { id: relatedMemoryId },
     });
-  }, []);
+  }, [id]);
 
   if (loading) {
     return (
@@ -616,6 +743,12 @@ export default function MemoryDetailScreen() {
                   const typeConf = TYPE_CONFIG[item.type] || TYPE_CONFIG.text;
                   const categoryTone = getCategoryTone(item.category_color, isDark);
                   const score = item.similarity != null ? `${Math.round(item.similarity * 100)}% ${t('memory.match')}` : t('memory.relatedViaCategory');
+                  const linkType =
+                    item.link_type === 'explicit'
+                      ? t('memory.relatedLinkTypeExplicit')
+                      : item.link_type === 'temporal'
+                        ? t('memory.relatedLinkTypeTemporal')
+                        : t('memory.relatedLinkTypeSemantic');
                   const preview = (item.content || '').trim();
                   const relatedAt = formatRelativeDate(new Date(item.created_at), t);
                   return (
@@ -636,6 +769,8 @@ export default function MemoryDetailScreen() {
                           <Text style={[styles.relatedMeta, { color: colors.textSecondary }]}>
                             {score}
                           </Text>
+                          <Text style={[styles.relatedMetaDot, { color: colors.textMuted }]}>•</Text>
+                          <Text style={[styles.relatedMeta, { color: colors.textSecondary }]}>{linkType}</Text>
                           <Text style={[styles.relatedMetaDot, { color: colors.textMuted }]}>•</Text>
                           <Text style={[styles.relatedMeta, { color: colors.textMuted }]}>{relatedAt}</Text>
                         </View>
@@ -669,6 +804,112 @@ export default function MemoryDetailScreen() {
             )}
           </View>
         )}
+
+        {/* Manual Links */}
+        <View style={[styles.relatedSection, { borderTopColor: colors.border }]}> 
+          <Text style={[styles.relatedTitle, { color: colors.textPrimary }]}>{t('memory.manualLinksTitle')}</Text>
+          <Text style={[styles.linkSectionHint, { color: colors.textSecondary }]}>{t('memory.manualLinksSubtitle')}</Text>
+
+          <View style={styles.linkSearchRow}>
+            <TextInput
+              style={[styles.linkSearchInput, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.inputBg }]}
+              placeholder={t('memory.searchLinkPlaceholder')}
+              placeholderTextColor={colors.textPlaceholder}
+              value={linkQuery}
+              onChangeText={setLinkQuery}
+            />
+            <TouchableOpacity
+              style={[styles.linkSearchBtn, { backgroundColor: colors.accent }]}
+              onPress={() => void searchLinkCandidates()}
+              activeOpacity={0.75}
+            >
+              {searchingLinkTargets ? (
+                <ActivityIndicator size="small" color={colors.buttonText} />
+              ) : (
+                <Text style={[styles.linkSearchBtnText, { color: colors.buttonText }]}>{t('memory.searchLinkButton')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {loadingLinks ? (
+            <View style={styles.relatedLoadingRow}>
+              <ActivityIndicator size="small" color={colors.textSecondary} />
+              <Text style={[styles.relatedLoadingText, { color: colors.textSecondary }]}>{t('memory.loadingRelated')}</Text>
+            </View>
+          ) : explicitLinks.length === 0 ? (
+            <Text style={[styles.linkEmptyText, { color: colors.textMuted }]}>{t('memory.noManualLinks')}</Text>
+          ) : (
+            <View style={styles.relatedList}>
+              {explicitLinks.map((item) => (
+                <View
+                  key={item.link.id}
+                  style={[styles.relatedItem, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                >
+                  <View style={[styles.relatedTypeDot, { backgroundColor: `${colors.accent}20` }]}>
+                    <Text style={styles.relatedTypeEmoji}>🔗</Text>
+                  </View>
+                  <View style={styles.relatedBody}>
+                    <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
+                      {item.target?.aiSummary || item.target?.content || item.link.target_memory_id}
+                    </Text>
+                    <Text style={[styles.relatedMeta, { color: colors.textMuted }]} numberOfLines={1}>
+                      {item.link.explanation || item.link.target_memory_id}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.linkRemoveBtn, { borderColor: colors.border, backgroundColor: colors.cardBg }]}
+                    onPress={() => void removeExplicitLink(item.link.target_memory_id)}
+                    disabled={deletingLinkTargetId === item.link.target_memory_id}
+                    activeOpacity={0.75}
+                  >
+                    {deletingLinkTargetId === item.link.target_memory_id ? (
+                      <ActivityIndicator size="small" color={colors.textSecondary} />
+                    ) : (
+                      <Text style={[styles.linkRemoveBtnText, { color: colors.textSecondary }]}>{t('memory.removeLink')}</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {linkTargets.length > 0 && (
+            <View style={styles.relatedList}>
+              {linkTargets.map((target) => (
+                <View
+                  key={target.id}
+                  style={[styles.relatedItem, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+                >
+                  <View style={[styles.relatedTypeDot, { backgroundColor: `${colors.accent}16` }]}>
+                    <Text style={styles.relatedTypeEmoji}>➕</Text>
+                  </View>
+                  <View style={styles.relatedBody}>
+                    <Text style={[styles.relatedPreview, { color: colors.textPrimary }]} numberOfLines={2}>
+                      {target.aiSummary || target.content}
+                    </Text>
+                    <Text style={[styles.relatedMeta, { color: colors.textMuted }]}>{target.id}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.linkAddBtn, { backgroundColor: colors.accent }]}
+                    onPress={() => void addExplicitLink(target.id)}
+                    disabled={savingLinkTargetId === target.id}
+                    activeOpacity={0.75}
+                  >
+                    {savingLinkTargetId === target.id ? (
+                      <ActivityIndicator size="small" color={colors.buttonText} />
+                    ) : (
+                      <Text style={[styles.linkAddBtnText, { color: colors.buttonText }]}>{t('memory.addLink')}</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {!searchingLinkTargets && linkQuery.trim().length > 0 && linkTargets.length === 0 ? (
+            <Text style={[styles.linkEmptyText, { color: colors.textMuted }]}>{t('memory.noLinkResults')}</Text>
+          ) : null}
+        </View>
       </ScrollView>
 
       {/* ── Bottom actions ── */}
@@ -1031,6 +1272,67 @@ const styles = StyleSheet.create({
   },
   relatedCategoryText: {
     fontSize: 10,
+    fontWeight: '600',
+  },
+
+  linkSectionHint: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 10,
+  },
+  linkSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  linkSearchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+  },
+  linkSearchBtn: {
+    minWidth: 86,
+    minHeight: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  linkSearchBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  linkEmptyText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  linkAddBtn: {
+    minWidth: 70,
+    minHeight: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  linkAddBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  linkRemoveBtn: {
+    minWidth: 70,
+    minHeight: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    borderWidth: 1,
+  },
+  linkRemoveBtnText: {
+    fontSize: 11,
     fontWeight: '600',
   },
   relatedChevron: {

@@ -122,10 +122,68 @@ class RadarEventCreate(BaseModel):
     """Request schema for radar interaction events."""
 
     memory_id: str
-    event_type: str = Field(..., pattern=r"^(served|opened|dismissed|acted)$")
+    event_type: str = Field(
+        ..., pattern=r"^(served|opened|dismissed|acted|related_click)$"
+    )
     reason_code: Optional[str] = Field(None, max_length=64)
     confidence: Optional[float] = Field(None, ge=0, le=100)
     context: Optional[dict] = None
+
+
+class MemoryLinkCreate(BaseModel):
+    target_memory_id: str
+    link_type: str = Field("explicit", max_length=32)
+    score: Optional[float] = Field(None, ge=0)
+    explanation: Optional[str] = Field(None, max_length=500)
+
+
+class MemoryLinkResponse(BaseModel):
+    id: str
+    source_memory_id: str
+    target_memory_id: str
+    link_type: str
+    score: Optional[float] = None
+    explanation: Optional[str] = None
+    created_at: datetime
+
+
+class DecisionCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=1000)
+    rationale: Optional[str] = Field(None, max_length=5000)
+    expected_outcome: Optional[str] = Field(None, max_length=5000)
+    revisit_at: Optional[datetime] = None
+    memory_id: Optional[str] = None
+
+
+class DecisionUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=1000)
+    rationale: Optional[str] = Field(None, max_length=5000)
+    expected_outcome: Optional[str] = Field(None, max_length=5000)
+    revisit_at: Optional[datetime] = None
+    status: Optional[str] = Field(None, pattern=r"^(open|reviewed|archived)$")
+
+
+class DecisionReview(BaseModel):
+    status: str = Field("reviewed", pattern=r"^(reviewed|archived)$")
+
+
+class DecisionResponse(BaseModel):
+    id: str
+    user_id: str
+    memory_id: Optional[str] = None
+    title: str
+    rationale: Optional[str] = None
+    expected_outcome: Optional[str] = None
+    revisit_at: Optional[datetime] = None
+    status: str
+    reviewed_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+
+class DecisionListResponse(BaseModel):
+    items: List[DecisionResponse]
+    total: int
 
 
 class SearchResponse(BaseModel):

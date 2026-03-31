@@ -4,6 +4,9 @@ Date: 2026-03-29
 Owner: Product + Engineering
 Scope: Competitor-informed plan to complete and harden app features across backend, mobile, extension, and web.
 
+Execution backlog:
+- docs/EXECUTION_EPICS_STORIES_2026-03-29.md
+
 ## 1) Executive Summary
 
 Memory AI already has a strong base: multi-modal capture, semantic search, related memories, insights, and weekly recap. The next winning move is not "more features" in general, but sharper execution on three differentiators:
