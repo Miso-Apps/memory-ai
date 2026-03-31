@@ -14,9 +14,10 @@ import {
   Linking,
   Platform,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { memoriesApi } from '../../services/api';
+import { memoriesApi, insightsApi } from '../../services/api';
 import {
   Sparkles,
   ChevronRight,
@@ -41,6 +42,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useTheme, type ThemeMode } from '../../constants/ThemeContext';
+import type { ThemeColors } from '../../constants/ThemeContext';
 import type { SupportedLanguage } from '../../i18n';
 import { ScreenHeader } from '../../components/ScreenHeader';
 
@@ -203,6 +205,72 @@ function PreferenceToggleRow({
   );
 }
 
+function WeeklyInsightCard({
+  insight,
+  colors,
+}: {
+  insight: { text: string; topTopics: string[] };
+  colors: ThemeColors;
+}) {
+  return (
+    <LinearGradient
+      colors={['#FFF3E8', '#FFE5CB']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[p.insightCard, { borderColor: colors.recallBannerBorder }]}
+    >
+      <Text style={[p.insightLabel, { color: colors.accent }]}>📊 INSIGHT TUẦN NÀY</Text>
+      <Text style={[p.insightText, { color: colors.textPrimary }]}>{insight.text}</Text>
+      {insight.topTopics.length > 0 && (
+        <View style={p.topicChips}>
+          {insight.topTopics.map((topic) => (
+            <View key={topic} style={[p.topicChip, { backgroundColor: 'rgba(194,96,10,0.12)' }]}>
+              <Text style={[p.topicChipText, { color: colors.accent }]}>{topic}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </LinearGradient>
+  );
+}
+
+function heatmapCellColor(count: number, max: number): string {
+  if (count === 0) return '#E8DDD0';
+  const ratio = count / Math.max(max, 1);
+  if (ratio < 0.33) return '#F0C89A';
+  if (ratio < 0.66) return '#D4874A';
+  return '#C2600A';
+}
+
+function CompactHeatmap({ data, colors }: { data: number[]; colors: ThemeColors }) {
+  const cells = data.slice(-28);
+  const max = Math.max(...cells, 1);
+  const columns: number[][] = [];
+  for (let col = 0; col < 4; col++) {
+    columns.push(cells.slice(col * 7, col * 7 + 7));
+  }
+
+  return (
+    <View style={[p.heatmapCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+      <Text style={[p.heatmapLabel, { color: colors.textMuted }]}>
+        Hoạt động 4 tuần qua
+      </Text>
+      <View style={p.heatmapGrid}>
+        {columns.map((col, ci) => (
+          <View key={ci} style={p.heatmapCol}>
+            {col.map((count, ri) => (
+              <View
+                key={ri}
+                style={[p.heatmapCell, { backgroundColor: heatmapCellColor(count, max) }]}
+              />
+            ))}
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 export default function ProfileScreen() {
   const { t } = useTranslation();
   const { user, logout } = useAuthStore();
@@ -210,11 +278,38 @@ export default function ProfileScreen() {
   type ModalType = 'account' | 'privacy' | 'about' | 'language' | 'appearance' | 'aiFeatures' | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [dismissedCount, setDismissedCount] = useState(0);
+  const [recallRate, setRecallRate] = useState<number | null>(null);
+  const [weeklyInsight, setWeeklyInsight] = useState<{ text: string; topTopics: string[] } | null>(null);
+  const [heatmapData, setHeatmapData] = useState<number[]>([]);
   const { colors, isDark, mode: themeMode } = useTheme();
 
   // Load preferences on focus
   useEffect(() => {
     loadPreferences();
+  }, []);
+
+  useEffect(() => {
+    insightsApi.getWeeklyRecap().then((recap) => {
+      if (recap) {
+        const topicsText = (recap.categories_used ?? [])
+          .slice(0, 3)
+          .map((c: { name: string; icon: string }) => c.name);
+        setWeeklyInsight({
+          text: recap.recap ?? `Đã lưu ${recap.total_memories ?? 0} ký ức tuần này.`,
+          topTopics: topicsText,
+        });
+      }
+    }).catch(() => undefined);
+
+    insightsApi.getDashboard(28).then((dash) => {
+      const counts = (dash.activity_heatmap ?? []).map((d: { count: number }) => d.count);
+      setHeatmapData(counts);
+      const total = dash.total_memories ?? 0;
+      if (total > 0) {
+        const thisWeekCount = (dash.weekly_trend ?? []).slice(-1)[0]?.count ?? 0;
+        setRecallRate(Math.min(99, Math.round(thisWeekCount / total * 100)));
+      }
+    }).catch(() => undefined);
   }, []);
 
   useFocusEffect(
@@ -272,6 +367,69 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Stats Row */}
+        <View style={p.statsRow}>
+          <View style={[p.statBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Text style={[p.statVal, { color: colors.textPrimary }]}>{dismissedCount ?? 0}</Text>
+            <Text style={[p.statLabel, { color: colors.textMuted }]}>bộ nhớ</Text>
+          </View>
+          <View style={[p.statBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+            <Text style={[p.statVal, { color: colors.textPrimary }]}>—</Text>
+            <Text style={[p.statLabel, { color: colors.textMuted }]}>streak</Text>
+          </View>
+          <View style={[p.statBox, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}>
+            <Text style={[p.statVal, { color: colors.accent }]}>
+              {recallRate !== null ? `${recallRate}%` : '—'}
+            </Text>
+            <Text style={[p.statLabel, { color: colors.accent }]}>recall rate</Text>
+          </View>
+        </View>
+
+        {/* Weekly Insight Card */}
+        {weeklyInsight && <WeeklyInsightCard insight={weeklyInsight} colors={colors} />}
+
+        {/* Compact Heatmap */}
+        {heatmapData.length > 0 && <CompactHeatmap data={heatmapData} colors={colors} />}
+
+        {/* Compact Settings List */}
+        <View style={[p.settingsList, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={[p.settingsItemRow, { borderBottomColor: colors.border }]}
+            onPress={() => setActiveModal('account')}
+            activeOpacity={0.7}
+          >
+            <View style={[p.settingsIcon, { backgroundColor: colors.accentLight }]}>
+              <Bell size={14} color={colors.accent} strokeWidth={1.8} />
+            </View>
+            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Cài đặt nhắc nhở</Text>
+            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[p.settingsItemRow, { borderBottomColor: colors.border }]}
+            onPress={() => setActiveModal('appearance')}
+            activeOpacity={0.7}
+          >
+            <View style={[p.settingsIcon, { backgroundColor: '#F5F0FF' }]}>
+              <Palette size={14} color="#7C3AED" strokeWidth={1.8} />
+            </View>
+            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Giao diện</Text>
+            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={p.settingsItemRow}
+            onPress={() => setActiveModal('privacy')}
+            activeOpacity={0.7}
+          >
+            <View style={[p.settingsIcon, { backgroundColor: '#F0FFF4' }]}>
+              <Lock size={14} color="#16A34A" strokeWidth={1.8} />
+            </View>
+            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Tài khoản & bảo mật</Text>
+            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
+          </TouchableOpacity>
+        </View>
+
         {/* AI Features Card */}
         <View style={[s.card, s.settingsGroup, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
           <PreferenceToggleRow
@@ -543,7 +701,7 @@ const s = StyleSheet.create({
     fontSize: 15,
   },
   scroll: { flex: 1 },
-  scrollContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 120 },
+  scrollContent: { paddingTop: 16, paddingBottom: 120 },
   card: {
     borderRadius: 20, borderWidth: 1,
     marginBottom: 12, overflow: 'hidden',
@@ -588,7 +746,7 @@ const s = StyleSheet.create({
   menuText: { flex: 1 },
   menuTitle: { fontSize: 15, fontWeight: '600', marginBottom: 2 },
   menuSubtitle: { fontSize: 13 },
-  dismissedBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, borderWidth: 1, paddingVertical: 14, marginBottom: 12 },
+  dismissedBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 16, borderWidth: 1, paddingVertical: 14, marginBottom: 12, marginHorizontal: 16 },
   dismissedText: { fontSize: 14, fontWeight: '500' },
   dismissedBadge: { borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5 },
   dismissedBadgeText: { fontSize: 11, fontWeight: '700' },
@@ -645,4 +803,26 @@ const r = StyleSheet.create({
   bullet: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   bulletDot: { width: 6, height: 6, borderRadius: 3, marginTop: 7 },
   bulletText: { flex: 1, fontSize: 14, lineHeight: 20 },
+});
+
+const p = StyleSheet.create({
+  statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
+  statBox: { flex: 1, borderRadius: 14, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
+  statVal: { fontSize: 18, fontWeight: '700', lineHeight: 22 },
+  statLabel: { fontSize: 10, marginTop: 2 },
+  insightCard: { marginHorizontal: 16, marginBottom: 10, borderRadius: 14, padding: 12, borderWidth: 1.5 },
+  insightLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5, marginBottom: 6 },
+  insightText: { fontSize: 13, lineHeight: 19 },
+  topicChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  topicChip: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  topicChipText: { fontSize: 11, fontWeight: '600' },
+  heatmapCard: { marginHorizontal: 16, marginBottom: 10, borderRadius: 14, borderWidth: 1, padding: 12 },
+  heatmapLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  heatmapGrid: { flexDirection: 'row', gap: 3 },
+  heatmapCol: { flexDirection: 'column', gap: 3 },
+  heatmapCell: { width: 14, height: 14, borderRadius: 3 },
+  settingsList: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 16 },
+  settingsItemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1 },
+  settingsIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  settingsText: { flex: 1, fontSize: 13, fontWeight: '500' },
 });
