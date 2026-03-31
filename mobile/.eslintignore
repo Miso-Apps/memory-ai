@@ -1,0 +1,4 @@
+.expo/
+dist/
+build/
+node_modules/

@@ -200,7 +200,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="recall"
         options={{
-          title: 'Nhắc',
+          title: t('tabs.recall'),
           tabBarIcon: ({ focused }) => <RecallTabIcon focused={focused} />,
           tabBarButton: (props) => <EnhancedTabButton {...props} />,
         }}
@@ -215,7 +215,13 @@ export default function TabsLayout() {
       />
       {/* Hidden screens — not shown in tab bar */}
       <Tabs.Screen name="insights" options={{ href: null }} />
-      <Tabs.Screen name="chat" options={{ href: null }} />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          href: null,
+          tabBarStyle: { display: 'none' },
+        }}
+      />
       <Tabs.Screen name="archive" options={{ href: null }} />
     </Tabs>
   );

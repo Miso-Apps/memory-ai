@@ -1,8 +1,9 @@
 """Quick endpoint smoke tests using httpx ASGI transport."""
 import asyncio
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from app.main import app
-from app.database import init_db
+from app.database import init_db, AsyncSessionLocal
 
 
 async def test():
@@ -29,6 +30,7 @@ async def test():
         assert "access_token" in r.json(), "register missing access_token"
         assert "user" in r.json(), "register missing user"
         token = r.json()["access_token"]
+        user_id = r.json()["user"]["id"]
         assert token != "mock_access_token", "token is still a mock!"
         print(f"  ✓ Real JWT issued: {token[:40]}...")
         headers = {"Authorization": f"Bearer {token}"}
@@ -105,6 +107,55 @@ async def test():
         print(f"GET /ai/search?q=test -> {r.status_code} keys={list(r.json().keys())}")
         assert r.status_code == 200, f"search failed: {r.text}"
 
+        # Test reflection endpoint exists and returns expected payload
+        r = await client.post(
+            "/ai/reflect",
+            json={"thought": "test memory", "limit": 5},
+            headers=headers,
+        )
+        print(f"POST /ai/reflect -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"reflect failed: {r.text}"
+        assert "insight" in r.json(), "reflect missing insight"
+        assert "related_memories" in r.json(), "reflect missing related_memories"
+        assert isinstance(r.json()["related_memories"], list)
+
+        r = await client.post(
+            "/memories/",
+            json={"type": "text", "content": "Reflect source memory"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"reflect source memory create failed: {r.text}"
+        reflect_memory_id = r.json().get("id")
+
+        # Reflection should support cache by memory_id and return markdown content
+        r = await client.post(
+            "/ai/reflect",
+            json={
+                "thought": "Test memory from smoke test",
+                "memory_id": reflect_memory_id,
+                "limit": 5,
+            },
+            headers=headers,
+        )
+        assert r.status_code == 200, f"reflect with memory_id failed: {r.text}"
+        first_reflect = r.json()
+        assert isinstance(first_reflect.get("cached"), bool), "reflect missing cached flag"
+        assert first_reflect.get("insight", "").startswith("## "), "reflect insight should be markdown"
+
+        r = await client.post(
+            "/ai/reflect",
+            json={
+                "thought": "Test memory from smoke test",
+                "memory_id": reflect_memory_id,
+                "limit": 5,
+            },
+            headers=headers,
+        )
+        assert r.status_code == 200, f"second reflect with memory_id failed: {r.text}"
+        second_reflect = r.json()
+        assert second_reflect.get("cached") is True, "second reflect call should use cache"
+        assert second_reflect.get("insight") == first_reflect.get("insight")
+
         # Create a memory for radar tests
         r = await client.post(
             "/memories/",
@@ -114,12 +165,47 @@ async def test():
         assert r.status_code == 200, f"create memory for radar failed: {r.text}"
         radar_memory_id = r.json()["id"]
 
+        # Duplicate link captures should return 409 + existing memory reference
+        r = await client.post(
+            "/memories/",
+            json={"type": "link", "content": "https://example.com/duplicate-check"},
+            headers=headers,
+        )
+        assert r.status_code == 200, f"first link create failed: {r.text}"
+        first_link_id = r.json().get("id")
+
+        r = await client.post(
+            "/memories/",
+            json={"type": "link", "content": "https://example.com/duplicate-check/"},
+            headers=headers,
+        )
+        assert r.status_code == 409, f"duplicate link should return 409, got {r.status_code}"
+        assert r.json().get("existing_memory_id") == first_link_id
+
         # Test radar feed endpoint
         r = await client.get("/ai/radar?limit=6", headers=headers)
         print(f"GET /ai/radar -> {r.status_code} keys={list(r.json().keys())}")
         assert r.status_code == 200, f"radar feed failed: {r.text}"
         assert "items" in r.json(), "radar missing items key"
         assert "generated_at" in r.json(), "radar missing generated_at key"
+
+        # Regression test: legacy NULL proactive_recall_opt_in must not hide radar cards.
+        async with AsyncSessionLocal() as db:
+            await db.execute(
+                text(
+                    """
+                    UPDATE user_preferences
+                    SET proactive_recall_opt_in = NULL
+                    WHERE user_id = CAST(:user_id AS UUID)
+                    """
+                ),
+                {"user_id": user_id},
+            )
+            await db.commit()
+
+        r = await client.get("/ai/radar?limit=6", headers=headers)
+        assert r.status_code == 200, f"radar with NULL proactive flag failed: {r.text}"
+        assert len(r.json().get("items", [])) > 0, "radar should not be empty when proactive_recall_opt_in is NULL"
 
         # Test radar feed with preference sensitivity update
         r = await client.put(
@@ -150,6 +236,34 @@ async def test():
         assert r.status_code == 200, f"radar event logging failed: {r.text}"
         assert r.json().get("status") == "ok"
         assert "event_id" in r.json()
+
+        # Test explicit pin-to-recall endpoint
+        r = await client.post(f"/memories/{radar_memory_id}/pin", headers=headers)
+        print(f"POST /memories/{{id}}/pin -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"pin memory failed: {r.text}"
+        assert r.json().get("reason_code") == "user_pinned"
+
+        # Add a served event so recall-rate has denominator
+        r = await client.post(
+            "/ai/radar/events",
+            json={
+                "memory_id": radar_memory_id,
+                "event_type": "served",
+                "reason_code": "user_pinned",
+                "confidence": 100,
+                "context": {"screen": "library"},
+            },
+            headers=headers,
+        )
+        assert r.status_code == 200, f"radar served event failed: {r.text}"
+
+        # Test recall-rate metric endpoint
+        r = await client.get("/insights/recall-rate?days=30", headers=headers)
+        print(f"GET /insights/recall-rate -> {r.status_code} {r.json()}")
+        assert r.status_code == 200, f"recall-rate failed: {r.text}"
+        assert r.json().get("served", 0) >= 1
+        assert r.json().get("opened", 0) >= 1
+        assert isinstance(r.json().get("recall_rate"), (int, float))
 
         # Test invalid radar event type validation
         r = await client.post(

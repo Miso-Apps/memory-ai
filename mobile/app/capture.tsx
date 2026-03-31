@@ -83,6 +83,22 @@ const MODE_DEFINITIONS: { key: CaptureMode }[] = [
   { key: 'photo' },
 ];
 
+function getHttpStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const maybeError = error as { response?: { status?: unknown } };
+  const status = maybeError.response?.status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function getExistingMemoryId(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const maybeError = error as {
+    response?: { data?: { existing_memory_id?: unknown } };
+  };
+  const value = maybeError.response?.data?.existing_memory_id;
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
 const TEXT_WARN_THRESHOLD = 300;
 
 const HINT_CHIPS: {
@@ -149,11 +165,11 @@ function BottomModeBar({
   onSelect: (m: CaptureMode) => void;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <View style={[modeBarStyles.wrap, { backgroundColor: colors.captureBg }]}>
-      <View style={[modeBarStyles.barShell, { backgroundColor: 'rgba(255,255,255,0.07)', borderColor: colors.captureBorder }]}>
+      <View style={[modeBarStyles.barShell, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : colors.captureCard, borderColor: colors.captureBorder }]}> 
         {MODE_DEFINITIONS.map(({ key }) => {
           const active = key === mode;
           const Icon = MODE_META[key].icon;
@@ -516,7 +532,7 @@ function ImageUpload({ onImageData }: ImageUploadProps) {
           onPress={handlePickImage}
           activeOpacity={0.8}
         >
-          <View style={[imageStyles.pickIconWell, { backgroundColor: '#fff8f2' }]}>
+          <View style={[imageStyles.pickIconWell, { backgroundColor: colors.accentLight }]}>
             <Text style={imageStyles.pickEmoji}>📷</Text>
           </View>
           <Text style={[imageStyles.pickLabel, { color: colors.brandAccent }]}>{t('capture.chooseImage')}</Text>
@@ -663,7 +679,7 @@ const imageStyles = StyleSheet.create({
 
 export default function CaptureScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
   // Smart default: explicit param > user preference > 'text'
@@ -758,7 +774,8 @@ export default function CaptureScreen() {
         setClipboardUrl(null);
       });
       router.back();
-    } catch {
+    } catch (error) {
+      if (handleDuplicateLinkError(error)) return;
       Alert.alert(t('capture.error'), t('capture.linkSaveFailed'));
     } finally {
       setClipSaving(false);
@@ -778,6 +795,27 @@ export default function CaptureScreen() {
     dismissClipboard();
   };
   // ── End clipboard detection ──
+
+  const handleDuplicateLinkError = (error: unknown): boolean => {
+    if (getHttpStatus(error) !== 409) return false;
+    const existingId = getExistingMemoryId(error);
+    Alert.alert(
+      t('capture.linkAlreadyExistsTitle'),
+      t('capture.linkAlreadyExistsMessage'),
+      [
+        { text: t('common.close'), style: 'cancel' },
+        {
+          text: t('capture.openExistingMemory'),
+          onPress: () => {
+            if (typeof existingId === 'string' && existingId.length > 0) {
+              router.push(`/memory/${existingId}`);
+            }
+          },
+        },
+      ],
+    );
+    return true;
+  };
 
   const handleSave = async () => {
     // --- Link validation ---
@@ -832,6 +870,7 @@ export default function CaptureScreen() {
       }
     } catch (error) {
       console.error('Failed to save:', error);
+      if (handleDuplicateLinkError(error)) return;
       Alert.alert(t('capture.error'), t('capture.saveFailed'));
     } finally {
       setIsSaving(false);
@@ -849,7 +888,7 @@ export default function CaptureScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.captureBg }]} edges={['top', 'bottom']}>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -927,7 +966,7 @@ export default function CaptureScreen() {
                   style={[styles.clipInCard, {
                     opacity: clipOpacity,
                     backgroundColor: colors.subtleBg,
-                    borderColor: '#f5dfc8',
+                    borderColor: colors.captureBorder,
                   }]}
                 >
                   <View style={styles.clipInCardLeft}>

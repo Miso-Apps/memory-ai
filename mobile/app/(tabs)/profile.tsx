@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Pressable,
   Switch,
   Modal,
+  RefreshControl,
   Animated,
   TouchableWithoutFeedback,
   Alert,
@@ -208,24 +209,33 @@ function PreferenceToggleRow({
 function WeeklyInsightCard({
   insight,
   colors,
+  isDark,
+  t,
 }: {
-  insight: { text: string; topTopics: string[] };
+  insight: { text: string; topTopics: { name: string; count: number }[] };
   colors: ThemeColors;
+  isDark: boolean;
+  t: (key: string, options?: Record<string, any>) => string;
 }) {
+  const insightGradient = isDark
+    ? ['rgba(61,36,16,0.96)', 'rgba(40,25,12,0.98)']
+    : ['#FFF3E8', '#FFE5CB'];
+  const topicChipBg = isDark ? 'rgba(247,177,116,0.16)' : 'rgba(194,96,10,0.12)';
+
   return (
     <LinearGradient
-      colors={['#FFF3E8', '#FFE5CB']}
+      colors={insightGradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[p.insightCard, { borderColor: colors.recallBannerBorder }]}
     >
-      <Text style={[p.insightLabel, { color: colors.accent }]}>📊 INSIGHT TUẦN NÀY</Text>
+      <Text style={[p.insightLabel, { color: colors.accent }]}>{t('profile.insightThisWeek')}</Text>
       <Text style={[p.insightText, { color: colors.textPrimary }]}>{insight.text}</Text>
       {insight.topTopics.length > 0 && (
         <View style={p.topicChips}>
           {insight.topTopics.map((topic) => (
-            <View key={topic} style={[p.topicChip, { backgroundColor: 'rgba(194,96,10,0.12)' }]}>
-              <Text style={[p.topicChipText, { color: colors.accent }]}>{topic}</Text>
+            <View key={`${topic.name}-${topic.count}`} style={[p.topicChip, { backgroundColor: topicChipBg }]}>
+              <Text style={[p.topicChipText, { color: colors.accent }]}>{`${topic.name} ×${topic.count}`}</Text>
             </View>
           ))}
         </View>
@@ -234,16 +244,35 @@ function WeeklyInsightCard({
   );
 }
 
-function heatmapCellColor(count: number, max: number): string {
-  if (count === 0) return '#E8DDD0';
+function heatmapCellColor(count: number, max: number, isDark: boolean): string {
+  if (count === 0) return isDark ? 'rgba(255,255,255,0.06)' : '#E8DDD0';
   const ratio = count / Math.max(max, 1);
+  if (isDark) {
+    if (ratio < 0.33) return 'rgba(245,172,111,0.38)';
+    if (ratio < 0.66) return 'rgba(228,141,75,0.70)';
+    return '#D4874A';
+  }
   if (ratio < 0.33) return '#F0C89A';
   if (ratio < 0.66) return '#D4874A';
   return '#C2600A';
 }
 
-function CompactHeatmap({ data, colors }: { data: number[]; colors: ThemeColors }) {
-  const cells = data.slice(-28);
+function CompactHeatmap({
+  data,
+  isDark,
+  colors,
+  t,
+}: {
+  data: number[];
+  isDark: boolean;
+  colors: ThemeColors;
+  t: (key: string, options?: Record<string, any>) => string;
+}) {
+  const cells = data.length >= 28
+    ? data.slice(-28)
+    : [...Array(Math.max(0, 28 - data.length)).fill(0), ...data];
+  const totalCaptures = cells.reduce((sum, count) => sum + count, 0);
+  const activeDays = cells.filter((count) => count > 0).length;
   const max = Math.max(...cells, 1);
   const columns: number[][] = [];
   for (let col = 0; col < 4; col++) {
@@ -253,7 +282,7 @@ function CompactHeatmap({ data, colors }: { data: number[]; colors: ThemeColors 
   return (
     <View style={[p.heatmapCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
       <Text style={[p.heatmapLabel, { color: colors.textMuted }]}>
-        Hoạt động 4 tuần qua
+        {t('profile.activity4Weeks')}
       </Text>
       <View style={p.heatmapGrid}>
         {columns.map((col, ci) => (
@@ -261,14 +290,39 @@ function CompactHeatmap({ data, colors }: { data: number[]; colors: ThemeColors 
             {col.map((count, ri) => (
               <View
                 key={ri}
-                style={[p.heatmapCell, { backgroundColor: heatmapCellColor(count, max) }]}
+                style={[p.heatmapCell, { backgroundColor: heatmapCellColor(count, max, isDark) }]}
               />
             ))}
           </View>
         ))}
       </View>
+      {totalCaptures > 0 ? (
+        <Text style={[p.heatmapSummary, { color: colors.textMuted }]}>
+          {t('profile.activitySummary', { count: totalCaptures, days: activeDays })}
+        </Text>
+      ) : (
+        <Text style={[p.heatmapNoData, { color: colors.textMuted }]}>
+          {t('profile.activityNoData')}
+        </Text>
+      )}
     </View>
   );
+}
+
+function buildHeatmapSeries(entries: { date: string; count: number }[], totalDays: number = 28): number[] {
+  const dateToCount = new Map(entries.map((entry) => [entry.date, entry.count]));
+  const now = new Date();
+  const todayUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const result: number[] = [];
+
+  for (let offset = totalDays - 1; offset >= 0; offset -= 1) {
+    const day = new Date(todayUtc);
+    day.setUTCDate(todayUtc.getUTCDate() - offset);
+    const key = day.toISOString().slice(0, 10);
+    result.push(dateToCount.get(key) ?? 0);
+  }
+
+  return result;
 }
 
 export default function ProfileScreen() {
@@ -278,46 +332,91 @@ export default function ProfileScreen() {
   type ModalType = 'account' | 'privacy' | 'about' | 'language' | 'appearance' | 'aiFeatures' | null;
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [dismissedCount, setDismissedCount] = useState(0);
+  const [totalMemories, setTotalMemories] = useState(0);
+  const [streak, setStreak] = useState(0);
   const [recallRate, setRecallRate] = useState<number | null>(null);
-  const [weeklyInsight, setWeeklyInsight] = useState<{ text: string; topTopics: string[] } | null>(null);
-  const [heatmapData, setHeatmapData] = useState<number[]>([]);
+  const [weeklyInsight, setWeeklyInsight] = useState<{ text: string; topTopics: { name: string; count: number }[] } | null>(null);
+  const [heatmapData, setHeatmapData] = useState<number[]>(() => Array(28).fill(0));
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const { colors, isDark, mode: themeMode } = useTheme();
+  const insightsLoadingRef = useRef(false);
 
-  // Load preferences on focus
-  useEffect(() => {
-    loadPreferences();
-  }, []);
+  const loadProfileInsights = useCallback(async () => {
+    if (insightsLoadingRef.current) {
+      return;
+    }
+    insightsLoadingRef.current = true;
+    try {
+      await loadPreferences();
 
-  useEffect(() => {
-    insightsApi.getWeeklyRecap().then((recap) => {
-      if (recap) {
-        const topicsText = (recap.categories_used ?? [])
+      await insightsApi.getWeeklyRecap().then((recap) => {
+        if (recap) {
+          const topicsText = (recap.categories_used ?? [])
+            .slice(0, 3)
+            .map((c: { name: string; icon: string }) => ({ name: c.name, count: 1 }));
+          setWeeklyInsight({
+            text: recap.recap ?? t('profile.weeklyInsightFallback', { count: recap.total_memories ?? 0 }),
+            topTopics: topicsText,
+          });
+        }
+      }).catch(() => undefined);
+
+      await insightsApi.getDashboard(28).then((dash) => {
+        const counts = buildHeatmapSeries(dash.activity_heatmap ?? [], 28);
+        setHeatmapData(counts);
+        setStreak(dash.current_streak ?? 0);
+
+        const topTopics = (dash.category_breakdown ?? [])
+          .filter((c: { name?: string }) => !!c.name)
           .slice(0, 3)
-          .map((c: { name: string; icon: string }) => c.name);
-        setWeeklyInsight({
-          text: recap.recap ?? `Đã lưu ${recap.total_memories ?? 0} ký ức tuần này.`,
-          topTopics: topicsText,
-        });
-      }
-    }).catch(() => undefined);
+          .map((c: { name?: string; count: number }) => ({
+            name: c.name || 'Other',
+            count: c.count,
+          }));
 
-    insightsApi.getDashboard(28).then((dash) => {
-      const counts = (dash.activity_heatmap ?? []).map((d: { count: number }) => d.count);
-      setHeatmapData(counts);
-      const total = dash.total_memories ?? 0;
-      if (total > 0) {
-        const thisWeekCount = (dash.weekly_trend ?? []).slice(-1)[0]?.count ?? 0;
-        setRecallRate(Math.min(99, Math.round(thisWeekCount / total * 100)));
-      }
-    }).catch(() => undefined);
-  }, []);
+        setWeeklyInsight((prev) => {
+          const total = dash.total_memories ?? 0;
+          const growth = dash.growth_percentage ?? 0;
+          const fallback = t('profile.weeklyInsightFallback', { count: total });
+          const baseText = prev?.text || fallback;
+          const growthText = `${growth >= 0 ? '+' : ''}${growth}%`;
+          const composed = `${baseText} (${growthText} ${t('insights.vsPrevious')})`;
+          return {
+            text: composed,
+            topTopics: topTopics.length > 0 ? topTopics : (prev?.topTopics ?? []),
+          };
+        });
+      }).catch(() => undefined);
+
+      await insightsApi.getRecallRate(30).then((rate) => {
+        setRecallRate(Math.round(rate.recall_rate));
+      }).catch(() => undefined);
+
+      await memoriesApi.stats().then((stats) => {
+        setTotalMemories(stats.total ?? 0);
+        setStreak((prev) => (prev > 0 ? prev : stats.streak ?? 0));
+      }).catch(() => undefined);
+
+      setLastUpdatedAt(new Date());
+    } finally {
+      insightsLoadingRef.current = false;
+    }
+  }, [loadPreferences, t]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadProfileInsights();
+    setRefreshing(false);
+  }, [loadProfileInsights]);
 
   useFocusEffect(
     useCallback(() => {
+      void loadProfileInsights();
       memoriesApi.listDismissed({ limit: 100 })
         .then((response) => setDismissedCount(response.total ?? response.memories.length))
         .catch(() => { });
-    }, [])
+    }, [loadProfileInsights])
   );
 
   const handleLogout = () => {
@@ -366,69 +465,64 @@ export default function ProfileScreen() {
         />
       </View>
 
-      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={(
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+          />
+        )}
+      >
         {/* Stats Row */}
         <View style={p.statsRow}>
           <View style={[p.statBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-            <Text style={[p.statVal, { color: colors.textPrimary }]}>{dismissedCount ?? 0}</Text>
-            <Text style={[p.statLabel, { color: colors.textMuted }]}>bộ nhớ</Text>
+            <Text style={[p.statVal, { color: colors.textPrimary }]}>{totalMemories}</Text>
+            <Text style={[p.statLabel, { color: colors.textMuted }]}>{t('profile.totalMemories')}</Text>
           </View>
           <View style={[p.statBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-            <Text style={[p.statVal, { color: colors.textPrimary }]}>—</Text>
-            <Text style={[p.statLabel, { color: colors.textMuted }]}>streak</Text>
+            <Text style={[p.statVal, { color: colors.textPrimary }]}>{streak}🔥</Text>
+            <Text style={[p.statLabel, { color: colors.textMuted }]}>{t('home.statsStreak')}</Text>
           </View>
           <View style={[p.statBox, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}>
             <Text style={[p.statVal, { color: colors.accent }]}>
               {recallRate !== null ? `${recallRate}%` : '—'}
             </Text>
-            <Text style={[p.statLabel, { color: colors.accent }]}>recall rate</Text>
+            <Text style={[p.statLabel, { color: colors.accent }]}>{t('profile.recallRate')}</Text>
           </View>
         </View>
 
+        <View style={p.quickActionsWrap}>
+          <Text style={[p.quickActionsLabel, { color: colors.textMuted }]}>{t('profile.quickActions')}</Text>
+          <View style={p.quickActionsRow}>
+            <TouchableOpacity
+              style={[p.quickActionBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+              onPress={() => router.push('/(tabs)/recall')}
+              activeOpacity={0.75}
+            >
+              <Text style={[p.quickActionText, { color: colors.textPrimary }]}>{t('profile.goToRecall')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[p.quickActionBtn, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+              onPress={() => router.push('/dismissed')}
+              activeOpacity={0.75}
+            >
+              <Text style={[p.quickActionText, { color: colors.textPrimary }]}>{t('profile.openDismissed')}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[p.updatedText, { color: colors.textMuted }]}>
+            {t('profile.lastUpdated', { time: lastUpdatedAt ? lastUpdatedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—' })}
+          </Text>
+        </View>
+
         {/* Weekly Insight Card */}
-        {weeklyInsight && <WeeklyInsightCard insight={weeklyInsight} colors={colors} />}
+        {weeklyInsight && <WeeklyInsightCard insight={weeklyInsight} colors={colors} isDark={isDark} t={t} />}
 
         {/* Compact Heatmap */}
-        {heatmapData.length > 0 && <CompactHeatmap data={heatmapData} colors={colors} />}
-
-        {/* Compact Settings List */}
-        <View style={[p.settingsList, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <TouchableOpacity
-            style={[p.settingsItemRow, { borderBottomColor: colors.border }]}
-            onPress={() => setActiveModal('account')}
-            activeOpacity={0.7}
-          >
-            <View style={[p.settingsIcon, { backgroundColor: colors.accentLight }]}>
-              <Bell size={14} color={colors.accent} strokeWidth={1.8} />
-            </View>
-            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Cài đặt nhắc nhở</Text>
-            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[p.settingsItemRow, { borderBottomColor: colors.border }]}
-            onPress={() => setActiveModal('appearance')}
-            activeOpacity={0.7}
-          >
-            <View style={[p.settingsIcon, { backgroundColor: '#F5F0FF' }]}>
-              <Palette size={14} color="#7C3AED" strokeWidth={1.8} />
-            </View>
-            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Giao diện</Text>
-            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={p.settingsItemRow}
-            onPress={() => setActiveModal('privacy')}
-            activeOpacity={0.7}
-          >
-            <View style={[p.settingsIcon, { backgroundColor: '#F0FFF4' }]}>
-              <Lock size={14} color="#16A34A" strokeWidth={1.8} />
-            </View>
-            <Text style={[p.settingsText, { color: colors.textPrimary }]}>Tài khoản & bảo mật</Text>
-            <ChevronRight size={16} color={colors.textMuted} strokeWidth={1.5} />
-          </TouchableOpacity>
-        </View>
+        <CompactHeatmap data={heatmapData} colors={colors} isDark={isDark} t={t} />
 
         {/* AI Features Card */}
         <View style={[s.card, s.settingsGroup, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
@@ -806,6 +900,24 @@ const r = StyleSheet.create({
 });
 
 const p = StyleSheet.create({
+  quickActionsWrap: { marginHorizontal: 16, marginBottom: 10 },
+  quickActionsLabel: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 12,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  quickActionsRow: { flexDirection: 'row', gap: 8 },
+  quickActionBtn: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  quickActionText: { fontFamily: 'DMSans_500Medium', fontSize: 13 },
+  updatedText: { fontFamily: 'DMSans_400Regular', fontSize: 11, marginTop: 8 },
   statsRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
   statBox: { flex: 1, borderRadius: 14, borderWidth: 1, paddingVertical: 10, alignItems: 'center' },
   statVal: { fontSize: 18, fontWeight: '700', lineHeight: 22 },
@@ -821,6 +933,8 @@ const p = StyleSheet.create({
   heatmapGrid: { flexDirection: 'row', gap: 3 },
   heatmapCol: { flexDirection: 'column', gap: 3 },
   heatmapCell: { width: 14, height: 14, borderRadius: 3 },
+  heatmapSummary: { fontSize: 11, marginTop: 8 },
+  heatmapNoData: { fontSize: 11, marginTop: 8 },
   settingsList: { marginHorizontal: 16, borderRadius: 14, borderWidth: 1, overflow: 'hidden', marginBottom: 16 },
   settingsItemRow: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1 },
   settingsIcon: { width: 28, height: 28, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },

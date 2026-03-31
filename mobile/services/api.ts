@@ -307,6 +307,17 @@ export const memoriesApi = {
     return response.data;
   },
 
+  // Pin memory to recall queue
+  pinForRecall: async (id: string) => {
+    const response = await api.post<{
+      status: string;
+      memory_id: string;
+      event_id: string;
+      reason_code: string;
+    }>(`/memories/${id}/pin`);
+    return response.data;
+  },
+
   // List dismissed (soft-deleted) memories
   listDismissed: async (params?: { limit?: number; offset?: number }) => {
     const response = await api.get<Memory[] | PaginatedMemoriesResponse>('/memories/dismissed', { params });
@@ -554,11 +565,15 @@ export const aiApi = {
   },
 
   // AI reflection on user's thought
-  reflect: async (thought: string) => {
+  reflect: async (thought: string, memoryId?: string) => {
     const response = await api.post<{
       insight: string;
       related_memories: Memory[];
-    }>('/ai/reflect', { thought });
+      cached: boolean;
+    }>('/ai/reflect', {
+      thought,
+      memory_id: memoryId,
+    });
     return response.data;
   },
 };
@@ -629,6 +644,13 @@ export interface StreakDetails {
   monthly_activity: Array<{ month: string; active_days: number }>;
 }
 
+export interface RecallRate {
+  days: number;
+  served: number;
+  opened: number;
+  recall_rate: number;
+}
+
 export const insightsApi = {
   // Get insights dashboard
   getDashboard: async (days: number = 30) => {
@@ -674,6 +696,14 @@ export const insightsApi = {
   // Get detailed streak info
   getStreaks: async () => {
     const response = await api.get<StreakDetails>('/insights/streaks');
+    return response.data;
+  },
+
+  // Get recall rate from radar events
+  getRecallRate: async (days: number = 30) => {
+    const response = await api.get<RecallRate>('/insights/recall-rate', {
+      params: { days },
+    });
     return response.data;
   },
 };

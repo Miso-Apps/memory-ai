@@ -12,13 +12,13 @@ import {
   Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, router } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { chatApi, ChatMessage, ChatSource } from '../../services/api';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
 import { useSettingsStore } from '../../store/settingsStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
-import { ArrowUp, Brain, Sparkles } from 'lucide-react-native';
+import { ArrowLeft, ArrowUp, Brain, Sparkles } from 'lucide-react-native';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,6 +133,7 @@ function TypingIndicator({ colors }: { colors: ThemeColors }) {
 export default function ChatScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const params = useLocalSearchParams<{ prefill?: string }>();
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const { preferences } = useSettingsStore();
@@ -144,6 +145,7 @@ export default function ChatScreen() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [prefillApplied, setPrefillApplied] = useState(false);
 
   const loadSuggestions = useCallback(async () => {
     try {
@@ -177,6 +179,15 @@ export default function ChatScreen() {
       loadSuggestions();
     }
   }, [language, loadSuggestions, messages.length]);
+
+  useEffect(() => {
+    if (prefillApplied || messages.length > 0) return;
+    const seededPrompt = typeof params.prefill === 'string' ? params.prefill.trim() : '';
+    if (!seededPrompt) return;
+    setInputText(seededPrompt);
+    setPrefillApplied(true);
+    setTimeout(() => inputRef.current?.focus(), 150);
+  }, [messages.length, params.prefill, prefillApplied]);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -293,10 +304,17 @@ export default function ChatScreen() {
   const showWelcome = messages.length === 0;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerTop}>
+          <TouchableOpacity
+            style={[styles.backBtn, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+            onPress={() => router.back()}
+            activeOpacity={0.75}
+          >
+            <ArrowLeft size={16} color={colors.textSecondary} strokeWidth={2.2} />
+          </TouchableOpacity>
           <View style={styles.headerTextWrap}>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               {t('chat.title')}
@@ -318,7 +336,7 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={90}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 12 : 0}
       >
         {/* Messages */}
         <ScrollView
@@ -421,6 +439,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   headerTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 2,
+  },
   headerTextWrap: { flex: 1 },
   headerTitle: { fontSize: 26, fontWeight: '600', marginBottom: 4 },
   headerSubtitle: { fontSize: 15 },
@@ -436,7 +464,7 @@ const styles = StyleSheet.create({
 
   // Messages
   messagesList: { flex: 1 },
-  messagesContent: { padding: 16, paddingBottom: 8 },
+  messagesContent: { padding: 16, paddingBottom: 6 },
 
   // Welcome
   welcome: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 24 },
@@ -515,9 +543,9 @@ const styles = StyleSheet.create({
 
   // Input bar
   inputBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingBottom: 6,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 6,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   inputWrap: {
@@ -528,7 +556,7 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     paddingRight: 6,
     paddingVertical: 6,
-    minHeight: 44,
+    minHeight: 46,
   },
   input: {
     flex: 1,

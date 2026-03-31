@@ -533,11 +533,13 @@ function RecallBanner({
   topTopic,
   onPress,
   colors,
+  t,
 }: {
   count: number;
   topTopic: string;
   onPress: () => void;
   colors: ThemeColors;
+  t: (key: string, options?: Record<string, any>) => string;
 }) {
   if (count === 0) return null;
   return (
@@ -550,17 +552,17 @@ function RecallBanner({
       >
         <View style={styles.recallBannerTop}>
           <Text style={[styles.recallBannerLabel, { color: colors.accent }]}>
-            🔔 Nhắc lại hôm nay
+            🔔 {t('home.recallBannerLabel')}
           </Text>
           <View style={[styles.recallBadge, { backgroundColor: colors.badgeRed }]}>
-            <Text style={styles.recallBadgeText}>{count} mới</Text>
+            <Text style={styles.recallBadgeText}>{t('home.recallBannerNew', { count })}</Text>
           </View>
         </View>
         <Text style={[styles.recallBannerTitle, { color: colors.textPrimary }]}>
           {topTopic}
         </Text>
         <Text style={[styles.recallBannerCta, { color: colors.accent }]}>
-          Xem ngay →
+          {t('home.recallBannerCta')}
         </Text>
       </LinearGradient>
     </TouchableOpacity>
@@ -752,13 +754,6 @@ export default function HomeScreen() {
             {/* Daily Focus Card */}
             {hasAnyContent && <FocusCard stats={stats} reminders={reminders} t={t} colors={colors} />}
 
-            {/* Quick Capture Row */}
-            <SectionHeader
-              icon={<Plus size={14} color={colors.textSecondary} strokeWidth={2.5} />}
-              title={t('home.quickCapture')}
-            />
-            <QuickCaptureRow t={t} />
-
             {!hasAnyContent ? (
               <EmptyState t={t} />
             ) : (
@@ -861,13 +856,13 @@ export default function HomeScreen() {
                 <Text style={[styles.statVal, { color: colors.textPrimary }]}>
                   {stats?.this_week ?? 0}
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>tuần này</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.thisWeek')}</Text>
               </View>
               <View style={[styles.statPill, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
                 <Text style={[styles.statVal, { color: colors.textPrimary }]}>
                   {stats?.streak ?? 0}🔥
                 </Text>
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>streak</Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.statsStreak')}</Text>
               </View>
               <TouchableOpacity
                 style={[styles.statPill, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}
@@ -875,7 +870,7 @@ export default function HomeScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={[styles.statVal, { color: colors.accent }]}>{recallCount}</Text>
-                <Text style={[styles.statLabel, { color: colors.accent }]}>nhắc mới</Text>
+                <Text style={[styles.statLabel, { color: colors.accent }]}>{t('home.newRecalls')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -885,6 +880,7 @@ export default function HomeScreen() {
               topTopic={recallTopTopic}
               onPress={() => router.push('/(tabs)/recall')}
               colors={colors}
+              t={t}
             />
           </>
         )}

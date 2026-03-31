@@ -291,6 +291,58 @@ async def summarize_search_results(
         return None
 
 
+async def generate_reflection_markdown(
+    thought: str,
+    memory_snippets: list[str],
+    language: str = "en",
+) -> Optional[str]:
+    """Generate a markdown reflection for a thought using related memory snippets."""
+    if not _has_valid_key() or not thought.strip():
+        return None
+
+    try:
+        from openai import AsyncOpenAI
+        from app.config import settings
+
+        client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        snippets_text = "\n".join(f"- {s[:220]}" for s in memory_snippets[:10])
+        lang_note = _language_instruction(language)
+
+        response = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a personal reflection coach. "
+                        "Return STRICT markdown with this structure: "
+                        "1) '## Reflection' heading, "
+                        "2) one short paragraph, "
+                        "3) '### Signals from memories' heading with 2-4 bullet points, "
+                        "4) '### Next action' heading with exactly 2-3 numbered action. "
+                        "Use **bold** for concrete facts and *italic* for patterns. "
+                        "No JSON, no code blocks, no preamble." + lang_note
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Thought: {thought}\n\n"
+                        f"Related memories ({len(memory_snippets)}):\n{snippets_text or '- (none)'}\n\n"
+                        "Write the reflection in the required markdown structure." + lang_note
+                    ),
+                },
+            ],
+            max_tokens=1024,
+            temperature=0.4,
+        )
+        result = (response.choices[0].message.content or "").strip()
+        return result or None
+    except Exception as exc:
+        log.warning("OpenAI reflection generation failed: %s", exc)
+        return None
+
+
 async def group_memories_by_topic(
     memory_contents: dict[str, str],
     language: str = "en",
@@ -345,7 +397,7 @@ async def group_memories_by_topic(
                     "content": f"Group these notes:\n\n{items_text}",
                 },
             ],
-            max_tokens=500,
+            max_tokens=1024,
             temperature=0.3,
             response_format={"type": "json_object"},
         )
@@ -502,8 +554,7 @@ async def fetch_and_summarize_link(url: str, language: str = "en") -> Optional[s
         system_msg = (
             "You are a helpful assistant that summarises YouTube videos for a personal memory app. "
             "Write 1-2 concise sentences describing what the video is about, its key topic, "
-            "and any notable insights from the transcript if available."
-            + lang_note
+            "and any notable insights from the transcript if available." + lang_note
         )
         user_msg = f"Summarise this YouTube video:\n\n{prompt_text}"
         max_tokens = 120

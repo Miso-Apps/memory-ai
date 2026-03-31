@@ -141,12 +141,12 @@ export const LightColors: ThemeColors = {
   recallBannerBorder: '#F0C89A',
 
   // Capture dark modal
-  captureBg: '#1C1108',
-  captureCard: 'rgba(255,255,255,0.06)',
-  captureBorder: 'rgba(255,255,255,0.10)',
-  captureText: '#F5EFE8',
-  captureMuted: 'rgba(245,239,232,0.45)',
-  captureAccent: '#E8844A',
+  captureBg: '#FBF7F2',
+  captureCard: '#FFFFFF',
+  captureBorder: '#E8DDD0',
+  captureText: '#2C1810',
+  captureMuted: '#8B5E3C',
+  captureAccent: '#C2600A',
 
   // Notification badge
   badgeRed: '#E8442A',

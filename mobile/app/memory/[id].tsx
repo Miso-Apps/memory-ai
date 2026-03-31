@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Modal,
   Alert,
   Share,
   TextInput,
@@ -17,9 +18,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { memoriesApi, insightsApi, MemoryLink, RelatedMemory } from '../../services/api';
+import { aiApi, memoriesApi, insightsApi, MemoryLink, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
 import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles } from 'lucide-react-native';
+import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 
 interface Memory {
   id: string;
@@ -341,6 +343,9 @@ export default function MemoryDetailScreen() {
   const [savingLinkTargetId, setSavingLinkTargetId] = useState<string | null>(null);
   const [deletingLinkTargetId, setDeletingLinkTargetId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isReflecting, setIsReflecting] = useState(false);
+  const [reflectionMarkdown, setReflectionMarkdown] = useState<string>('');
+  const [showReflectionModal, setShowReflectionModal] = useState(false);
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
   useEffect(() => {
@@ -545,6 +550,23 @@ export default function MemoryDetailScreen() {
     });
   }, [id]);
 
+  const handleReflect = useCallback(async () => {
+    if (!memory || isReflecting) return;
+    setIsReflecting(true);
+    try {
+      const sourceText = memory.aiSummary || memory.transcription || memory.content;
+      const result = await aiApi.reflect(sourceText, memory.id);
+      const referencedCount = result.related_memories?.length ?? 0;
+      const footer = `\n\n---\n${t('chat.memoriesReferenced', { count: referencedCount })}${result.cached ? ` • ${t('memory.cachedReflection')}` : ''}`;
+      setReflectionMarkdown(`${result.insight}${footer}`);
+      setShowReflectionModal(true);
+    } catch {
+      Alert.alert(t('common.error'), t('memory.reflectionFailed'));
+    } finally {
+      setIsReflecting(false);
+    }
+  }, [memory, isReflecting, t]);
+
   if (loading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top', 'bottom']}>
@@ -694,13 +716,14 @@ export default function MemoryDetailScreen() {
                 </View>
               </TouchableOpacity>
             ) : memory.type === 'photo' ? (
-              <View style={[styles.photoDescriptionBox, { backgroundColor: colors.accentLight, borderColor: colors.accentMid }]}>
-                <Text style={[styles.photoDescriptionLabel, { color: colors.accent }]}>🤖 {t('memory.aiDescription')}</Text>
-                <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
+              <View style={[styles.photoDescriptionBox, { backgroundColor: colors.inputBg, borderColor: colors.accentMid }]}>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.aiDescription')}</Text>
+                <Text style={[styles.transcriptionText, { color: colors.textSecondary }]}>{memory.content}</Text>
               </View>
             ) : (
-              <View style={[styles.contentCard, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <Text style={[styles.contentText, { color: colors.textPrimary }]}>{memory.content}</Text>
+              <View style={[styles.contentCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.aiTextContent')}</Text>
+                <Text style={[styles.transcriptionText, { color: colors.textSecondary }]}>{memory.content}</Text>
               </View>
             )}
           </View>
@@ -806,7 +829,7 @@ export default function MemoryDetailScreen() {
         )}
 
         {/* Manual Links */}
-        <View style={[styles.relatedSection, { borderTopColor: colors.border }]}> 
+        <View style={[styles.relatedSection, { borderTopColor: colors.border }]}>
           <Text style={[styles.relatedTitle, { color: colors.textPrimary }]}>{t('memory.manualLinksTitle')}</Text>
           <Text style={[styles.linkSectionHint, { color: colors.textSecondary }]}>{t('memory.manualLinksSubtitle')}</Text>
 
@@ -918,30 +941,52 @@ export default function MemoryDetailScreen() {
         <TouchableOpacity
           style={[styles.primaryActionBtn, { backgroundColor: colors.brandAccent }]}
           onPress={() => {
-            if (memory.type === 'voice') {
-              audioPlayerRef.current?.togglePlayback();
-            } else if (memory.type === 'link') {
-              WebBrowser.openBrowserAsync(memory.content, {
-                dismissButtonStyle: 'close',
-                presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-                controlsColor: '#6366F1',
-              }).catch(() => { });
-            }
-            // text/photo: Reflect — no-op until reflect flow is built
+            void handleReflect();
           }}
+          disabled={isReflecting}
           activeOpacity={0.8}
         >
-          <Text style={[styles.primaryActionBtnText, { color: colors.buttonText }]}>
-            {memory.type === 'voice'
-              ? t('memory.actionPlay')
-              : memory.type === 'link'
-                ? t('memory.actionOpenLink')
-                : t('memory.actionReflect')}
-          </Text>
+          {isReflecting ? (
+            <View style={styles.reflectLoadingRow}>
+              <ActivityIndicator size="small" color={colors.buttonText} />
+              <Text style={[styles.primaryActionBtnText, { color: colors.buttonText }]}>
+                {t('memory.reflecting')}
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.primaryActionBtnText, { color: colors.buttonText }]}>
+              {memory.type === 'voice'
+                ? t('memory.actionReflect')
+                : t('memory.actionThinkAbout')}
+            </Text>
+          )}
         </TouchableOpacity>
         {/* Secondary row */}
         <View style={styles.secondaryActionRow}>
-          {memory.type === 'text' || memory.type === 'photo' ? (
+          {memory.type === 'voice' ? (
+            <>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                onPress={() => {
+                  audioPlayerRef.current?.togglePlayback();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionPlay')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+                onPress={handleShare}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+                  {t('memory.actionShare')}
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : (
             <>
               <TouchableOpacity
                 style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
@@ -962,29 +1007,34 @@ export default function MemoryDetailScreen() {
                 </Text>
               </TouchableOpacity>
             </>
-          ) : (
-            <>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionReflect')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                onPress={handleShare}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionShare')}
-                </Text>
-              </TouchableOpacity>
-            </>
           )}
         </View>
       </View>
+
+      <Modal
+        visible={showReflectionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowReflectionModal(false)}
+      >
+        <View style={styles.reflectionBackdrop}>
+          <View style={[styles.reflectionCard, { backgroundColor: colors.modalBg, borderColor: colors.border }]}>
+            <View style={[styles.reflectionHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.reflectionTitle, { color: colors.textPrimary }]}>{t('memory.reflectionTitle')}</Text>
+              <TouchableOpacity onPress={() => setShowReflectionModal(false)}>
+                <Text style={[styles.reflectionClose, { color: colors.accent }]}>{t('common.close')}</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.reflectionBody} showsVerticalScrollIndicator={false}>
+              <SimpleMarkdown
+                content={reflectionMarkdown}
+                textColor={colors.textPrimary}
+                colors={colors}
+              />
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1346,6 +1396,46 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     gap: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  reflectLoadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  reflectionBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  reflectionCard: {
+    width: '100%',
+    maxHeight: '78%',
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  reflectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  reflectionTitle: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 16,
+  },
+  reflectionClose: {
+    fontFamily: 'DMSans_500Medium',
+    fontSize: 14,
+  },
+  reflectionBody: {
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   primaryActionBtn: {
     borderRadius: 10,

@@ -83,9 +83,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const VALID_LANGS: SupportedLanguage[] = ['en', 'vi'];
       const serverLang = prefs.language as SupportedLanguage;
       if (serverLang && VALID_LANGS.includes(serverLang)) {
-        await AsyncStorage.setItem(LANGUAGE_KEY, serverLang);
-        i18n.changeLanguage(serverLang);
-        set({ language: serverLang });
+        const currentLang = get().language;
+        if (serverLang !== currentLang) {
+          await AsyncStorage.setItem(LANGUAGE_KEY, serverLang);
+          setApiLanguage(serverLang);
+          i18n.changeLanguage(serverLang);
+          set({ language: serverLang });
+        }
       }
       
       // Cache

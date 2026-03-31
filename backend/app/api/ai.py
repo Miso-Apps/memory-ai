@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, text, func
+from sqlalchemy import select, and_, or_, text, func, inspect
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime, timezone
+from typing import List, Optional, Sequence
+from datetime import datetime, timezone, timedelta
+import hashlib
 import uuid
 import json
 import logging
@@ -40,26 +41,48 @@ class GroupRequest(BaseModel):
     memory_ids: List[str]
 
 
+class ReflectRequest(BaseModel):
+    thought: str
+    limit: int = 5
+    memory_id: Optional[str] = None
+
+
 def _memory_to_response_payload(m: Memory) -> dict:
-    """Build a MemoryResponse-compatible payload from a Memory ORM object."""
+    """Build a MemoryResponse-compatible payload without triggering lazy loads."""
+    row = m.__dict__
+    state = inspect(m)
+
+    def _as_str(value):
+        return str(value) if value is not None else None
+
+    identity = state.identity or ()
+    memory_id = row.get("id") or (identity[0] if len(identity) > 0 else None)
+
+    memory_type = row.get("type")
+    if memory_type is not None and hasattr(memory_type, "value"):
+        memory_type = memory_type.value
+
+    created_at = row.get("created_at")
+    updated_at = row.get("updated_at")
+
     return {
-        "id": str(m.id),
-        "user_id": str(m.user_id),
-        "type": m.type.value if hasattr(m.type, "value") else str(m.type),
-        "content": m.content,
-        "transcription": m.transcription,
-        "audio_url": m.audio_url,
-        "audio_duration": m.audio_duration,
-        "image_url": m.image_url,
-        "ai_summary": m.ai_summary,
-        "metadata": m.extra_metadata,
-        "category_id": str(m.category_id) if m.category_id else None,
+        "id": _as_str(memory_id),
+        "user_id": _as_str(row.get("user_id")),
+        "type": str(memory_type) if memory_type is not None else None,
+        "content": row.get("content"),
+        "transcription": row.get("transcription"),
+        "audio_url": row.get("audio_url"),
+        "audio_duration": row.get("audio_duration"),
+        "image_url": row.get("image_url"),
+        "ai_summary": row.get("ai_summary"),
+        "metadata": row.get("extra_metadata"),
+        "category_id": _as_str(row.get("category_id")),
         "category_name": None,
         "category_icon": None,
         "category_color": None,
-        "category_confidence": m.category_confidence,
-        "created_at": m.created_at.isoformat() if m.created_at else None,
-        "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+        "category_confidence": row.get("category_confidence"),
+        "created_at": created_at.isoformat() if created_at else None,
+        "updated_at": updated_at.isoformat() if updated_at else None,
     }
 
 
@@ -122,6 +145,133 @@ def _radar_confidence(memory: Memory) -> int:
     return int(max(0, min(100, round(score))))
 
 
+def _days_since_last_view(memory: Memory, now: datetime) -> int | None:
+    if not memory.last_viewed_at:
+        return None
+    viewed_at = memory.last_viewed_at
+    if viewed_at.tzinfo is None:
+        viewed_at = viewed_at.replace(tzinfo=timezone.utc)
+    return int(max(0, (now - viewed_at).total_seconds() / 86400))
+
+
+def _hours_since_last_view(memory: Memory, now: datetime) -> float | None:
+    if not memory.last_viewed_at:
+        return None
+    viewed_at = memory.last_viewed_at
+    if viewed_at.tzinfo is None:
+        viewed_at = viewed_at.replace(tzinfo=timezone.utc)
+    return max(0.0, (now - viewed_at).total_seconds() / 3600)
+
+
+def _on_this_day_years(memory: Memory, now: datetime) -> int | None:
+    if not memory.created_at:
+        return None
+    created_at = memory.created_at
+    if created_at.month != now.month or created_at.day != now.day:
+        return None
+    years = now.year - created_at.year
+    return years if years >= 1 else None
+
+
+def _cosine_similarity(a: Sequence[float], b: Sequence[float]) -> float:
+    if len(a) != len(b) or len(a) == 0:
+        return 0.0
+    dot = 0.0
+    norm_a = 0.0
+    norm_b = 0.0
+    for x, y in zip(a, b):
+        dot += x * y
+        norm_a += x * x
+        norm_b += y * y
+    if norm_a <= 0.0 or norm_b <= 0.0:
+        return 0.0
+    return dot / ((norm_a**0.5) * (norm_b**0.5))
+
+
+def _semantic_cluster_memory_ids(memories: list[Memory]) -> set[str]:
+    """Return memory ids belonging to a dense semantic neighborhood."""
+    embedded = [
+        m
+        for m in memories
+        if m.embedding is not None
+        and isinstance(m.embedding, list)
+        and len(m.embedding) > 0
+    ]
+    if len(embedded) < 3:
+        return set()
+
+    cluster_ids: set[str] = set()
+    for idx, memory in enumerate(embedded):
+        neighbors = 0
+        for jdx, other in enumerate(embedded):
+            if idx == jdx:
+                continue
+            similarity = _cosine_similarity(memory.embedding, other.embedding)
+            if similarity >= 0.82:
+                neighbors += 1
+        if neighbors >= 2:
+            cluster_ids.add(str(memory.id))
+    return cluster_ids
+
+
+def _radar_reason_enhanced(
+    memory: Memory,
+    now: datetime,
+    pinned_ids: set[str],
+    category_frequency_14d: dict[str, int],
+    semantic_cluster_ids: set[str],
+) -> tuple[str, str, str, int]:
+    memory_id = str(memory.id)
+
+    if memory_id in pinned_ids:
+        return (
+            "You marked this to revisit",
+            "user_pinned",
+            "Open this and reconnect the context",
+            12,
+        )
+
+    years = _on_this_day_years(memory, now)
+    if years is not None:
+        year_text = "year" if years == 1 else "years"
+        return (
+            f"On this day {years} {year_text} ago",
+            "on_this_day",
+            "Revisit this memory and note what changed",
+            8,
+        )
+
+    days_since_view = _days_since_last_view(memory, now)
+    if days_since_view is not None and days_since_view > 7:
+        return (
+            f"Not reviewed for {days_since_view} days",
+            "not_viewed",
+            "Review quickly and decide the next action",
+            6,
+        )
+
+    if memory.category_id:
+        category_key = str(memory.category_id)
+        if category_frequency_14d.get(category_key, 0) >= 3:
+            return (
+                "You have been thinking about this topic often",
+                "repeated_topic",
+                "Use this to connect your recent notes",
+                7,
+            )
+
+    if memory_id in semantic_cluster_ids:
+        return (
+            "Related to your recent memory patterns",
+            "semantic_cluster",
+            "Open this to reconnect the cluster of ideas",
+            5,
+        )
+
+    reason, reason_code, action_hint = _radar_reason(memory)
+    return (reason, reason_code, action_hint, 0)
+
+
 @router.get("/recall", response_model=dict)
 async def get_recall(
     limit: int = Query(5, ge=1, le=10),
@@ -162,7 +312,19 @@ async def get_radar(
 ):
     """Return a preference-aware proactive radar feed of recall cards."""
     prefs = await get_or_create_preferences(db, current_user.id)
-    if not prefs.ai_recall_enabled or not prefs.proactive_recall_opt_in:
+
+    # Legacy rows can contain NULL for these flags. Treat NULL as enabled so
+    # recall cards still render in the Recall tab.
+    ai_recall_enabled = (
+        prefs.ai_recall_enabled if prefs.ai_recall_enabled is not None else True
+    )
+    proactive_recall_opt_in = (
+        prefs.proactive_recall_opt_in
+        if prefs.proactive_recall_opt_in is not None
+        else True
+    )
+
+    if not ai_recall_enabled or not proactive_recall_opt_in:
         return {"items": [], "generated_at": datetime.now(timezone.utc).isoformat()}
 
     min_confidence = _radar_threshold_by_sensitivity(
@@ -177,12 +339,54 @@ async def get_radar(
     )
     memories = result.scalars().all()
 
+    now = datetime.now(timezone.utc)
+    recent_cutoff = now - timedelta(days=14)
+    category_frequency_14d: dict[str, int] = {}
+    for memory in memories:
+        if not memory.category_id or not memory.created_at:
+            continue
+        created_at = memory.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        if created_at >= recent_cutoff:
+            category_key = str(memory.category_id)
+            category_frequency_14d[category_key] = (
+                category_frequency_14d.get(category_key, 0) + 1
+            )
+
+    pinned_result = await db.execute(
+        select(RadarEvent.memory_id)
+        .where(
+            and_(
+                RadarEvent.user_id == current_user.id,
+                RadarEvent.event_type == "acted",
+                RadarEvent.reason_code == "user_pinned",
+            )
+        )
+        .order_by(RadarEvent.created_at.desc())
+        .limit(100)
+    )
+    pinned_ids = {str(row[0]) for row in pinned_result.all() if row[0] is not None}
+    semantic_cluster_ids = _semantic_cluster_memory_ids(memories)
+
     items = []
     for memory in memories:
+        viewed_hours = _hours_since_last_view(memory, now)
+        if (
+            viewed_hours is not None
+            and viewed_hours < 24
+            and str(memory.id) not in pinned_ids
+        ):
+            # Avoid immediately re-suggesting memories that were just opened.
+            continue
+
         confidence = _radar_confidence(memory)
+        reason, reason_code, action_hint, confidence_boost = _radar_reason_enhanced(
+            memory, now, pinned_ids, category_frequency_14d, semantic_cluster_ids
+        )
+        confidence = max(0, min(100, confidence + confidence_boost))
         if confidence < min_confidence:
             continue
-        reason, reason_code, action_hint = _radar_reason(memory)
         items.append(
             {
                 "memory": _memory_to_response_payload(memory),
@@ -238,6 +442,166 @@ async def create_radar_event(
     await db.flush()
 
     return {"status": "ok", "event_id": str(event.id)}
+
+
+@router.post("/reflect", response_model=dict)
+async def reflect_on_thought(
+    body: ReflectRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate a concise reflection and return related memories."""
+    thought = (body.thought or "").strip()
+    if not thought:
+        raise HTTPException(status_code=422, detail="thought is required")
+
+    limit = max(1, min(10, int(body.limit or 5)))
+
+    source_memory: Optional[Memory] = None
+    if body.memory_id:
+        try:
+            source_memory_id = uuid.UUID(body.memory_id)
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=422, detail="Invalid memory_id")
+
+        source_result = await db.execute(
+            select(Memory).where(
+                and_(
+                    Memory.id == source_memory_id,
+                    Memory.user_id == current_user.id,
+                    Memory.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
+        source_memory = source_result.scalar_one_or_none()
+        if not source_memory:
+            raise HTTPException(status_code=404, detail="Memory not found")
+
+    source_hash = hashlib.sha256(thought.encode("utf-8")).hexdigest()
+    if source_memory:
+        metadata = dict(source_memory.extra_metadata or {})
+        reflection_cache = metadata.get("reflection_cache")
+        if (
+            isinstance(reflection_cache, dict)
+            and reflection_cache.get("source_hash") == source_hash
+            and isinstance(reflection_cache.get("insight_markdown"), str)
+            and reflection_cache.get("insight_markdown", "").strip()
+        ):
+            cached_related_ids = [
+                rid
+                for rid in (reflection_cache.get("related_memory_ids") or [])
+                if isinstance(rid, str)
+            ]
+            cached_related_memories: list[Memory] = []
+            if cached_related_ids:
+                parsed_ids: list[uuid.UUID] = []
+                for rid in cached_related_ids:
+                    try:
+                        parsed_ids.append(uuid.UUID(rid))
+                    except (TypeError, ValueError):
+                        continue
+
+                if parsed_ids:
+                    related_result = await db.execute(
+                        select(Memory)
+                        .where(
+                            and_(
+                                Memory.user_id == current_user.id,
+                                Memory.is_deleted == False,  # noqa: E712
+                                Memory.id.in_(parsed_ids),
+                            )
+                        )
+                        .order_by(Memory.created_at.desc())
+                    )
+                    cached_related_memories = related_result.scalars().all()
+
+            return {
+                "insight": reflection_cache["insight_markdown"],
+                "related_memories": [
+                    _memory_to_response_payload(memory)
+                    for memory in cached_related_memories
+                ],
+                "cached": True,
+                "format": "markdown",
+            }
+
+    search_pattern = f"%{thought}%"
+    result = await db.execute(
+        select(Memory)
+        .where(
+            and_(
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,  # noqa: E712
+                or_(
+                    Memory.content.ilike(search_pattern),
+                    Memory.transcription.ilike(search_pattern),
+                    Memory.ai_summary.ilike(search_pattern),
+                ),
+            )
+        )
+        .order_by(Memory.created_at.desc())
+        .limit(limit)
+    )
+    related_memories = result.scalars().all()
+    related_memory_payloads = [
+        _memory_to_response_payload(memory) for memory in related_memories
+    ]
+
+    user_lang = await _get_user_language(request, db, current_user.id)
+    snippets = [
+        (m.ai_summary or m.transcription or m.content or "").strip()
+        for m in related_memories
+        if (m.ai_summary or m.transcription or m.content)
+    ]
+
+    insight = await ai_service.generate_reflection_markdown(
+        thought,
+        snippets,
+        user_lang,
+    )
+    if not insight:
+        if user_lang == "vi":
+            insight = (
+                "## Suy ngẫm\n\n"
+                "Mình chưa thấy mẫu nổi bật từ các ký ức liên quan ở thời điểm này.\n\n"
+                "### Tín hiệu từ ký ức\n"
+                "- Chưa đủ tín hiệu để kết luận một chủ đề lặp lại.\n"
+                "- Bạn có thể mở lại các ký ức gần nhất để thêm ngữ cảnh cụ thể.\n\n"
+                "### Hành động tiếp theo\n"
+                "1. Chọn một ký ức gần nhất và ghi thêm 1 ý chính bạn muốn làm rõ."
+            )
+        else:
+            insight = (
+                "## Reflection\n\n"
+                "A strong pattern is not visible from related memories yet.\n\n"
+                "### Signals from memories\n"
+                "- Current evidence is limited for a clear recurring theme.\n"
+                "- Adding one concrete takeaway can improve the signal quickly.\n\n"
+                "### Next action\n"
+                "1. Re-open one recent memory and write one specific takeaway."
+            )
+
+    if not insight.lstrip().startswith("##"):
+        insight = f"## Reflection\n\n{insight.strip()}"
+
+    if source_memory:
+        metadata = dict(source_memory.extra_metadata or {})
+        metadata["reflection_cache"] = {
+            "source_hash": source_hash,
+            "insight_markdown": insight,
+            "related_memory_ids": [str(m.id) for m in related_memories],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        source_memory.extra_metadata = metadata
+        await db.flush()
+
+    return {
+        "insight": insight,
+        "related_memories": related_memory_payloads,
+        "cached": False,
+        "format": "markdown",
+    }
 
 
 @router.get("/search")

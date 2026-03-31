@@ -219,7 +219,12 @@ function SwipeableMemoryCard({
           // Swipe left → pin to recall queue
           Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
           const store = useRecallBadgeStore.getState();
-          store.setCount(store.count + 1);
+          memoriesApi
+            .pinForRecall(memory.id)
+            .then(() => {
+              store.setCount(store.count + 1);
+            })
+            .catch(() => undefined);
         } else if (gs.dx > SWIPE_THRESHOLD) {
           // Swipe right → delete
           onDelete(memory.id);
@@ -737,7 +742,6 @@ export default function LibraryScreen() {
         }
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>{loading ? '⏳' : '📭'}</Text>
             <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>{loading ? t('library.loading') : t('library.empty')}</Text>
             {!!searchQuery && (
               <TouchableOpacity onPress={() => {
@@ -777,7 +781,7 @@ export default function LibraryScreen() {
                 onPress={() => { setSelectedCategory(null); setCategoryModalVisible(false); }}
                 activeOpacity={0.7}
               >
-                <Text style={styles.modalRowIcon}>📂</Text>
+                {/* <Text style={styles.modalRowIcon}>📂</Text> */}
                 <Text style={[styles.modalRowText, { color: !selectedCategory ? colors.accent : colors.textPrimary }]}>
                   {t('library.allCategories')}
                 </Text>
@@ -797,7 +801,7 @@ export default function LibraryScreen() {
                     onPress={() => { setSelectedCategory(isSelected ? null : cat.id); setCategoryModalVisible(false); }}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.modalRowIcon}>{cat.icon}</Text>
+                    {/* <Text style={styles.modalRowIcon}>{cat.icon}</Text> */}
                     <Text style={[styles.modalRowText, { color: isSelected ? (cat.color || colors.accent) : colors.textPrimary }]}>
                       {getCategoryDisplayName(cat.name, t)}
                     </Text>

@@ -1,14 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 from typing import Optional
 from datetime import datetime, timezone, timedelta
 import uuid
 import logging
+from urllib.parse import urlsplit, urlunsplit
 
 from app.database import get_db, AsyncSessionLocal
 from app.models.memory import Memory
 from app.models.memory_link import MemoryLink
+from app.models.radar_event import RadarEvent
 from app.models.user import User
 from app.models import Category
 from app.schemas import (
@@ -30,6 +33,23 @@ log = logging.getLogger(__name__)
 router = APIRouter()
 
 _VALID_LANGS = {"en", "vi"}
+
+
+def _normalize_url(raw_url: str) -> str:
+    """Normalize URL to improve duplicate-link detection."""
+    value = (raw_url or "").strip()
+    if not value:
+        return ""
+    try:
+        parsed = urlsplit(value)
+        scheme = (parsed.scheme or "https").lower()
+        netloc = (parsed.netloc or "").lower()
+        path = parsed.path or ""
+        if path != "/":
+            path = path.rstrip("/")
+        return urlunsplit((scheme, netloc, path, parsed.query, ""))
+    except Exception:
+        return value
 
 
 async def _get_user_language(request: Request, db: AsyncSession, user_id) -> str:
@@ -205,13 +225,17 @@ async def create_memory(
     """Create a new memory for the authenticated user."""
     metadata = dict(memory.metadata or {})
     mem_type = memory.type.value if hasattr(memory.type, "value") else str(memory.type)
+    normalized_input_url = ""
+    normalized_canonical_url = ""
 
     # For link memories, enrich metadata with preview fields used by mobile UI.
     if mem_type.lower() == "link":
+        normalized_input_url = _normalize_url(memory.content)
         try:
             link_content = await fetch_link_content(memory.content)
             image = (link_content.get("image") or "").strip()
             canonical_url = (link_content.get("url") or "").strip()
+            normalized_canonical_url = _normalize_url(canonical_url)
 
             if image.lower().startswith(("http://", "https://")):
                 metadata.setdefault("og_image", image)
@@ -220,6 +244,8 @@ async def create_memory(
 
             if canonical_url.lower().startswith(("http://", "https://")):
                 metadata.setdefault("canonical_url", canonical_url)
+            if normalized_canonical_url:
+                metadata.setdefault("normalized_url", normalized_canonical_url)
 
             title = (link_content.get("title") or "").strip()
             description = (link_content.get("description") or "").strip()
@@ -232,6 +258,47 @@ async def create_memory(
                 metadata.setdefault("site_name", sitename)
         except Exception as exc:
             log.debug("Link metadata enrichment skipped for %s: %s", memory.content, exc)
+
+        if not metadata.get("normalized_url") and normalized_input_url:
+            metadata.setdefault("normalized_url", normalized_input_url)
+
+        duplicate_candidates = {
+            candidate
+            for candidate in [
+                normalized_input_url,
+                normalized_canonical_url,
+                _normalize_url(str(metadata.get("canonical_url") or "")),
+            ]
+            if candidate
+        }
+        if duplicate_candidates:
+            existing_result = await db.execute(
+                select(Memory)
+                .where(
+                    and_(
+                        Memory.user_id == current_user.id,
+                        Memory.is_deleted == False,  # noqa: E712
+                        Memory.type == memory.type,
+                    )
+                )
+                .order_by(Memory.created_at.desc())
+                .limit(300)
+            )
+            for existing in existing_result.scalars().all():
+                existing_metadata = dict(existing.extra_metadata or {})
+                existing_candidates = {
+                    _normalize_url(existing.content),
+                    _normalize_url(str(existing_metadata.get("canonical_url") or "")),
+                    _normalize_url(str(existing_metadata.get("normalized_url") or "")),
+                }
+                if duplicate_candidates.intersection({c for c in existing_candidates if c}):
+                    return JSONResponse(
+                        status_code=409,
+                        content={
+                            "detail": "Link already saved",
+                            "existing_memory_id": str(existing.id),
+                        },
+                    )
 
     m = Memory(
         user_id=current_user.id,
@@ -536,6 +603,50 @@ async def mark_viewed(
     await db.flush()
     await db.refresh(m)
     return _to_dict(m)
+
+
+@router.post("/{memory_id}/pin", response_model=dict)
+async def pin_memory_for_recall(
+    memory_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Pin a memory to the recall queue via radar event logging."""
+    try:
+        mid = uuid.UUID(memory_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    result = await db.execute(
+        select(Memory).where(
+            and_(
+                Memory.id == mid,
+                Memory.user_id == current_user.id,
+                Memory.is_deleted == False,
+            )  # noqa: E712
+        )
+    )
+    memory = result.scalar_one_or_none()
+    if not memory:
+        raise HTTPException(status_code=404, detail="Memory not found")
+
+    event = RadarEvent(
+        user_id=current_user.id,
+        memory_id=mid,
+        event_type="acted",
+        reason_code="user_pinned",
+        confidence=100,
+        context={"source": "library_swipe"},
+    )
+    db.add(event)
+    await db.flush()
+
+    return {
+        "status": "ok",
+        "memory_id": str(mid),
+        "event_id": str(event.id),
+        "reason_code": "user_pinned",
+    }
 
 
 @router.get("/", response_model=MemoryListResponse)

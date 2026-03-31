@@ -828,3 +828,35 @@ async def get_streak_details(
         "first_memory_date": first_date.isoformat() if first_date else None,
         "monthly_activity": monthly_activity,
     }
+
+
+@router.get("/recall-rate", response_model=dict)
+async def get_recall_rate(
+    days: int = Query(30, ge=7, le=90, description="Rolling time window in days"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return recall open-rate from radar served/opened events."""
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    base = and_(
+        RadarEvent.user_id == current_user.id,
+        RadarEvent.created_at >= since,
+    )
+
+    served_result = await db.execute(
+        select(func.count()).where(and_(base, RadarEvent.event_type == "served"))
+    )
+    opened_result = await db.execute(
+        select(func.count()).where(and_(base, RadarEvent.event_type == "opened"))
+    )
+
+    served = served_result.scalar() or 0
+    opened = opened_result.scalar() or 0
+    recall_rate = round((opened / served) * 100, 1) if served > 0 else 0.0
+
+    return {
+        "days": days,
+        "served": served,
+        "opened": opened,
+        "recall_rate": recall_rate,
+    }
