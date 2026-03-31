@@ -1049,9 +1049,42 @@ export const authApi = {
 
 export default api;
 
-// Agent API — stub for push token registration (full implementation in Task 9)
+// ─── Agent API ────────────────────────────────────────────────────────────────
+
+export interface AgentInsight {
+  id: string;
+  insight_type: 'intention_loop' | 'arc' | 'tension';
+  title: string;
+  body: string;
+  synthesis: string;
+  memory_ids: string[];
+}
+
+export interface SynthesisResult {
+  synthesis: string;
+  memory_ids: string[];
+}
+
 export const agentApi = {
-  registerPushToken: async (token: string): Promise<void> => {
-    await api.post('/agent/push-token', { token });
+  registerPushToken: async (expoPushToken: string): Promise<void> => {
+    await api.post('/agent/notifications/register', { expo_push_token: expoPushToken });
+  },
+
+  getInsight: async (insightId: string): Promise<AgentInsight> => {
+    const r = await api.get<AgentInsight>(`/agent/insights/${insightId}`);
+    return r.data;
+  },
+
+  markOpened: async (insightId: string): Promise<void> => {
+    await api.post(`/agent/insights/${insightId}/open`);
+  },
+
+  dismiss: async (insightId: string): Promise<void> => {
+    await api.post(`/agent/insights/${insightId}/dismiss`);
+  },
+
+  synthesizeMemories: async (memoryIds: string[]): Promise<SynthesisResult> => {
+    const r = await api.post<SynthesisResult>('/ai/synthesize', { memory_ids: memoryIds });
+    return r.data;
   },
 };
