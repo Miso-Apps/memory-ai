@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { aiApi, memoriesApi, Memory as ApiMemory } from '../../services/api';
+import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
 import { BrandMark } from '../../components/BrandMark';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -526,6 +528,45 @@ function EmptyState({ t }: { t: Function }) {
   );
 }
 
+function RecallBanner({
+  count,
+  topTopic,
+  onPress,
+  colors,
+}: {
+  count: number;
+  topTopic: string;
+  onPress: () => void;
+  colors: ThemeColors;
+}) {
+  if (count === 0) return null;
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
+      <LinearGradient
+        colors={['#FFF3E8', '#FFE5CB']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.recallBanner}
+      >
+        <View style={styles.recallBannerTop}>
+          <Text style={[styles.recallBannerLabel, { color: colors.accent }]}>
+            🔔 Nhắc lại hôm nay
+          </Text>
+          <View style={[styles.recallBadge, { backgroundColor: colors.badgeRed }]}>
+            <Text style={styles.recallBadgeText}>{count} mới</Text>
+          </View>
+        </View>
+        <Text style={[styles.recallBannerTitle, { color: colors.textPrimary }]}>
+          {topTopic}
+        </Text>
+        <Text style={[styles.recallBannerCta, { color: colors.accent }]}>
+          Xem ngay →
+        </Text>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+}
+
 export default function HomeScreen() {
   const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -534,6 +575,9 @@ export default function HomeScreen() {
   const [groups, setGroups] = useState<MemoryGroup[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const setRecallBadgeCount = useRecallBadgeStore((s) => s.setCount);
+  const recallCount = useRecallBadgeStore((s) => s.count);
+  const [recallTopTopic, setRecallTopTopic] = useState('Bạn có ký ức chờ nhớ lại');
 
   const mapMemory = (m: ApiMemory): ReminderMemory => {
     const sourceUrl = m.type === 'link' ? pickSourceUrl(m) : undefined;
@@ -635,6 +679,18 @@ export default function HomeScreen() {
       loadData();
     }, [])
   );
+
+  useEffect(() => {
+    aiApi.getRadar(6).then((res) => {
+      const items = res.items ?? [];
+      setRecallBadgeCount(items.length);
+      const first = items[0];
+      if (first) {
+        const preview = first.memory.ai_summary ?? first.memory.content;
+        setRecallTopTopic(preview.length > 50 ? preview.slice(0, 50) + '…' : preview);
+      }
+    }).catch(() => undefined);
+  }, [setRecallBadgeCount]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -799,17 +855,37 @@ export default function HomeScreen() {
               </>
             )}
 
-            {/* ── Stats row (bottom of scroll) ── */}
-            <View style={[styles.statsRow, { borderTopColor: colors.border }]}>
-              <View style={[styles.statsPill, { backgroundColor: colors.streakBg, borderColor: colors.streakBorder }]}>
-                <Text style={[styles.statsPillText, { color: colors.streakText }]}>
-                  🔥 {stats?.streak ?? 0}
+            {/* ── Stats row ── */}
+            <View style={styles.statsRow}>
+              <View style={[styles.statPill, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <Text style={[styles.statVal, { color: colors.textPrimary }]}>
+                  {stats?.this_week ?? 0}
                 </Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>tuần này</Text>
               </View>
-              <Text style={[styles.statsText, { color: colors.textMuted }]}>
-                {stats?.total ?? 0} total · {stats?.this_week ?? 0} this week
-              </Text>
+              <View style={[styles.statPill, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
+                <Text style={[styles.statVal, { color: colors.textPrimary }]}>
+                  {stats?.streak ?? 0}🔥
+                </Text>
+                <Text style={[styles.statLabel, { color: colors.textMuted }]}>streak</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.statPill, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}
+                onPress={() => router.push('/(tabs)/recall')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.statVal, { color: colors.accent }]}>{recallCount}</Text>
+                <Text style={[styles.statLabel, { color: colors.accent }]}>nhắc mới</Text>
+              </TouchableOpacity>
             </View>
+
+            {/* ── Recall Banner ── */}
+            <RecallBanner
+              count={recallCount}
+              topTopic={recallTopTopic}
+              onPress={() => router.push('/(tabs)/recall')}
+              colors={colors}
+            />
           </>
         )}
       </ScrollView>
@@ -835,29 +911,74 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  // Stats row at bottom of scroll
+  // Stats row — 3-pill layout
   statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginTop: 8,
+    gap: 8,
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
-  statsPill: {
-    borderRadius: 100,
+  statPill: {
+    flex: 1,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 10,
+    alignItems: 'center',
   },
-  statsPillText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 12,
+  statVal: {
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 22,
+    fontFamily: SANS_FONT,
   },
-  statsText: {
-    fontFamily: 'DMSans_400Regular',
+  statLabel: {
+    fontSize: 10,
+    marginTop: 2,
+    fontFamily: SANS_FONT,
+  },
+  recallBanner: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#F0C89A',
+  },
+  recallBannerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  recallBannerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    fontFamily: SANS_FONT,
+  },
+  recallBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  recallBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: SANS_FONT,
+  },
+  recallBannerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 6,
+    lineHeight: 20,
+    fontFamily: SANS_FONT,
+  },
+  recallBannerCta: {
     fontSize: 12,
+    fontWeight: '600',
+    fontFamily: SANS_FONT,
   },
 
   scrollView: { flex: 1 },
