@@ -1048,3 +1048,10 @@ export const authApi = {
 };
 
 export default api;
+
+// Agent API — stub for push token registration (full implementation in Task 9)
+export const agentApi = {
+  registerPushToken: async (token: string): Promise<void> => {
+    await api.post('/agent/push-token', { token });
+  },
+};

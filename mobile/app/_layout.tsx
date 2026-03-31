@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { Stack, router } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +9,7 @@ import { useAuthStore } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
 import '../i18n'; // initialize i18n
+import { agentApi } from '../services/api';
 import { useFonts } from 'expo-font';
 import {
   DMSans_400Regular,
@@ -15,6 +17,27 @@ import {
   DMSans_600SemiBold,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
+
+async function registerForPushNotifications(): Promise<void> {
+  if (Platform.OS === 'web') return;
+
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') return;
+
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync();
+    await agentApi.registerPushToken(tokenData.data);
+  } catch (e) {
+    console.warn('Push token registration failed:', e);
+  }
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +82,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
       router.replace('/login');
     }
   }, [checking, isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    registerForPushNotifications();
+
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const insightId = response.notification.request.content.data?.agent_insight_id as string | undefined;
+      if (insightId) {
+        router.push(`/chat?agent_insight_id=${insightId}`);
+      }
+    });
+    return () => sub.remove();
+  }, [isAuthenticated]);
 
   if (checking) {
     return (
