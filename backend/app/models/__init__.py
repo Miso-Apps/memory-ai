@@ -5,6 +5,9 @@ from app.models.decision_memory import DecisionMemory
 from app.models.memory_link import MemoryLink
 from app.models.category import Category, SYSTEM_CATEGORIES
 from app.models.preferences import UserPreferences, ThemeMode, DefaultCaptureType
+from app.models.intention import Intention
+from app.models.agent_insight import AgentInsight
+from app.models.device_token import DeviceToken
 
 __all__ = [
     "User",
@@ -18,4 +21,7 @@ __all__ = [
     "UserPreferences",
     "ThemeMode",
     "DefaultCaptureType",
+    "Intention",
+    "AgentInsight",
+    "DeviceToken",
 ]

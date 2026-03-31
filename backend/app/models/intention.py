@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime
 from sqlalchemy import Column, Text, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
@@ -23,7 +23,7 @@ class Intention(Base):
         nullable=False,
     )
     extracted = Column(Text, nullable=False)
-    follow_up_at = Column(DateTime(timezone=True), nullable=False)
+    follow_up_at = Column(DateTime(timezone=True), nullable=False, index=True)
     notified_at = Column(DateTime(timezone=True), nullable=True)
     dismissed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

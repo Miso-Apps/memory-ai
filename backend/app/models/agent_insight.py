@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, Text, String, DateTime, ARRAY, func
+from sqlalchemy import Column, Text, String, DateTime, ARRAY, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from app.database import Base
 
@@ -10,7 +10,7 @@ class AgentInsight(Base):
     __tablename__ = "agent_insights"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     insight_type = Column(String(32), nullable=False)  # 'intention_loop' | 'arc' | 'tension'
     title = Column(Text, nullable=False)
     body = Column(Text, nullable=False)
