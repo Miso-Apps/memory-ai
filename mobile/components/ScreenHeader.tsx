@@ -8,6 +8,7 @@ interface ScreenHeaderProps {
   subtitle?: string;
   titleSize?: number;
   paddingHorizontal?: number;
+  rightAction?: React.ReactNode;
 }
 
 export function ScreenHeader({
@@ -16,6 +17,7 @@ export function ScreenHeader({
   subtitle,
   titleSize = 26,
   paddingHorizontal = 16,
+  rightAction,
 }: ScreenHeaderProps) {
   const { colors } = useTheme();
 
@@ -26,14 +28,17 @@ export function ScreenHeader({
           {eyebrow.toUpperCase()}
         </Text>
       ) : null}
-      <Text
-        style={[
-          styles.title,
-          { color: colors.textPrimary, fontSize: titleSize },
-        ]}
-      >
-        {title}
-      </Text>
+      <View style={styles.titleRow}>
+        <Text
+          style={[
+            styles.title,
+            { color: colors.textPrimary, fontSize: titleSize },
+          ]}
+        >
+          {title}
+        </Text>
+        {rightAction ?? null}
+      </View>
       {subtitle ? (
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
           {subtitle}
@@ -53,6 +58,11 @@ const styles = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 0.8,
     marginBottom: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     fontFamily: 'DMSans_700Bold',
