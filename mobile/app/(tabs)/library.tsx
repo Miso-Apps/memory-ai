@@ -850,18 +850,24 @@ export default function LibraryScreen() {
       />
 
       {/* ── Synthesize action bar ── */}
-      {selectMode && selectedIds.size > 0 && (
+      {selectMode && (
         <View style={[styles.actionBar, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccent }]}>
-          <Text style={[styles.actionBarText, { color: colors.textSecondary }]}>
-            {t('library.selectedCount', { count: selectedIds.size })}
-          </Text>
+          {selectedIds.size < 2 ? (
+            <Text style={[styles.actionBarText, { color: colors.textMuted, fontStyle: 'italic' }]}>
+              {t('library.selectHint')}
+            </Text>
+          ) : (
+            <Text style={[styles.actionBarText, { color: colors.textSecondary }]}>
+              {t('library.memoriesCount', { count: selectedIds.size })}
+            </Text>
+          )}
           <TouchableOpacity
             onPress={handleSynthesize}
             disabled={selectedIds.size < 2 || isSynthesizing}
             style={[
               styles.synthesizeActionBtn,
               { backgroundColor: colors.brandAccent },
-              (selectedIds.size < 2 || isSynthesizing) && { opacity: 0.5 },
+              (selectedIds.size < 2 || isSynthesizing) && { opacity: 0.35 },
             ]}
           >
             <Text style={[styles.synthesizeActionBtnText, { color: colors.buttonText }]}>
