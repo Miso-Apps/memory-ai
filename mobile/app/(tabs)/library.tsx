@@ -598,6 +598,7 @@ export default function LibraryScreen() {
           <View style={[
             styles.cardWrapper,
             styles.memoryCardWrapper,
+            selectMode && styles.memoryCardSelectPadding,
             selectMode && selectedIds.has(memory.id) && {
               borderColor: colors.brandAccent,
               borderWidth: 1.5,
@@ -1291,16 +1292,19 @@ const styles = StyleSheet.create({
   memoryCardWrapper: {
     position: 'relative',
   },
+  memoryCardSelectPadding: {
+    paddingRight: 36,
+  },
   checkbox: {
     position: 'absolute',
-    top: 12,
-    left: -8,
+    top: 10,
+    right: 10,
     width: 20,
     height: 20,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
-    backgroundColor: 'transparent',
+    borderColor: 'rgba(255,255,255,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.15)',
     zIndex: 10,
     alignItems: 'center',
     justifyContent: 'center',
