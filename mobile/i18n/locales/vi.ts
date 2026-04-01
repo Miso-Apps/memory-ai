@@ -350,6 +350,8 @@ const vi = {
     promptIdea: 'Ý tưởng mới cần khám phá',
     promptTask: 'Việc quan trọng cần theo dõi',
     textPlaceholder: 'Bạn đang nghĩ gì?',
+    composerPlaceholder: 'Bạn đang nghĩ gì?',
+    linkInputPlaceholder: 'Dán URL…',
     linkPlaceholder: 'Dán URL vào đây…',
     linkError: 'Vui lòng nhập URL hợp lệ bắt đầu bằng http:// hoặc https://',
     tapToRecord: 'Nhấn để bắt đầu ghi âm',

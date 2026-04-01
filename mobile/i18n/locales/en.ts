@@ -351,6 +351,8 @@ const en = {
     promptIdea: 'New idea to explore',
     promptTask: 'Important follow-up task',
     textPlaceholder: "What's on your mind?",
+    composerPlaceholder: "What's on your mind?",
+    linkInputPlaceholder: 'Paste a URL…',
     linkPlaceholder: 'Paste a URL…',
     linkError: 'Please enter a valid URL starting with http:// or https://',
     tapToRecord: 'Tap to start recording',
