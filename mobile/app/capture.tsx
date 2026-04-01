@@ -247,203 +247,127 @@ interface VoiceData {
   isUploading: boolean;
 }
 
-interface VoiceRecorderProps {
-  onVoiceData: (data: VoiceData) => void;
+interface VoiceWidgetProps {
+  status: 'idle' | 'recording' | 'uploading' | 'done';
+  duration: number;
+  transcription: string | null;
+  onStop: () => void;
+  onDiscard: () => void;
 }
 
-function VoiceRecorder({ onVoiceData }: VoiceRecorderProps) {
-  const { t } = useTranslation();
+function VoiceWidget({ status, duration, transcription, onStop, onDiscard }: VoiceWidgetProps) {
   const { colors } = useTheme();
-  const [isRecording, setIsRecording] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'recording' | 'uploading' | 'done'>('idle');
-  const [transcription, setTranscription] = useState<string | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  const recordingRef = useRef<Audio.Recording | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pulseRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => { });
-      pulseRef.current?.stop();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isRecording) {
+    if (status === 'recording') {
       pulseRef.current = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.14, duration: 700, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.08, duration: 600, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
         ])
       );
       pulseRef.current.start();
     } else {
       pulseRef.current?.stop();
-      Animated.timing(pulseAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
     }
-  }, [isRecording]);
-
-  const startRecording = async () => {
-    try {
-      const { status: permStatus } = await Audio.requestPermissionsAsync();
-      if (permStatus !== 'granted') {
-        Alert.alert(t('capture.permissionRequired'), t('capture.microphonePermission'));
-        return;
-      }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording } = await Audio.Recording.createAsync(OPTIMIZED_RECORDING_OPTIONS);
-      recordingRef.current = recording;
-      setIsRecording(true);
-      setStatus('recording');
-      setDuration(0);
-      timerRef.current = setInterval(() => setDuration((d) => d + 1), 1000);
-    } catch (err) {
-      Alert.alert(t('capture.recordingError'), t('capture.recordingErrorMessage'));
-      console.error('startRecording error:', err);
-    }
-  };
-
-  const stopRecording = async () => {
-    if (!recordingRef.current) return;
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    setIsRecording(false);
-    setStatus('uploading');
-    onVoiceData({ audioUrl: null, transcription: null, recorded: false, isUploading: true });
-    try {
-      await recordingRef.current.stopAndUnloadAsync();
-      const uri = recordingRef.current.getURI();
-      recordingRef.current = null;
-      if (!uri) throw new Error('No recording URI');
-      const result = await storageApi.uploadAudio(uri);
-      const tx = result.transcription || null;
-      setTranscription(tx);
-      setStatus('done');
-      onVoiceData({ audioUrl: result.audio_url || null, transcription: tx, recorded: true, isUploading: false });
-    } catch (err) {
-      console.error('stopRecording / upload error:', err);
-      setStatus('done');
-      onVoiceData({ audioUrl: null, transcription: null, recorded: true, isUploading: false });
-    }
-  };
+  }, [status]);
 
   const fmtDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-  return (
-    <View style={voiceStyles.container}>
-      {/* Pulse rings + button */}
-      <View style={voiceStyles.btnWrap}>
-        {/* Static outer rings for warmth */}
-        <View style={[voiceStyles.staticRingOuter, { borderColor: 'rgba(201,125,58,0.12)' }]} />
-        <View style={[voiceStyles.staticRingInner, { borderColor: 'rgba(201,125,58,0.22)' }]} />
-        {/* Animated pulse ring when recording */}
-        {isRecording && (
-          <Animated.View
-            style={[voiceStyles.pulseRing, { borderColor: colors.error, transform: [{ scale: pulseAnim }] }]}
-          />
-        )}
-        <TouchableOpacity
-          style={[
-            voiceStyles.btn,
-            {
-              backgroundColor: isRecording ? colors.error : colors.brandAccent,
-            },
-          ]}
-          onPress={isRecording ? stopRecording : startRecording}
-          activeOpacity={0.85}
-          disabled={status === 'uploading'}
-        >
-          {status === 'uploading' ? (
-            <ActivityIndicator color="#FFF" size="large" />
-          ) : isRecording ? (
-            <View style={voiceStyles.stopSquare} />
-          ) : (
-            <Mic size={38} color="#FFFFFF" strokeWidth={2.4} />
-          )}
+  if (status === 'idle') return null;
+
+  if (status === 'recording') {
+    return (
+      <View style={[widgetStyles.voiceCard, { backgroundColor: 'rgba(232,132,74,0.08)', borderColor: 'rgba(232,132,74,0.25)' }]}>
+        <Animated.View style={[widgetStyles.recDot, { transform: [{ scale: pulseAnim }], backgroundColor: colors.error }]} />
+        <View style={widgetStyles.waveform}>
+          {[6, 14, 18, 10, 16, 8, 20, 12, 14, 6, 18, 10].map((h, i) => (
+            <View key={i} style={[widgetStyles.wbar, { height: h, backgroundColor: colors.captureAccent }]} />
+          ))}
+        </View>
+        <Text style={[widgetStyles.recTime, { color: colors.captureAccent }]}>{fmtDuration(duration)}</Text>
+        <TouchableOpacity style={[widgetStyles.stopBtn, { backgroundColor: colors.captureAccent }]} onPress={onStop}>
+          <View style={widgetStyles.stopSquare} />
         </TouchableOpacity>
       </View>
+    );
+  }
 
-      <Text style={[voiceStyles.statusText, { color: colors.captureText }]}>
-        {status === 'idle' && t('capture.tapToRecord')}
-        {status === 'recording' && `${t('capture.recording')} ${fmtDuration(duration)}`}
-        {status === 'uploading' && t('capture.processingAudio')}
-        {status === 'done' && (transcription ? t('capture.transcriptionReady') : t('capture.recordingSaved'))}
-      </Text>
-      {status === 'recording' && (
-        <Text style={[voiceStyles.hintText, { color: colors.captureMuted }]}>{t('capture.tapToStop')}</Text>
-      )}
-
-      {/* Transcription card */}
-      <View style={[voiceStyles.txCard, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder, borderWidth: 1 }]}>
-        <Text style={[voiceStyles.txLabel, { color: colors.captureMuted }]}>{t('capture.modeVoice')}</Text>
-        <Text style={[
-          voiceStyles.txText,
-          { color: status === 'done' && transcription ? colors.captureText : colors.captureMuted },
-          !transcription && { fontStyle: 'italic' },
-        ]}>
-          {transcription ?? t('capture.tapToRecord')}
-        </Text>
+  if (status === 'uploading') {
+    return (
+      <View style={[widgetStyles.voiceCard, { backgroundColor: 'rgba(232,132,74,0.08)', borderColor: 'rgba(232,132,74,0.25)' }]}>
+        <ActivityIndicator size="small" color={colors.captureAccent} />
+        <Text style={[widgetStyles.recTime, { color: colors.captureMuted }]}>Processing…</Text>
       </View>
+    );
+  }
+
+  // done — show pill
+  return (
+    <View style={[widgetStyles.pill, { backgroundColor: 'rgba(232,132,74,0.10)', borderColor: 'rgba(232,132,74,0.35)' }]}>
+      <Mic size={12} color={colors.captureAccent} strokeWidth={2.2} />
+      <Text style={[widgetStyles.pillText, { color: colors.captureAccent }]}>
+        {transcription ? transcription.slice(0, 40) + (transcription.length > 40 ? '…' : '') : fmtDuration(duration)}
+      </Text>
+      <TouchableOpacity onPress={onDiscard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <X size={12} color={colors.captureMuted} strokeWidth={2.2} />
+      </TouchableOpacity>
     </View>
   );
 }
 
-const voiceStyles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 24 },
-  btnWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
-  staticRingOuter: {
-    position: 'absolute',
-    width: 148,
-    height: 148,
-    borderRadius: 74,
-    borderWidth: 2,
-  },
-  staticRingInner: {
-    position: 'absolute',
-    width: 128,
-    height: 128,
-    borderRadius: 64,
-    borderWidth: 2,
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 136,
-    height: 136,
-    borderRadius: 68,
-    borderWidth: 3,
-    opacity: 0.45,
-  },
-  btn: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+const widgetStyles = StyleSheet.create({
+  voiceCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#c97d3a',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 10,
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginTop: 8,
   },
-  stopSquare: { width: 28, height: 28, backgroundColor: '#FFF', borderRadius: 4 },
-  statusText: { fontSize: 15, fontWeight: '500', textAlign: 'center', marginBottom: 4 },
-  hintText: { fontSize: 13, textAlign: 'center', marginBottom: 16 },
-  txCard: {
-    marginTop: 16,
-    padding: 16,
+  recDot: {
+    width: 8, height: 8, borderRadius: 4,
+  },
+  waveform: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    height: 20,
+  },
+  wbar: {
+    width: 3, borderRadius: 2, opacity: 0.75,
+  },
+  recTime: {
+    fontSize: 12, fontWeight: '600', fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+  },
+  stopBtn: {
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  stopSquare: {
+    width: 8, height: 8, backgroundColor: '#fff', borderRadius: 2,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
     borderRadius: 18,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginTop: 8,
+    alignSelf: 'flex-start',
   },
-  txLabel: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 6 },
-  txText: { fontSize: 14, lineHeight: 21 },
+  pillText: {
+    fontSize: 11, fontWeight: '500',
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+    maxWidth: 180,
+  },
 });
 
 // ── Image Upload Component ─────────────────────────────────────────────────
@@ -696,12 +620,13 @@ export default function CaptureScreen() {
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
   const [linkError, setLinkError] = useState('');
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'recording' | 'uploading' | 'done'>('idle');
+  const [voiceDuration, setVoiceDuration] = useState(0);
   const [voiceData, setVoiceData] = useState<VoiceData>({
-    audioUrl: null,
-    transcription: null,
-    recorded: false,
-    isUploading: false,
+    audioUrl: null, transcription: null, recorded: false, isUploading: false,
   });
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [imageData, setImageData] = useState<ImageUploadData>({
     imageUrl: null,
     thumbnailUrl: null,
@@ -710,6 +635,8 @@ export default function CaptureScreen() {
     isUploading: false,
   });
   const [photoNote, setPhotoNote] = useState('');
+  const [linkVisible, setLinkVisible] = useState(false);
+  const [linkContent, setLinkContent] = useState('');
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   // ── Smart clipboard detection ──
@@ -796,6 +723,64 @@ export default function CaptureScreen() {
   };
   // ── End clipboard detection ──
 
+  // ── Voice recording (lifted state) ──
+  const startVoiceRecording = async () => {
+    try {
+      const { status: permStatus } = await Audio.requestPermissionsAsync();
+      if (permStatus !== 'granted') {
+        Alert.alert(t('capture.permissionRequired'), t('capture.microphonePermission'));
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(OPTIMIZED_RECORDING_OPTIONS);
+      recordingRef.current = recording;
+      setVoiceStatus('recording');
+      setVoiceDuration(0);
+      timerRef.current = setInterval(() => setVoiceDuration((d) => d + 1), 1000);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (err) {
+      Alert.alert(t('capture.recordingError'), t('capture.recordingErrorMessage'));
+      console.error('startVoiceRecording error:', err);
+    }
+  };
+
+  const stopVoiceRecording = async () => {
+    if (!recordingRef.current) return;
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    setVoiceStatus('uploading');
+    try {
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+      recordingRef.current = null;
+      if (!uri) throw new Error('No recording URI');
+      const result = await storageApi.uploadAudio(uri);
+      const tx = result.transcription || null;
+      setVoiceStatus('done');
+      setVoiceData({ audioUrl: result.audio_url || null, transcription: tx, recorded: true, isUploading: false });
+    } catch (err) {
+      console.error('stopVoiceRecording error:', err);
+      setVoiceStatus('done');
+      setVoiceData({ audioUrl: null, transcription: null, recorded: true, isUploading: false });
+    }
+  };
+
+  const discardVoice = () => {
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+    recordingRef.current?.stopAndUnloadAsync().catch(() => {});
+    recordingRef.current = null;
+    setVoiceStatus('idle');
+    setVoiceDuration(0);
+    setVoiceData({ audioUrl: null, transcription: null, recorded: false, isUploading: false });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      recordingRef.current?.stopAndUnloadAsync().catch(() => {});
+    };
+  }, []);
+  // ── End voice recording ──
+
   const handleDuplicateLinkError = (error: unknown): boolean => {
     if (getHttpStatus(error) !== 409) return false;
     const existingId = getExistingMemoryId(error);
@@ -879,12 +864,13 @@ export default function CaptureScreen() {
 
   const handleCancel = () => router.back();
 
-  const isVoiceReady = voiceData.recorded && !voiceData.isUploading;
+  const isVoiceReady = voiceStatus === 'done' && voiceData.recorded;
   const isImageReady = imageData.picked && !imageData.isUploading && (!!imageData.imageUrl || !!imageData.thumbnailUrl);
   const canSave =
-    mode === 'voice' ? isVoiceReady :
-      mode === 'photo' ? isImageReady :
-        content.trim().length > 0;
+    content.trim().length > 0 ||
+    isVoiceReady ||
+    (isImageReady) ||
+    (linkVisible && /^https?:\/\/.+/i.test(linkContent.trim()));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.captureBg }]} edges={['top', 'bottom']}>
@@ -1032,7 +1018,13 @@ export default function CaptureScreen() {
           </View>
         ) : mode === 'voice' ? (
           <View style={styles.modePanel}>
-            <VoiceRecorder onVoiceData={setVoiceData} />
+            <VoiceWidget
+              status={voiceStatus}
+              duration={voiceDuration}
+              transcription={voiceData.transcription}
+              onStop={stopVoiceRecording}
+              onDiscard={discardVoice}
+            />
           </View>
         ) : (
           /* Photo */
