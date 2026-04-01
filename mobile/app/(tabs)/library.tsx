@@ -1297,7 +1297,7 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     position: 'absolute',
-    top: 10,
+    top: 12,
     right: 10,
     width: 20,
     height: 20,
