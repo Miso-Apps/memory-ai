@@ -273,6 +273,7 @@ function VoiceWidget({ status, duration, transcription, onStop, onDiscard }: Voi
       pulseRef.current?.stop();
       Animated.timing(pulseAnim, { toValue: 1, duration: 150, useNativeDriver: true }).start();
     }
+    return () => { pulseRef.current?.stop(); };
   }, [status]);
 
   const fmtDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -765,6 +766,7 @@ export default function CaptureScreen() {
   };
 
   const discardVoice = () => {
+    if (voiceStatus === 'uploading') return;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     recordingRef.current?.stopAndUnloadAsync().catch(() => {});
     recordingRef.current = null;
