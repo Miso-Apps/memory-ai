@@ -380,227 +380,74 @@ interface ImageUploadData {
   isUploading: boolean;
 }
 
-interface ImageUploadProps {
-  onImageData: (data: ImageUploadData) => void;
+interface ImageWidgetProps {
+  imageData: ImageUploadData;
+  onDiscard: () => void;
 }
 
-function ImageUpload({ onImageData }: ImageUploadProps) {
-  const { t } = useTranslation();
+function ImageWidget({ imageData, onDiscard }: ImageWidgetProps) {
   const { colors } = useTheme();
-  const [pickedUri, setPickedUri] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [description, setDescription] = useState<string | null>(null);
+  const { t } = useTranslation();
 
-  const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert(t('capture.permissionRequired'), t('capture.photoLibraryPermission'));
-      return;
-    }
+  if (!imageData.picked && !imageData.isUploading) return null;
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1, // full quality — we compress via optimizeImage below
-    });
-
-    if (result.canceled || !result.assets?.[0]) return;
-
-    const asset = result.assets[0];
-
-    // ── Compress & resize before upload ──────────────────────────────────
-    let optimizedUri = asset.uri;
-    try {
-      const optimized = await optimizeImage(asset.uri);
-      optimizedUri = optimized.uri;
-    } catch (err) {
-      console.warn('Image optimization failed, uploading original:', err);
-    }
-
-    setPickedUri(optimizedUri);
-    setDescription(null);
-    setIsUploading(true);
-    onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: true });
-
-    try {
-      const uploadResult = await storageApi.uploadImage(optimizedUri);
-      const desc = uploadResult.description ?? null;
-      setDescription(desc);
-      setIsUploading(false);
-      onImageData({
-        imageUrl: uploadResult.image_url ?? null,
-        thumbnailUrl: uploadResult.thumbnail_url ?? null,
-        description: desc,
-        picked: true,
-        isUploading: false,
-      });
-    } catch (err) {
-      console.error('Image upload / analysis error:', err);
-      setIsUploading(false);
-      Alert.alert(t('capture.error'), t('capture.saveFailed'));
-      onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
-    }
-  };
-
-  const handleClear = () => {
-    setPickedUri(null);
-    setDescription(null);
-    onImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
-  };
-
-  // Empty state — show picker button
-  if (!pickedUri) {
+  if (imageData.isUploading) {
     return (
-      <View style={imageStyles.emptyContainer}>
-        <TouchableOpacity
-          style={[imageStyles.pickCard, { borderColor: colors.border, backgroundColor: colors.cardBg }]}
-          onPress={handlePickImage}
-          activeOpacity={0.8}
-        >
-          <View style={[imageStyles.pickIconWell, { backgroundColor: colors.accentLight }]}>
-            <Text style={imageStyles.pickEmoji}>📷</Text>
-          </View>
-          <Text style={[imageStyles.pickLabel, { color: colors.brandAccent }]}>{t('capture.chooseImage')}</Text>
-          <Text style={[imageStyles.pickSub, { color: colors.textMuted }]}>
-            {t('capture.chooseImageSub')}
-          </Text>
-        </TouchableOpacity>
+      <View style={[imgWidgetStyles.thumb, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}>
+        <ActivityIndicator color={colors.captureAccent} />
+        <Text style={[imgWidgetStyles.uploadingText, { color: colors.captureMuted }]}>{t('capture.analyzingImage')}</Text>
       </View>
     );
   }
 
-  // Image selected — show preview + analysis result
-  return (
-    <ScrollView style={imageStyles.scroll} showsVerticalScrollIndicator={false}>
-      <View style={imageStyles.previewContainer}>
-        <Image source={{ uri: pickedUri }} style={imageStyles.preview} resizeMode="cover" />
-        {isUploading ? (
-          <View style={imageStyles.uploadingOverlay}>
-            <ActivityIndicator color="#FFFFFF" size="large" />
-            <Text style={imageStyles.uploadingText}>{t('capture.analyzingImage')}</Text>
-          </View>
-        ) : (
-          <TouchableOpacity style={imageStyles.clearBtn} onPress={handleClear}>
-            <Text style={imageStyles.clearBtnText}>✕  {t('capture.changeImage')}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+  const uri = imageData.thumbnailUrl || imageData.imageUrl;
+  if (!uri) return null;
 
-      {!isUploading && (
-        <View style={[imageStyles.analysisBox, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-          <Text style={[imageStyles.analysisLabel, { color: colors.textMuted }]}>{t('capture.imageAnalysis')}</Text>
-          <Text style={[imageStyles.analysisText, { color: colors.textPrimary }]}>
-            {description ?? t('capture.imageAnalysisFailed')}
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+  return (
+    <View style={imgWidgetStyles.thumbWrap}>
+      <Image source={{ uri }} style={imgWidgetStyles.thumb} resizeMode="cover" />
+      <TouchableOpacity style={imgWidgetStyles.removeBtn} onPress={onDiscard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <X size={12} color="#fff" strokeWidth={2.5} />
+      </TouchableOpacity>
+    </View>
   );
 }
 
-const imageStyles = StyleSheet.create({
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 36,
-    borderRadius: 22,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    gap: 10,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  pickIconWell: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pickEmoji: {
-    fontSize: 28,
-  },
-  pickLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    fontFamily: SANS_FONT,
-  },
-  pickSub: {
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 18,
-    fontFamily: SANS_FONT,
-  },
-  scroll: {
-    flex: 1,
-  },
-  previewContainer: {
-    borderRadius: 16,
+  // Empty state — show picker button
+const imgWidgetStyles = StyleSheet.create({
+  thumbWrap: {
+    marginTop: 10,
+    borderRadius: 12,
     overflow: 'hidden',
     position: 'relative',
+    alignSelf: 'flex-start',
   },
-  preview: {
-    width: '100%',
-    height: 260,
-  },
-  uploadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+  thumb: {
+    width: 200,
+    height: 130,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   uploadingText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '500',
-    fontFamily: SANS_FONT,
+    fontSize: 12,
+    marginTop: 6,
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
   },
-  clearBtn: {
+  removeBtn: {
     position: 'absolute',
-    bottom: 12,
-    alignSelf: 'center',
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  clearBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: SANS_FONT,
-  },
-  analysisBox: {
-    marginTop: 16,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  analysisLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    fontFamily: SANS_FONT,
-  },
-  analysisText: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontFamily: SANS_FONT,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
-// ── End Image Upload ──────────────────────────────────────────────────────────
 
 export default function CaptureScreen() {
   const { t } = useTranslation();
@@ -782,6 +629,50 @@ export default function CaptureScreen() {
     };
   }, []);
   // ── End voice recording ──
+
+  // ── Image pick/upload ──
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert(t('capture.permissionRequired'), t('capture.photoLibraryPermission'));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    let optimizedUri = asset.uri;
+    try {
+      const optimized = await optimizeImage(asset.uri);
+      optimizedUri = optimized.uri;
+    } catch (err) {
+      console.warn('Image optimization failed, uploading original:', err);
+    }
+    setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: true });
+    try {
+      const uploadResult = await storageApi.uploadImage(optimizedUri);
+      setImageData({
+        imageUrl: uploadResult.image_url ?? null,
+        thumbnailUrl: uploadResult.thumbnail_url ?? null,
+        description: uploadResult.description ?? null,
+        picked: true,
+        isUploading: false,
+      });
+    } catch (err) {
+      console.error('Image upload error:', err);
+      setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
+      Alert.alert(t('capture.error'), t('capture.saveFailed'));
+    }
+  };
+
+  const discardImage = () => {
+    setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
+    setPhotoNote('');
+  };
+  // ── End image pick/upload ──
 
   const handleDuplicateLinkError = (error: unknown): boolean => {
     if (getHttpStatus(error) !== 409) return false;
@@ -1031,7 +922,7 @@ export default function CaptureScreen() {
         ) : (
           /* Photo */
           <View style={styles.modePanel}>
-            <ImageUpload onImageData={(data) => { setImageData(data); if (!data.picked) setPhotoNote(''); }} />
+            <ImageWidget imageData={imageData} onDiscard={discardImage} />
             {imageData.picked && !imageData.isUploading && (
               <TextInput
                 style={[styles.photoNoteInput, { color: colors.captureText, backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
