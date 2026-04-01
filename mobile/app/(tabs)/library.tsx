@@ -640,12 +640,40 @@ export default function LibraryScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
 
       {/* ── Header ── */}
-      <ScreenHeader
-        eyebrow={t('library.eyebrow', { count: memories.length })}
-        title={t('library.title')}
-        titleSize={30}
-        paddingHorizontal={16}
-      />
+      {selectMode ? (
+        <View style={[styles.selectHeader, { paddingHorizontal: 16 }]}>
+          <Text style={[styles.selectEyebrow, { color: colors.brandAccent }]}>
+            {t('library.selectMode')}
+          </Text>
+          <View style={styles.selectTitleRow}>
+            <Text style={[styles.selectCount, { color: colors.brandAccent }]}>
+              {t('library.selectedCount', { count: selectedIds.size })}
+            </Text>
+            <TouchableOpacity onPress={toggleSelectMode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={[styles.cancelLink, { color: colors.brandAccent }]}>
+                {t('library.cancelSelect')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <ScreenHeader
+          eyebrow={t('library.eyebrow', { count: memories.length })}
+          title={t('library.title')}
+          titleSize={30}
+          paddingHorizontal={16}
+          rightAction={
+            <TouchableOpacity
+              style={[styles.synthIconBtn, { backgroundColor: colors.brandAccentLight }]}
+              onPress={toggleSelectMode}
+              accessibilityLabel={t('library.synthesize')}
+              activeOpacity={0.7}
+            >
+              <Sparkles size={15} color={colors.brandAccent} strokeWidth={2} />
+            </TouchableOpacity>
+          }
+        />
+      )}
 
       {/* ── Search bar + Category filter button ── */}
       <View style={styles.searchBarRow}>
@@ -751,23 +779,6 @@ export default function LibraryScreen() {
               </View>
             </TouchableOpacity>
           ))}
-          <TouchableOpacity
-            onPress={toggleSelectMode}
-            style={[
-              styles.synthesizeBtn,
-              { backgroundColor: colors.brandAccentLight, borderColor: selectMode ? colors.brandAccent : 'transparent' },
-            ]}
-            accessibilityLabel={selectMode ? t('library.cancelSelect') : t('library.synthesize')}
-          >
-            <Sparkles size={12} color={colors.brandAccent} />
-            <Text style={[styles.synthesizeBtnText, { color: colors.brandAccent }]}>
-              {selectMode
-                ? selectedIds.size > 0
-                  ? t('library.selectedCount', { count: selectedIds.size })
-                  : t('library.cancelSelect')
-                : t('library.synthesize')}
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       )}
 
@@ -999,6 +1010,40 @@ const styles = StyleSheet.create({
   catFilterChevron: {
     fontSize: 14,
     fontWeight: '600',
+  },
+
+  // ── Select mode header ──────────────────────────────────
+  selectHeader: {
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  selectEyebrow: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 10,
+    letterSpacing: 0.8,
+    marginBottom: 4,
+  },
+  selectTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  selectCount: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 24,
+    letterSpacing: -0.5,
+    lineHeight: 32,
+  },
+  cancelLink: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 15,
+  },
+  synthIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Filter chips ────────────────────────────────────────
@@ -1243,20 +1288,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Synthesis selection UI ───────────────────────────────
-  synthesizeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderWidth: 1.5,
-    marginLeft: 'auto',
-  },
-  synthesizeBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
   memoryCardWrapper: {
     position: 'relative',
   },
