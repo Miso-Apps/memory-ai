@@ -205,6 +205,9 @@ const vi = {
     selectedCount: 'Đã chọn {{count}}',
     synthesizing: 'Đang tổng hợp...',
     synthesizeAction: 'Tổng hợp →',
+    selectMode: 'CHỌN KÝ ỨC',
+    selectHint: 'Chọn 2 hoặc nhiều hơn để tổng hợp',
+    memoriesCount: '{{count}} ký ức',
   },
 
   // System category names (used in library, memory badges)

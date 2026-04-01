@@ -206,6 +206,9 @@ const en = {
     selectedCount: '{{count}} selected',
     synthesizing: 'Synthesizing...',
     synthesizeAction: 'Synthesize →',
+    selectMode: 'SELECT MEMORIES',
+    selectHint: 'Select 2 or more to synthesize',
+    memoriesCount: '{{count}} memories',
   },
 
   // System category names (used in library, memory badges)
