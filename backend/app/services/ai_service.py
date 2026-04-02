@@ -71,6 +71,7 @@ async def generate_summary(
             "text": "a personal note",
             "voice": "a voice memo (transcription)",
             "link": "a saved web link / URL",
+            "rich": "a mixed-media note with text, images, and/or voice",
         }
         hint = type_hints.get(memory_type, "a note")
         lang_note = _language_instruction(language)
