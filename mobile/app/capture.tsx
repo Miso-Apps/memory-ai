@@ -413,7 +413,6 @@ function ImageWidget({ imageData, onDiscard }: ImageWidgetProps) {
   );
 }
 
-  // Empty state — show picker button
 const imgWidgetStyles = StyleSheet.create({
   thumbWrap: {
     marginTop: 10,
