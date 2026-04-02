@@ -199,6 +199,26 @@ curl -X POST -H "Authorization: Bearer <token>" \
   "https://api.dukiai.com/decisions/"
 ```
 
+## 6.3 Rich mixed-media memory schema (2026-04)
+
+Applied by running `backend/migrate_rich_blocks.sql` once:
+- Adds `RICH` value to the `memorytype` PostgreSQL enum
+- Adds `blocks JSONB NULL` column to the `memories` table
+- Creates `idx_memories_blocks_gin` GIN partial index for block queries
+
+To apply in production:
+```bash
+docker exec -i memory-ai-postgres psql -U memoryai -d memoryai < backend/migrate_rich_blocks.sql
+```
+
+Smoke-check after deploy:
+```bash
+curl -X POST -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"rich","content":"test","blocks":[{"type":"text","order_index":0,"content":"hello"}]}' \
+  "https://api.dukiai.com/memories/"
+```
+
 ---
 
 ## 7. Subsequent deploys

@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -87,17 +89,20 @@ async def _generate_and_save_summary(
         log.warning("Failed to save auto-summary for memory %s: %s", memory_id, exc)
 
 
-# Category cache to avoid repeated DB queries
+# Category cache to avoid repeated DB queries (TTL: 5 minutes)
 _category_cache: dict[str, dict] = {}
+_category_cache_expires: dict[str, float] = {}
+_CATEGORY_CACHE_TTL = 300  # seconds
 
 
 async def _get_category_info(db: AsyncSession, category_id) -> dict:
-    """Get category info by ID, with caching."""
+    """Get category info by ID, with TTL-bounded caching."""
     if not category_id:
         return {}
 
     cache_key = str(category_id)
-    if cache_key in _category_cache:
+    now = time.monotonic()
+    if cache_key in _category_cache and _category_cache_expires.get(cache_key, 0) > now:
         return _category_cache[cache_key]
 
     result = await db.execute(select(Category).where(Category.id == category_id))
@@ -111,6 +116,7 @@ async def _get_category_info(db: AsyncSession, category_id) -> dict:
             "category_color": cat.color,
         }
         _category_cache[cache_key] = info
+        _category_cache_expires[cache_key] = now + _CATEGORY_CACHE_TTL
         return info
 
     return {}
@@ -296,7 +302,9 @@ async def create_memory(
             if sitename:
                 metadata.setdefault("site_name", sitename)
         except Exception as exc:
-            log.debug("Link metadata enrichment skipped for %s: %s", memory.content, exc)
+            log.debug(
+                "Link metadata enrichment skipped for %s: %s", memory.content, exc
+            )
 
         if not metadata.get("normalized_url") and normalized_input_url:
             metadata.setdefault("normalized_url", normalized_input_url)
@@ -330,7 +338,9 @@ async def create_memory(
                     _normalize_url(str(existing_metadata.get("canonical_url") or "")),
                     _normalize_url(str(existing_metadata.get("normalized_url") or "")),
                 }
-                if duplicate_candidates.intersection({c for c in existing_candidates if c}):
+                if duplicate_candidates.intersection(
+                    {c for c in existing_candidates if c}
+                ):
                     return JSONResponse(
                         status_code=409,
                         content={
@@ -416,23 +426,26 @@ async def get_memory_stats(
     )
     today = today_result.scalar() or 0
 
-    # Streak — consecutive days (up to today) with at least one memory
+    # Streak — consecutive days with at least one memory.
+    # Single query fetches all active days in the last year; Python computes the streak.
+    year_ago = today_start - timedelta(days=364)
+    active_days_result = await db.execute(
+        select(func.date_trunc("day", Memory.created_at).label("day"))
+        .where(and_(base, Memory.created_at >= year_ago))
+        .distinct()
+    )
+    active_days = {row[0].date() for row in active_days_result.all() if row[0]}
+
     streak = 0
-    day_cursor = today_start
-    for _ in range(365):  # cap at 1 year
-        day_end = day_cursor + timedelta(days=1)
-        day_result = await db.execute(
-            select(func.count()).where(
-                and_(base, Memory.created_at >= day_cursor, Memory.created_at < day_end)
-            )
-        )
-        if (day_result.scalar() or 0) > 0:
+    cursor = today_start.date()
+    for _ in range(365):
+        if cursor in active_days:
             streak += 1
-            day_cursor -= timedelta(days=1)
+            cursor -= timedelta(days=1)
         else:
-            # Allow skipping today if it just started, count from yesterday
-            if streak == 0 and day_cursor == today_start:
-                day_cursor -= timedelta(days=1)
+            # Allow today having no entries yet — start streak from yesterday
+            if streak == 0:
+                cursor -= timedelta(days=1)
                 continue
             break
 

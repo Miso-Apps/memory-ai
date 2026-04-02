@@ -1,8 +1,19 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from app.api import auth, memories, ai, storage, categories, preferences, insights, decisions, agent
+from app.api import (
+    auth,
+    memories,
+    ai,
+    storage,
+    categories,
+    preferences,
+    insights,
+    decisions,
+    agent,
+)
 from app.database import init_db
 from app.config import settings
 
@@ -17,10 +28,17 @@ scheduler = AsyncIOScheduler(timezone="UTC")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: create tables + start nightly agent scan scheduler."""
+    """Startup: validate config, create tables + start nightly agent scan scheduler."""
+    if not settings.SECRET_KEY:
+        raise RuntimeError(
+            "SECRET_KEY is not set. Generate one with: openssl rand -hex 32"
+        )
     await init_db()
     from app.tasks.agent_scan import run_nightly_scan
-    scheduler.add_job(run_nightly_scan, "cron", hour=2, minute=0, id="nightly_agent_scan")
+
+    scheduler.add_job(
+        run_nightly_scan, "cron", hour=2, minute=0, id="nightly_agent_scan"
+    )
     scheduler.start()
     yield
     scheduler.shutdown(wait=False)
@@ -43,6 +61,7 @@ def _get_cors_origins() -> list[str]:
     if raw == "*":
         return ["*"]
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
 
 # CORS middleware
 app.add_middleware(
@@ -73,7 +92,15 @@ async def root():
 
 @app.get("/health")
 async def health():
-    """Health check endpoint"""
+    """Health check endpoint — verifies DB connectivity."""
+    from app.database import AsyncSessionLocal
+    from sqlalchemy import text
+
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+    except Exception as exc:
+        return JSONResponse({"status": "error", "detail": str(exc)}, status_code=503)
     return {"status": "ok"}
 
 

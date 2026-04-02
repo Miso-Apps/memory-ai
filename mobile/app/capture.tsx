@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as ExpoClipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -24,14 +25,15 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
-import { useAuthStore } from '../store/authStore';
 import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
 import {
   Mic,
   Link2,
   Image as ImageIcon,
   X,
+  Lock,
 } from 'lucide-react-native';
+import { useAuthStore } from '../store/authStore';
 
 const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 
@@ -61,52 +63,52 @@ const HINT_CHIPS: {
   darkBorder: string;
   darkText: string;
 }[] = [
-  {
-    labelKey: 'capture.hintIdea',
-    bg: '#fff8f2',
-    border: '#f5dfc8',
-    text: '#c47a3a',
-    darkBg: 'rgba(184,92,32,0.16)',
-    darkBorder: 'rgba(184,92,32,0.28)',
-    darkText: '#f0b182',
-  },
-  {
-    labelKey: 'capture.hintMeeting',
-    bg: '#f2f8ff',
-    border: '#d0e8ff',
-    text: '#4a7ab5',
-    darkBg: 'rgba(73,115,163,0.22)',
-    darkBorder: 'rgba(123,168,222,0.32)',
-    darkText: '#b9d8ff',
-  },
-  {
-    labelKey: 'capture.hintDecision',
-    bg: '#f0fff4',
-    border: '#b8e8c8',
-    text: '#2e7d52',
-    darkBg: 'rgba(53,120,84,0.22)',
-    darkBorder: 'rgba(93,171,129,0.34)',
-    darkText: '#a7e5c1',
-  },
-  {
-    labelKey: 'capture.hintConversation',
-    bg: '#fff0f8',
-    border: '#f0c0dc',
-    text: '#a0456a',
-    darkBg: 'rgba(132,65,97,0.26)',
-    darkBorder: 'rgba(191,114,153,0.34)',
-    darkText: '#ebb3ce',
-  },
-  {
-    labelKey: 'capture.hintLearning',
-    bg: '#f5f0ff',
-    border: '#d8c8f8',
-    text: '#6a4ab5',
-    darkBg: 'rgba(100,79,155,0.24)',
-    darkBorder: 'rgba(145,120,208,0.34)',
-    darkText: '#cab8f7',
-  },
-];
+    {
+      labelKey: 'capture.hintIdea',
+      bg: '#fff8f2',
+      border: '#f5dfc8',
+      text: '#c47a3a',
+      darkBg: 'rgba(184,92,32,0.16)',
+      darkBorder: 'rgba(184,92,32,0.28)',
+      darkText: '#f0b182',
+    },
+    {
+      labelKey: 'capture.hintMeeting',
+      bg: '#f2f8ff',
+      border: '#d0e8ff',
+      text: '#4a7ab5',
+      darkBg: 'rgba(73,115,163,0.22)',
+      darkBorder: 'rgba(123,168,222,0.32)',
+      darkText: '#b9d8ff',
+    },
+    {
+      labelKey: 'capture.hintDecision',
+      bg: '#f0fff4',
+      border: '#b8e8c8',
+      text: '#2e7d52',
+      darkBg: 'rgba(53,120,84,0.22)',
+      darkBorder: 'rgba(93,171,129,0.34)',
+      darkText: '#a7e5c1',
+    },
+    {
+      labelKey: 'capture.hintConversation',
+      bg: '#fff0f8',
+      border: '#f0c0dc',
+      text: '#a0456a',
+      darkBg: 'rgba(132,65,97,0.26)',
+      darkBorder: 'rgba(191,114,153,0.34)',
+      darkText: '#ebb3ce',
+    },
+    {
+      labelKey: 'capture.hintLearning',
+      bg: '#f5f0ff',
+      border: '#d8c8f8',
+      text: '#6a4ab5',
+      darkBg: 'rgba(100,79,155,0.24)',
+      darkBorder: 'rgba(145,120,208,0.34)',
+      darkText: '#cab8f7',
+    },
+  ];
 
 interface VoiceData {
   audioUrl: string | null;
@@ -114,6 +116,49 @@ interface VoiceData {
   recorded: boolean;
   isUploading: boolean;
 }
+
+// ── Block types ──────────────────────────────────────────────────────────────
+
+export type LocalBlockType = 'text' | 'image' | 'voice' | 'link';
+
+export interface TextBlock {
+  id: string;
+  type: 'text';
+  content: string;
+}
+
+export interface ImageBlock {
+  id: string;
+  type: 'image';
+  imageUrl: string | null;
+  thumbnailUrl: string | null;
+  description: string | null;
+  caption: string;
+  uploading: boolean;
+}
+
+export interface VoiceBlock {
+  id: string;
+  type: 'voice';
+  audioUrl: string | null;
+  transcription: string | null;
+  duration: number;
+}
+
+export interface LinkBlock {
+  id: string;
+  type: 'link';
+  url: string;
+  error: string;
+}
+
+export type LocalBlock = TextBlock | ImageBlock | VoiceBlock | LinkBlock;
+
+function genId(): string {
+  return Math.random().toString(36).slice(2, 11);
+}
+
+// ── End block types ───────────────────────────────────────────────────────────
 
 interface VoiceWidgetProps {
   status: 'idle' | 'recording' | 'uploading' | 'done';
@@ -125,6 +170,7 @@ interface VoiceWidgetProps {
 
 function VoiceWidget({ status, duration, transcription, onStop, onDiscard }: VoiceWidgetProps) {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const pulseRef = useRef<Animated.CompositeAnimation | null>(null);
 
@@ -169,7 +215,7 @@ function VoiceWidget({ status, duration, transcription, onStop, onDiscard }: Voi
     return (
       <View style={[widgetStyles.voiceCard, { backgroundColor: 'rgba(232,132,74,0.08)', borderColor: 'rgba(232,132,74,0.25)' }]}>
         <ActivityIndicator size="small" color={colors.captureAccent} />
-        <Text style={[widgetStyles.recTime, { color: colors.captureMuted }]}>Processing…</Text>
+        <Text style={[widgetStyles.recTime, { color: colors.captureMuted }]}>{t('capture.processingAudio')}</Text>
       </View>
     );
   }
@@ -316,113 +362,269 @@ const imgWidgetStyles = StyleSheet.create({
   },
 });
 
+// ── Block widget components ───────────────────────────────────────────────────
+
+interface VoiceBlockWidgetProps {
+  block: VoiceBlock;
+  onRemove: () => void;
+}
+
+function VoiceBlockWidget({ block, onRemove }: VoiceBlockWidgetProps) {
+  const { colors } = useTheme();
+  const fmtDuration = (s: number) =>
+    `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+  return (
+    <View style={[widgetStyles.pill, { backgroundColor: 'rgba(232,132,74,0.10)', borderColor: 'rgba(232,132,74,0.35)', marginTop: 8 }]}>
+      <Mic size={12} color={colors.captureAccent} strokeWidth={2.2} />
+      <Text style={[widgetStyles.pillText, { color: colors.captureAccent }]}>
+        {block.transcription
+          ? block.transcription.slice(0, 40) + (block.transcription.length > 40 ? '…' : '')
+          : fmtDuration(block.duration)}
+      </Text>
+      <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <X size={12} color={colors.captureMuted} strokeWidth={2.2} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+interface ImageBlockWidgetProps {
+  block: ImageBlock;
+  onRemove: () => void;
+  onChangeCaption: (v: string) => void;
+}
+
+function ImageBlockWidget({ block, onRemove, onChangeCaption }: ImageBlockWidgetProps) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+
+  if (block.uploading) {
+    return (
+      <View style={[imgWidgetStyles.thumb, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder, marginTop: 10 }]}>
+        <ActivityIndicator color={colors.captureAccent} />
+        <Text style={[imgWidgetStyles.uploadingText, { color: colors.captureMuted }]}>{t('capture.analyzingImage')}</Text>
+      </View>
+    );
+  }
+
+  const uri = block.thumbnailUrl || block.imageUrl;
+  if (!uri) return null;
+
+  return (
+    <View style={{ marginTop: 10 }}>
+      <View style={imgWidgetStyles.thumbWrap}>
+        <Image source={{ uri }} style={imgWidgetStyles.thumb} resizeMode="cover" />
+        <TouchableOpacity style={imgWidgetStyles.removeBtn} onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <X size={12} color="#fff" strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
+      {!!block.description && (
+        <Text style={[{ marginTop: 5, fontSize: 12, lineHeight: 17, fontStyle: 'italic' }, { color: colors.captureMuted, fontFamily: 'DMSans_400Regular' }]} numberOfLines={2}>
+          {block.description}
+        </Text>
+      )}
+      <TextInput
+        style={[{ marginTop: 6, minHeight: 60, fontSize: 14, lineHeight: 20, borderRadius: 10, padding: 10, borderWidth: 1, textAlignVertical: 'top' }, { color: colors.captureText, borderColor: colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
+        placeholder={t('capture.imageCaptionPlaceholder')}
+        placeholderTextColor={colors.captureMuted}
+        multiline
+        value={block.caption}
+        onChangeText={onChangeCaption}
+        textAlignVertical="top"
+      />
+    </View>
+  );
+}
+
+interface LinkBlockWidgetProps {
+  block: LinkBlock;
+  onChangeUrl: (v: string) => void;
+  onRemove: () => void;
+}
+
+function LinkBlockWidget({ block, onChangeUrl, onRemove }: LinkBlockWidgetProps) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  return (
+    <View style={{ marginTop: 8 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <TextInput
+          style={[{ flex: 1, fontSize: 15, lineHeight: 22, borderRadius: 10, padding: 10, borderWidth: 1 }, { color: colors.captureText, borderColor: block.error ? colors.error : colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
+          placeholder={t('capture.linkBlockPlaceholder')}
+          placeholderTextColor={colors.captureMuted}
+          value={block.url}
+          onChangeText={onChangeUrl}
+          keyboardType="url"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <X size={16} color={colors.captureMuted} strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
+      {!!block.error && (
+        <Text style={{ fontSize: 12, marginTop: 4, color: colors.error }}>{block.error}</Text>
+      )}
+    </View>
+  );
+}
+
+interface TextBlockWidgetProps {
+  block: TextBlock;
+  isFirst: boolean;
+  onChange: (v: string) => void;
+}
+
+function TextBlockWidget({ block, isFirst, onChange }: TextBlockWidgetProps) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  return (
+    <TextInput
+      style={[{ fontSize: 15, lineHeight: 24, minHeight: 48 }, { color: colors.captureText, fontFamily: 'DMSans_400Regular' }]}
+      placeholder={isFirst ? t('capture.composerPlaceholder') : t('capture.textBlockPlaceholder')}
+      placeholderTextColor={colors.captureMuted}
+      multiline
+      autoFocus={isFirst}
+      value={block.content}
+      onChangeText={onChange}
+      textAlignVertical="top"
+      autoCapitalize="sentences"
+      autoCorrect
+    />
+  );
+}
+
+// ── End block widget components ───────────────────────────────────────────────
+
 interface ComposerRowProps {
-  content: string;
-  onChangeContent: (v: string) => void;
-  voiceStatus: 'idle' | 'recording' | 'uploading' | 'done';
-  voiceDuration: number;
-  voiceTranscription: string | null;
-  onStopVoice: () => void;
-  onDiscardVoice: () => void;
-  imageData: ImageUploadData;
-  onDiscardImage: () => void;
-  linkVisible: boolean;
-  linkContent: string;
-  onChangeLinkContent: (v: string) => void;
-  linkError: string;
+  blocks: LocalBlock[];
+  onUpdateBlock: (id: string, patch: Partial<LocalBlock>) => void;
+  onRemoveBlock: (id: string) => void;
+  onSelectHint: (label: string) => void;
+  recordingStatus: 'idle' | 'recording' | 'uploading';
+  recordingDuration: number;
+  onStartRecording: () => void;
+  onStopRecording: () => void;
   clipboardUrl: string | null;
   clipOpacity: Animated.Value;
   clipSaving: boolean;
   onQuickSaveLink: () => void;
   onUseClipboardUrl: () => void;
   onDismissClipboard: () => void;
-  photoNote: string;
-  onChangePhotoNote: (v: string) => void;
+  onAddImage: () => void;
+  onAddLink: () => void;
+  username: string;
 }
 
 function ComposerRow({
-  content, onChangeContent,
-  voiceStatus, voiceDuration, voiceTranscription, onStopVoice, onDiscardVoice,
-  imageData, onDiscardImage,
-  linkVisible, linkContent, onChangeLinkContent, linkError,
+  blocks, onUpdateBlock, onRemoveBlock, onSelectHint,
+  recordingStatus, recordingDuration,
+  onStartRecording, onStopRecording,
   clipboardUrl, clipOpacity, clipSaving, onQuickSaveLink, onUseClipboardUrl, onDismissClipboard,
-  photoNote, onChangePhotoNote,
+  onAddImage, onAddLink,
+  username,
 }: ComposerRowProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
-  const user = useAuthStore((s) => s.user);
-  const initial = (user?.name?.charAt(0) || user?.email?.charAt(0) || 'M').toUpperCase();
+  const { colors, isDark } = useTheme();
+
+  const initial = username.charAt(0).toUpperCase();
+  const isRecording = recordingStatus === 'recording' || recordingStatus === 'uploading';
+  const hasVoice = blocks.some((b) => b.type === 'voice');
+  const hasImage = blocks.some((b) => b.type === 'image');
+  const hasLink = blocks.some((b) => b.type === 'link');
+  const showChips = blocks.length === 0;
 
   return (
     <View style={composerStyles.row}>
-      {/* Avatar column */}
+
+      {/* ── Avatar column ── */}
       <View style={composerStyles.avatarCol}>
-        <View style={[composerStyles.avatar, { backgroundColor: colors.captureAccent }]}>
-          <Text style={composerStyles.avatarText}>{initial}</Text>
+        <LinearGradient
+          colors={['#F2B67E', '#C2600A']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={composerStyles.avatarCircle}
+        >
+          <Text style={composerStyles.avatarInitial}>{initial}</Text>
+        </LinearGradient>
+        {/* Thread line + node dot */}
+        <View style={composerStyles.threadWrapper}>
+          <View style={[composerStyles.threadLine, { backgroundColor: isDark ? 'rgba(232,132,74,0.2)' : 'rgba(194,96,10,0.12)' }]} />
+          <View style={[composerStyles.threadNode, { backgroundColor: colors.captureAccent }]} />
+          <View style={[composerStyles.threadLineFlex, { backgroundColor: isDark ? 'rgba(232,132,74,0.1)' : 'rgba(194,96,10,0.07)' }]} />
         </View>
-        <View style={[composerStyles.threadLine, { backgroundColor: colors.captureBorder }]} />
       </View>
 
-      {/* Content column */}
+      {/* ── Content column ── */}
       <View style={composerStyles.contentCol}>
-        <Text style={[composerStyles.username, { color: colors.captureText }]}>
-          {user?.name || user?.email?.split('@')[0] || 'me'}
-        </Text>
 
-        {/* Main text input */}
-        <TextInput
-          style={[composerStyles.input, { color: colors.captureText, fontFamily: 'DMSans_400Regular' }]}
-          placeholder={t('capture.composerPlaceholder')}
-          placeholderTextColor={colors.captureMuted}
-          multiline
-          autoFocus
-          value={content}
-          onChangeText={onChangeContent}
-          textAlignVertical="top"
-          autoCapitalize="sentences"
-          autoCorrect
-        />
+        {/* Author row */}
+        <View style={composerStyles.authorRow}>
+          <Text style={[composerStyles.authorName, { color: colors.captureText }]}>{username}</Text>
+          <Text style={[composerStyles.authorTime, { color: colors.captureMuted }]}>{t('capture.justNow')}</Text>
+        </View>
 
-        {/* Voice widget */}
-        <VoiceWidget
-          status={voiceStatus}
-          duration={voiceDuration}
-          transcription={voiceTranscription}
-          onStop={onStopVoice}
-          onDiscard={onDiscardVoice}
-        />
+        {/* Block list */}
+        {blocks.map((block, idx) => {
+          if (block.type === 'text') {
+            return (
+              <TextBlockWidget
+                key={block.id}
+                block={block}
+                isFirst={idx === 0}
+                onChange={(v) => onUpdateBlock(block.id, { content: v } as Partial<TextBlock>)}
+              />
+            );
+          }
+          if (block.type === 'image') {
+            return (
+              <ImageBlockWidget
+                key={block.id}
+                block={block}
+                onRemove={() => onRemoveBlock(block.id)}
+                onChangeCaption={(v) => onUpdateBlock(block.id, { caption: v } as Partial<ImageBlock>)}
+              />
+            );
+          }
+          if (block.type === 'voice') {
+            return (
+              <VoiceBlockWidget
+                key={block.id}
+                block={block}
+                onRemove={() => onRemoveBlock(block.id)}
+              />
+            );
+          }
+          if (block.type === 'link') {
+            return (
+              <LinkBlockWidget
+                key={block.id}
+                block={block}
+                onChangeUrl={(v) => onUpdateBlock(block.id, { url: v, error: '' } as Partial<LinkBlock>)}
+                onRemove={() => onRemoveBlock(block.id)}
+              />
+            );
+          }
+          return null;
+        })}
 
-        {/* Image widget */}
-        <ImageWidget imageData={imageData} onDiscard={onDiscardImage} />
+        {/* Hint chips — visible when empty */}
+        {showChips && <HintChips onSelect={onSelectHint} />}
 
-        {/* Optional photo note when image picked */}
-        {imageData.picked && !imageData.isUploading && (
-          <TextInput
-            style={[composerStyles.photoNote, { color: colors.captureText, borderColor: colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
-            placeholder={t('capture.photoNotePlaceholder')}
-            placeholderTextColor={colors.captureMuted}
-            multiline
-            value={photoNote}
-            onChangeText={onChangePhotoNote}
-            textAlignVertical="top"
-          />
-        )}
-
-        {/* Inline link input */}
-        {linkVisible && (
-          <View style={composerStyles.linkInputWrapper}>
-            <TextInput
-              style={[composerStyles.linkInput, { color: colors.captureText, borderColor: linkError ? colors.error : colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
-              placeholder={t('capture.linkInputPlaceholder')}
-              placeholderTextColor={colors.captureMuted}
-              value={linkContent}
-              onChangeText={onChangeLinkContent}
-              keyboardType="url"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {!!linkError && (
-              <Text style={[composerStyles.linkError, { color: colors.error }]}>{linkError}</Text>
+        {/* Recording in-progress pill */}
+        {isRecording && (
+          <View style={[widgetStyles.pill, { backgroundColor: 'rgba(232,132,74,0.10)', borderColor: 'rgba(232,132,74,0.35)', marginTop: 8 }]}>
+            <Mic size={12} color={colors.captureAccent} strokeWidth={2.2} />
+            <Text style={[widgetStyles.pillText, { color: colors.captureAccent }]}>
+              {recordingStatus === 'uploading'
+                ? t('capture.voiceBlockUploading')
+                : `${t('capture.voiceBlockRecording')} ${Math.floor(recordingDuration / 60)}:${String(recordingDuration % 60).padStart(2, '0')}`}
+            </Text>
+            {recordingStatus === 'recording' && (
+              <TouchableOpacity onPress={onStopRecording} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <X size={12} color={colors.captureMuted} strokeWidth={2.2} />
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -450,6 +652,40 @@ function ComposerRow({
             </View>
           </Animated.View>
         ) : null}
+
+        {/* ── Attachment icon row ── */}
+        <View style={[composerStyles.attachmentDivider, { borderTopColor: colors.captureBorder }]}>
+          <View style={composerStyles.attachmentRow}>
+            <TouchableOpacity
+              onPress={onAddImage}
+              disabled={isRecording}
+              style={{ opacity: isRecording ? 0.3 : 1 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('capture.toolbarImageA11y')}
+            >
+              <ImageIcon size={20} color={hasImage ? colors.captureAccent : colors.captureMuted} strokeWidth={1.8} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={isRecording ? onStopRecording : onStartRecording}
+              accessibilityRole="button"
+              accessibilityLabel={t('capture.toolbarVoiceA11y')}
+            >
+              <Mic size={20} color={isRecording || hasVoice ? colors.captureAccent : colors.captureMuted} strokeWidth={isRecording ? 2.4 : 1.8} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onAddLink}
+              disabled={isRecording}
+              style={{ opacity: isRecording ? 0.3 : 1 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('capture.toolbarLinkA11y')}
+            >
+              <Link2 size={20} color={hasLink ? colors.captureAccent : colors.captureMuted} strokeWidth={hasLink ? 2.4 : 1.8} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
       </View>
     </View>
   );
@@ -460,47 +696,74 @@ const composerStyles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingTop: 12,
-    gap: 12,
-    flex: 1,
+    paddingBottom: 12,
+    alignItems: 'flex-start',
   },
+  // ── Avatar column ──
   avatarCol: {
-    width: 38,
+    width: 50,
     alignItems: 'center',
     flexShrink: 0,
   },
-  avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  avatarCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: {
+  avatarInitial: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 18,
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
+  },
+  threadWrapper: {
+    alignItems: 'center',
+    marginTop: 4,
+    height: 56,
   },
   threadLine: {
-    width: 1.5,
-    flex: 1,
-    marginTop: 6,
+    width: 2,
+    height: 18,
     borderRadius: 1,
-    opacity: 0.3,
   },
+  threadNode: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    opacity: 0.65,
+  },
+  threadLineFlex: {
+    width: 2,
+    height: 30,
+    borderRadius: 1,
+    marginTop: 4,
+  },
+  // ── Content column ──
   contentCol: {
     flex: 1,
-    paddingBottom: 12,
+    paddingTop: 2,
+    paddingLeft: 4,
+    flexShrink: 1,
   },
-  username: {
-    fontSize: 14,
-    fontWeight: '700',
-    marginTop: 8,
-    marginBottom: 4,
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+    marginBottom: 8,
+  },
+  authorName: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 15,
+  },
+  authorTime: {
+    fontSize: 12,
+    fontFamily: 'DMSans_400Regular',
   },
   input: {
     fontSize: 15,
-    lineHeight: 23,
-    minHeight: 40,
+    lineHeight: 24,
+    minHeight: 48,
   },
   photoNote: {
     marginTop: 10,
@@ -575,129 +838,46 @@ const composerStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-});
-
-interface BottomToolbarProps {
-  isRecording: boolean;
-  hasImage: boolean;
-  hasVoice: boolean;
-  hasLink: boolean;
-  charCount: number;
-  onMic: () => void;
-  onImage: () => void;
-  onLink: () => void;
-}
-
-function BottomToolbar({ isRecording, hasImage, hasVoice, hasLink, charCount, onMic, onImage, onLink }: BottomToolbarProps) {
-  const { colors } = useTheme();
-  const MAX_CHARS = 500;
-  const remaining = MAX_CHARS - charCount;
-
-  return (
-    <View style={[toolbarStyles.wrap, { borderTopColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
-      <TouchableOpacity
-        onPress={onMic}
-        style={[toolbarStyles.toolBtn, hasImage && { opacity: 0.35 }]}
-        activeOpacity={0.7}
-        disabled={hasImage}
-        accessibilityRole="button"
-        accessibilityLabel="Record voice"
-        accessibilityState={{ disabled: hasImage }}
-      >
-        <Mic
-          size={22}
-          color={isRecording ? colors.captureAccent : hasImage ? colors.captureBorder : colors.captureMuted}
-          strokeWidth={isRecording ? 2.4 : 1.8}
-        />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={onImage}
-        style={[toolbarStyles.toolBtn, (isRecording || hasImage || hasVoice) && { opacity: 0.35 }]}
-        activeOpacity={0.7}
-        disabled={isRecording || hasImage || hasVoice}
-        accessibilityRole="button"
-        accessibilityLabel="Attach image"
-        accessibilityState={{ disabled: isRecording || hasImage || hasVoice }}
-      >
-        <ImageIcon
-          size={22}
-          color={isRecording || hasImage || hasVoice ? colors.captureBorder : colors.captureMuted}
-          strokeWidth={1.8}
-        />
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={onLink}
-        style={[toolbarStyles.toolBtn, isRecording && { opacity: 0.35 }]}
-        activeOpacity={0.7}
-        disabled={isRecording}
-        accessibilityRole="button"
-        accessibilityLabel="Add link"
-        accessibilityState={{ disabled: isRecording }}
-      >
-        <Link2
-          size={22}
-          color={hasLink ? colors.captureAccent : isRecording ? colors.captureBorder : colors.captureMuted}
-          strokeWidth={hasLink ? 2.4 : 1.8}
-        />
-      </TouchableOpacity>
-
-      <Text style={[
-        toolbarStyles.charCount,
-        { color: remaining < 50 ? colors.warning : colors.captureBorder },
-      ]}>
-        {remaining}
-      </Text>
-    </View>
-  );
-}
-
-const toolbarStyles = StyleSheet.create({
-  wrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 12,
+  // ── Inline attachment row ──
+  attachmentDivider: {
+    marginTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    gap: 4,
+    paddingTop: 10,
   },
-  toolBtn: {
-    padding: 6,
-    borderRadius: 8,
-  },
-  charCount: {
-    marginLeft: 'auto',
-    fontSize: 12,
-    fontWeight: '600',
-    minWidth: 32,
-    textAlign: 'right',
-    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+  attachmentRow: {
+    flexDirection: 'row',
+    gap: 20,
+    alignItems: 'center',
   },
 });
 
-function HintChips({ onSelect }: { onSelect: (label: string) => void }) {
+function HintChips({ onSelect, embedded = false }: { onSelect: (label: string) => void; embedded?: boolean }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={hintStyles.scroll}
-      style={[hintStyles.container, { backgroundColor: colors.captureBg }]}
+      style={[hintStyles.container, !embedded && { backgroundColor: colors.captureBg }]}
     >
       {HINT_CHIPS.map((chip) => (
         <TouchableOpacity
           key={chip.labelKey}
           onPress={() => onSelect(t(chip.labelKey))}
-          style={[hintStyles.chip, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
+          style={[
+            hintStyles.chip,
+            {
+              backgroundColor: isDark ? chip.darkBg : chip.bg,
+              borderColor: isDark ? chip.darkBorder : chip.border,
+            },
+          ]}
           activeOpacity={0.75}
           accessibilityRole="button"
           accessibilityLabel={t(chip.labelKey)}
         >
-          <Text style={[hintStyles.chipText, { color: colors.captureMuted }]}>{t(chip.labelKey)}</Text>
+          <Text style={[hintStyles.chipText, { color: isDark ? chip.darkText : chip.text }]}>{t(chip.labelKey)}</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -707,12 +887,15 @@ function HintChips({ onSelect }: { onSelect: (label: string) => void }) {
 const hintStyles = StyleSheet.create({
   container: {
     flexShrink: 0,
+    height: 36,
+    marginTop: 6,
   },
   scroll: {
     flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
+    alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 2,
+    paddingBottom: 2,
     paddingTop: 2,
   },
   chip: {
@@ -730,31 +913,25 @@ const hintStyles = StyleSheet.create({
 export default function CaptureScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const { user } = useAuthStore();
   const params = useLocalSearchParams<{ mode?: string }>();
-  const [content, setContent] = useState('');
+  const [blocks, setBlocks] = useState<LocalBlock[]>([{ id: genId(), type: 'text', content: '' }]);
+  const username = user?.name || user?.email?.split('@')[0] || 'me';
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const successOpacity = useRef(new Animated.Value(0)).current;
   const successScale = useRef(new Animated.Value(0.8)).current;
-  const [linkError, setLinkError] = useState('');
-  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'recording' | 'uploading' | 'done'>('idle');
-  const [voiceDuration, setVoiceDuration] = useState(0);
-  const [voiceData, setVoiceData] = useState<VoiceData>({
-    audioUrl: null, transcription: null, recorded: false, isUploading: false,
-  });
   const recordingRef = useRef<Audio.Recording | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const [imageData, setImageData] = useState<ImageUploadData>({
-    imageUrl: null,
-    thumbnailUrl: null,
-    description: null,
-    picked: false,
-    isUploading: false,
-  });
-  const [photoNote, setPhotoNote] = useState('');
-  const [linkVisible, setLinkVisible] = useState(false);
-  const [linkContent, setLinkContent] = useState('');
+  const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'uploading'>('idle');
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+
+  // ── Block helpers ──
+  const addBlock = (block: LocalBlock) => setBlocks((prev) => [...prev, block]);
+  const removeBlock = (id: string) => setBlocks((prev) => prev.filter((b) => b.id !== id));
+  const updateBlock = (id: string, patch: Partial<LocalBlock>) =>
+    setBlocks((prev) => prev.map((b) => (b.id === id ? ({ ...b, ...patch } as LocalBlock) : b)));
 
   // ── Smart clipboard detection ──
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
@@ -834,21 +1011,20 @@ export default function CaptureScreen() {
 
   const useClipboardUrl = () => {
     if (!clipboardUrl) return;
-    setLinkContent(clipboardUrl);
-    setLinkVisible(true);
+    addBlock({ id: genId(), type: 'link', url: clipboardUrl, error: '' });
     dismissClipboard();
   };
   // ── End clipboard detection ──
 
   // ── Deep-link mode bootstrap ──
   useEffect(() => {
-    if (params.mode === 'link') setLinkVisible(true);
+    if (params.mode === 'link') addBlock({ id: genId(), type: 'link', url: '', error: '' });
     if (params.mode === 'voice') startVoiceRecording();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // mount-only: params.mode is a stable nav param; startVoiceRecording reads refs not state
+  }, []); // mount-only
   // ── End deep-link mode bootstrap ──
 
-  // ── Voice recording (lifted state) ──
+  // ── Voice recording ──
   const startVoiceRecording = async () => {
     try {
       const { status: permStatus } = await Audio.requestPermissionsAsync();
@@ -859,9 +1035,9 @@ export default function CaptureScreen() {
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording } = await Audio.Recording.createAsync(OPTIMIZED_RECORDING_OPTIONS);
       recordingRef.current = recording;
-      setVoiceStatus('recording');
-      setVoiceDuration(0);
-      timerRef.current = setInterval(() => setVoiceDuration((d) => d + 1), 1000);
+      setRecordingStatus('recording');
+      setRecordingDuration(0);
+      timerRef.current = setInterval(() => setRecordingDuration((d) => d + 1), 1000);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch (err) {
       Alert.alert(t('capture.recordingError'), t('capture.recordingErrorMessage'));
@@ -872,37 +1048,39 @@ export default function CaptureScreen() {
   const stopVoiceRecording = async () => {
     if (!recordingRef.current) return;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    setVoiceStatus('uploading');
+    const finalDuration = recordingDuration;
+    setRecordingStatus('uploading');
     try {
       await recordingRef.current.stopAndUnloadAsync();
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
       if (!uri) throw new Error('No recording URI');
       const result = await storageApi.uploadAudio(uri);
-      const tx = result.transcription || null;
-      setVoiceStatus('done');
-      setVoiceData({ audioUrl: result.audio_url || null, transcription: tx, recorded: true, isUploading: false });
+      const blockId = genId();
+      addBlock({
+        id: blockId,
+        type: 'voice',
+        audioUrl: result.audio_url || null,
+        transcription: result.transcription || null,
+        duration: finalDuration,
+      });
+      setBlocks((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.type === 'text' && last.content === '') return prev;
+        return [...prev, { id: genId(), type: 'text', content: '' }];
+      });
     } catch (err) {
       console.error('stopVoiceRecording error:', err);
-      setVoiceStatus('done');
-      setVoiceData({ audioUrl: null, transcription: null, recorded: true, isUploading: false });
+    } finally {
+      setRecordingStatus('idle');
+      setRecordingDuration(0);
     }
-  };
-
-  const discardVoice = () => {
-    if (voiceStatus === 'uploading') return;
-    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
-    recordingRef.current?.stopAndUnloadAsync().catch(() => {});
-    recordingRef.current = null;
-    setVoiceStatus('idle');
-    setVoiceDuration(0);
-    setVoiceData({ audioUrl: null, transcription: null, recorded: false, isUploading: false });
   };
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      recordingRef.current?.stopAndUnloadAsync().catch(() => {});
+      recordingRef.current?.stopAndUnloadAsync().catch(() => { });
     };
   }, []);
   // ── End voice recording ──
@@ -928,26 +1106,35 @@ export default function CaptureScreen() {
     } catch (err) {
       console.warn('Image optimization failed, uploading original:', err);
     }
-    setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: true });
+    const blockId = genId();
+    addBlock({ id: blockId, type: 'image', imageUrl: null, thumbnailUrl: null, description: null, caption: '', uploading: true });
     try {
       const uploadResult = await storageApi.uploadImage(optimizedUri);
-      setImageData({
+      updateBlock(blockId, {
         imageUrl: uploadResult.image_url ?? null,
         thumbnailUrl: uploadResult.thumbnail_url ?? null,
         description: uploadResult.description ?? null,
-        picked: true,
-        isUploading: false,
+        uploading: false,
+      } as Partial<ImageBlock>);
+      setBlocks((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.type === 'text' && last.content === '') return prev;
+        return [...prev, { id: genId(), type: 'text', content: '' }];
       });
     } catch (err) {
       console.error('Image upload error:', err);
-      setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
+      removeBlock(blockId);
       Alert.alert(t('capture.error'), t('capture.saveFailed'));
     }
   };
 
-  const discardImage = () => {
-    setImageData({ imageUrl: null, thumbnailUrl: null, description: null, picked: false, isUploading: false });
-    setPhotoNote('');
+  const handleAddLink = () => {
+    addBlock({ id: genId(), type: 'link', url: '', error: '' });
+    setBlocks((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.type === 'text' && last.content === '') return prev;
+      return [...prev, { id: genId(), type: 'text', content: '' }];
+    });
   };
   // ── End image pick/upload ──
 
@@ -973,46 +1160,22 @@ export default function CaptureScreen() {
   };
 
   const handleSave = async () => {
-    // Prevent save if link panel is open but URL is empty
-    if (linkVisible && !linkContent.trim()) {
-      setLinkError(t('capture.linkError'));
-      return;
-    }
-
-    // --- Link validation ---
-    if (linkVisible && linkContent.trim()) {
-      const url = linkContent.trim();
-      if (!/^https?:\/\/.+/i.test(url)) {
-        setLinkError(t('capture.linkError'));
+    // Validate link blocks
+    const linkBlocks = blocks.filter((b): b is LinkBlock => b.type === 'link');
+    for (const lb of linkBlocks) {
+      if (!lb.url.trim()) {
+        updateBlock(lb.id, { error: t('capture.linkError') } as Partial<LinkBlock>);
         return;
       }
-      setLinkError('');
+      if (!/^https?:\/\/.+/i.test(lb.url.trim())) {
+        updateBlock(lb.id, { error: t('capture.linkError') } as Partial<LinkBlock>);
+        return;
+      }
     }
 
     setIsSaving(true);
     try {
-      if (voiceStatus === 'done' && voiceData.recorded) {
-        await memoriesApi.create({
-          type: 'voice',
-          content: voiceData.transcription || t('capture.voiceNote'),
-          transcription: voiceData.transcription ?? undefined,
-          audio_url: voiceData.audioUrl ?? undefined,
-        });
-      } else if (imageData.picked && imageData.imageUrl) {
-        const photoMetadata: Record<string, unknown> = {};
-        if (photoNote.trim()) photoMetadata.user_note = photoNote.trim();
-        if (imageData.thumbnailUrl) photoMetadata.thumbnail_url = imageData.thumbnailUrl;
-        await memoriesApi.create({
-          type: 'photo',
-          content: imageData.description || t('capture.imageNote'),
-          image_url: imageData.imageUrl,
-          metadata: Object.keys(photoMetadata).length > 0 ? photoMetadata : undefined,
-        });
-      } else if (linkVisible && linkContent.trim()) {
-        await memoriesApi.create({ type: 'link', content: linkContent.trim() });
-      } else {
-        await memoriesApi.create({ type: 'text', content: content.trim() });
-      }
+      await _doSave();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSaveSuccess(true);
       if (reduceMotionEnabled) {
@@ -1036,15 +1199,74 @@ export default function CaptureScreen() {
     }
   };
 
-  const handleCancel = () => router.back();
+  const _doSave = async () => {
+    const nonEmptyBlocks = blocks.filter((b) => {
+      if (b.type === 'text') return b.content.trim().length > 0;
+      if (b.type === 'image') return !b.uploading && !!b.imageUrl;
+      if (b.type === 'voice') return !!b.audioUrl;
+      if (b.type === 'link') return /^https?:\/\/.+/i.test(b.url.trim());
+      return false;
+    });
 
-  const isVoiceReady = voiceStatus === 'done' && voiceData.recorded;
-  const isImageReady = imageData.picked && !imageData.isUploading && (!!imageData.imageUrl || !!imageData.thumbnailUrl);
-  const canSave =
-    content.trim().length > 0 ||
-    isVoiceReady ||
-    (isImageReady) ||
-    (linkVisible && /^https?:\/\/.+/i.test(linkContent.trim()));
+    // Single-type backwards-compatible routing
+    if (nonEmptyBlocks.length === 1) {
+      const b = nonEmptyBlocks[0];
+      if (b.type === 'voice') {
+        await memoriesApi.create({
+          type: 'voice',
+          content: b.transcription || t('capture.voiceNote'),
+          transcription: b.transcription ?? undefined,
+          audio_url: b.audioUrl ?? undefined,
+        });
+        return;
+      }
+      if (b.type === 'image') {
+        await memoriesApi.create({
+          type: 'photo',
+          content: b.description || b.caption.trim() || t('capture.imageNote'),
+          image_url: b.imageUrl ?? undefined,
+          metadata: b.thumbnailUrl ? { thumbnail_url: b.thumbnailUrl, user_note: b.caption.trim() || undefined } : (b.caption.trim() ? { user_note: b.caption.trim() } : undefined),
+        });
+        return;
+      }
+      if (b.type === 'link') {
+        await memoriesApi.create({ type: 'link', content: b.url.trim() });
+        return;
+      }
+      if (b.type === 'text') {
+        await memoriesApi.create({ type: 'text', content: b.content.trim() });
+        return;
+      }
+    }
+
+    // Multi-block: save as rich
+    const apiBlocks = nonEmptyBlocks.map((b, i) => {
+      if (b.type === 'text') return { type: 'text' as const, order_index: i, content: b.content.trim() };
+      if (b.type === 'image') return { type: 'image' as const, order_index: i, image_url: b.imageUrl, thumbnail_url: b.thumbnailUrl, caption: b.caption || b.description || undefined };
+      if (b.type === 'voice') return { type: 'voice' as const, order_index: i, audio_url: b.audioUrl, transcription: b.transcription, duration: b.duration };
+      // link
+      const lb = b as LinkBlock;
+      return { type: 'link' as const, order_index: i, url: lb.url.trim() };
+    });
+    const textContent = nonEmptyBlocks
+      .filter((b): b is TextBlock => b.type === 'text')
+      .map((b) => b.content.trim())
+      .join(' ')
+      .slice(0, 500);
+    await memoriesApi.create({ type: 'rich', content: textContent, blocks: apiBlocks });
+  };
+
+  const canSave = blocks.some((b) => {
+    if (b.type === 'text') return b.content.trim().length > 0;
+    if (b.type === 'image') return !b.uploading && !!b.imageUrl;
+    if (b.type === 'voice') return !!b.audioUrl;
+    if (b.type === 'link') return /^https?:\/\/.+/i.test(b.url.trim());
+    return false;
+  });
+
+  const totalChars = blocks
+    .filter((b): b is TextBlock => b.type === 'text')
+    .reduce((s, b) => s + b.content.length, 0);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.captureBg }]} edges={['top', 'bottom']}>
@@ -1055,7 +1277,7 @@ export default function CaptureScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.cancelBtn} activeOpacity={0.7}>
             <Text style={[styles.cancelText, { color: colors.captureMuted }]}>{t('capture.cancel')}</Text>
           </TouchableOpacity>
 
@@ -1064,16 +1286,23 @@ export default function CaptureScreen() {
           <TouchableOpacity
             onPress={handleSave}
             disabled={!canSave || isSaving}
-            style={[styles.saveBtn, { backgroundColor: canSave && !isSaving ? '#fff' : colors.captureCard }]}
+            style={[styles.saveBtn, { opacity: canSave && !isSaving ? 1 : 0.55 }]}
             activeOpacity={0.85}
           >
-            {isSaving ? (
-              <ActivityIndicator color={canSave ? '#000' : colors.captureMuted} size="small" />
-            ) : (
-              <Text style={[styles.saveBtnText, { color: canSave && !isSaving ? '#000' : colors.captureMuted }]}>
-                {t('capture.save')}
-              </Text>
-            )}
+            <LinearGradient
+              colors={canSave && !isSaving ? ['#F2B67E', '#C2600A'] : [colors.captureCard, colors.captureCard]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.saveBtnGradient}
+            >
+              {isSaving ? (
+                <ActivityIndicator color={canSave ? '#fff' : colors.captureMuted} size="small" />
+              ) : (
+                <Text style={[styles.saveBtnText, { color: canSave && !isSaving ? '#fff' : colors.captureMuted }]}>
+                  {t('capture.save')}
+                </Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         </View>
 
@@ -1085,57 +1314,43 @@ export default function CaptureScreen() {
           contentContainerStyle={{ flexGrow: 1 }}
         >
           <ComposerRow
-            content={content}
-            onChangeContent={setContent}
-            voiceStatus={voiceStatus}
-            voiceDuration={voiceDuration}
-            voiceTranscription={voiceData.transcription}
-            onStopVoice={stopVoiceRecording}
-            onDiscardVoice={discardVoice}
-            imageData={imageData}
-            onDiscardImage={discardImage}
-            linkVisible={linkVisible}
-            linkContent={linkContent}
-            onChangeLinkContent={(v) => { setLinkContent(v); if (linkError) setLinkError(''); }}
-            linkError={linkError}
+            blocks={blocks}
+            onUpdateBlock={updateBlock}
+            onRemoveBlock={removeBlock}
+            onSelectHint={(label) => {
+              const firstText = blocks.find((b): b is TextBlock => b.type === 'text');
+              if (firstText) {
+                updateBlock(firstText.id, { content: firstText.content ? `${label} ${firstText.content}` : `${label} ` } as Partial<TextBlock>);
+              } else {
+                addBlock({ id: genId(), type: 'text', content: `${label} ` });
+              }
+            }}
+            recordingStatus={recordingStatus}
+            recordingDuration={recordingDuration}
+            onStartRecording={startVoiceRecording}
+            onStopRecording={stopVoiceRecording}
             clipboardUrl={clipboardUrl}
             clipOpacity={clipOpacity}
             clipSaving={clipSaving}
             onQuickSaveLink={handleQuickSaveLink}
             onUseClipboardUrl={useClipboardUrl}
             onDismissClipboard={dismissClipboard}
-            photoNote={photoNote}
-            onChangePhotoNote={setPhotoNote}
+            onAddImage={pickImage}
+            onAddLink={handleAddLink}
+            username={username}
           />
         </ScrollView>
 
-        {/* Toolbar */}
-        <BottomToolbar
-          isRecording={voiceStatus === 'recording' || voiceStatus === 'uploading'}
-          hasImage={imageData.picked}
-          hasVoice={voiceStatus === 'done'}
-          hasLink={linkVisible}
-          charCount={content.length}
-          onMic={() => {
-            if (voiceStatus === 'recording') {
-              stopVoiceRecording();
-            } else if (voiceStatus === 'idle') {
-              startVoiceRecording();
-            }
-          }}
-          onImage={pickImage}
-          onLink={() => {
-            setLinkVisible((v) => !v);
-            setLinkError('');
-          }}
-        />
-
-        {/* Hint chips — visible only when empty */}
-        {content.length === 0 && voiceStatus === 'idle' && !imageData.picked && !linkVisible && (
-          <HintChips
-            onSelect={(label) => setContent((prev) => (prev ? `${label} ${prev}` : `${label} `))}
-          />
-        )}
+        {/* Bottom bar: privacy signal + char count */}
+        <View style={[styles.bottomBar, { backgroundColor: colors.captureBg, borderTopColor: colors.captureBorder }]}>
+          <View style={styles.bottomBarLeft}>
+            <Lock size={13} color={colors.captureMuted} strokeWidth={2} />
+            <Text style={[styles.bottomBarText, { color: colors.captureMuted }]}>{t('capture.alwaysPrivate')}</Text>
+          </View>
+          <Text style={[styles.charCount, { color: totalChars > 450 ? colors.warning : colors.captureBorder }]}>
+            {500 - totalChars}
+          </Text>
+        </View>
       </KeyboardAvoidingView>
 
       {/* Success overlay */}
@@ -1176,16 +1391,62 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 17, fontWeight: '600', fontFamily: SANS_FONT },
   saveBtn: {
-    minWidth: 56,
+    minWidth: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    paddingVertical: 7,
+    borderRadius: 22,
+  },
+  saveBtnGradient: {
+    minWidth: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    paddingVertical: 8,
     paddingHorizontal: 16,
   },
   saveBtnText: {
     fontFamily: 'DMSans_700Bold',
     fontSize: 14,
+  },
+  headingBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  headingTitle: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 20,
+    letterSpacing: -0.3,
+  },
+  headingSub: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+
+  // ── Bottom bar ──
+  bottomBar: {
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  bottomBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  bottomBarText: {
+    fontSize: 13,
+    fontFamily: 'DMSans_400Regular',
+  },
+  charCount: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
   },
 
   // ── Success overlay ──

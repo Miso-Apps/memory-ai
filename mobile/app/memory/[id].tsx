@@ -18,9 +18,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
-import { aiApi, memoriesApi, insightsApi, MemoryLink, RelatedMemory } from '../../services/api';
+import { aiApi, memoriesApi, insightsApi, MemoryLink, MemoryBlock, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles } from 'lucide-react-native';
+import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles, Trash2 } from 'lucide-react-native';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 
 interface Memory {
@@ -35,6 +35,7 @@ interface Memory {
   aiSummary?: string;
   transcription?: string;
   audioDuration?: number;
+  blocks?: MemoryBlock[] | null;
   categoryId?: string;
   categoryName?: string;
   categoryIcon?: string;
@@ -110,10 +111,11 @@ function deriveTitle(aiSummary?: string, content?: string): string {
 }
 
 const TYPE_CONFIG: Record<string, { Icon: React.ComponentType<any>; labelKey: string; color: string }> = {
-  text: { Icon: FileText, labelKey: 'memory.typeText', color: '#5B7FA6' },
-  voice: { Icon: Mic, labelKey: 'memory.typeVoice', color: '#C2410C' },
-  link: { Icon: Link2, labelKey: 'memory.typeLink', color: '#2D7D63' },
-  photo: { Icon: ImageIcon, labelKey: 'memory.typePhoto', color: '#B45309' },
+  text: { Icon: FileText, labelKey: 'memory.typeText', color: '#C2600A' },
+  voice: { Icon: Mic, labelKey: 'memory.typeVoice', color: '#C2600A' },
+  link: { Icon: Link2, labelKey: 'memory.typeLink', color: '#C2600A' },
+  photo: { Icon: ImageIcon, labelKey: 'memory.typePhoto', color: '#C2600A' },
+  rich: { Icon: FileText, labelKey: 'memory.typeRich', color: '#C2600A' },
 };
 
 function parseHexColor(input?: string): { r: number; g: number; b: number } | null {
@@ -371,6 +373,7 @@ export default function MemoryDetailScreen() {
         categoryName: response.category_name,
         categoryIcon: response.category_icon,
         categoryColor: response.category_color,
+        blocks: response.blocks ?? null,
         createdAt: new Date(response.created_at),
         updatedAt: new Date(response.updated_at),
       };
@@ -509,6 +512,30 @@ export default function MemoryDetailScreen() {
     router.back();
   }, []);
 
+  const handleDelete = useCallback(() => {
+    if (!memory) return;
+    Alert.alert(
+      t('memory.deleteTitle'),
+      t('memory.deleteMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await memoriesApi.delete(memory.id);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.back();
+            } catch {
+              Alert.alert(t('common.error'), t('memory.deleteFailed'));
+            }
+          },
+        },
+      ],
+    );
+  }, [memory, t]);
+
   const handleShare = useCallback(async () => {
     if (!memory) return;
     try {
@@ -610,9 +637,14 @@ export default function MemoryDetailScreen() {
               {t('memory.backToLibrary')}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Share2 size={18} color={colors.textMuted} strokeWidth={2} />
-          </TouchableOpacity>
+          <View style={styles.navActions}>
+            <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Share2 size={18} color={colors.textMuted} strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginLeft: 16 }}>
+              <Trash2 size={18} color={colors.textMuted} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
         </View>
         {/* Identity row */}
         <View style={styles.eyebrowRow}>
@@ -681,8 +713,82 @@ export default function MemoryDetailScreen() {
           </View>
         )}
 
-        {/* Original content — skip for voice (transcription section below covers it) */}
-        {memory.type !== 'voice' && (
+        {/* Rich (mixed-media) blocks — render each block in order */}
+        {memory.type === 'rich' && memory.blocks && memory.blocks.length > 0 && (
+          <View style={styles.contentSection}>
+            {[...memory.blocks]
+              .sort((a, b) => a.order_index - b.order_index)
+              .map((block, idx) => {
+                if (block.type === 'text' && block.content?.trim()) {
+                  return (
+                    <View key={idx} style={[styles.contentCard, { backgroundColor: colors.inputBg, borderColor: colors.border, marginBottom: 10 }]}>
+                      <Text style={[styles.transcriptionText, { color: colors.textSecondary }]}>{block.content}</Text>
+                    </View>
+                  );
+                }
+                if (block.type === 'image' && (block.thumbnail_url || block.image_url)) {
+                  return (
+                    <View key={idx} style={[styles.photoSection, { marginBottom: 10 }]}>
+                      <Image
+                        source={{ uri: block.thumbnail_url || block.image_url! }}
+                        style={[styles.photoImage, { backgroundColor: colors.inputBg }]}
+                        resizeMode="cover"
+                      />
+                      {!!block.caption && (
+                        <Text style={[styles.transcriptionText, { color: colors.textSecondary, paddingHorizontal: 4, paddingTop: 6 }]}>
+                          {block.caption}
+                        </Text>
+                      )}
+                    </View>
+                  );
+                }
+                if (block.type === 'voice' && block.audio_url) {
+                  return (
+                    <View key={idx} style={{ marginBottom: 10 }}>
+                      <AudioPlayer audioUrl={block.audio_url} audioDuration={block.duration} />
+                      {block.transcription ? (
+                        <View style={[styles.transcriptionSection, { backgroundColor: colors.inputBg, borderColor: colors.border, marginTop: 6 }]}>
+                          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{t('memory.transcription')}</Text>
+                          <Text style={[styles.transcriptionText, { color: colors.textSecondary }]}>{block.transcription}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                }
+                if (block.type === 'link' && block.url) {
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={{ marginBottom: 10 }}
+                      onPress={() => WebBrowser.openBrowserAsync(block.url!, {
+                        dismissButtonStyle: 'close',
+                        presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+                        controlsColor: '#6366F1',
+                      }).catch(() => { })}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.linkCard, { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                        <View style={[styles.linkThumbFallback, { backgroundColor: colors.typeBgLink }]}>
+                          <Text style={styles.linkIcon}>🔗</Text>
+                        </View>
+                        <View style={styles.linkCardLeft}>
+                          <Text style={[styles.linkMetaLabel, { color: colors.textMuted }]}>{t('memory.linkPreview')}</Text>
+                          <Text style={[styles.linkUrl, { color: colors.accent }]} numberOfLines={2}>{block.url}</Text>
+                        </View>
+                        <View style={[styles.linkOpenBadge, { backgroundColor: colors.accentLight }]}>
+                          <Text style={[styles.linkOpenText, { color: colors.accent }]}>{t('memory.openLink')}</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                }
+                return null;
+              })}
+          </View>
+        )}
+
+        {/* Original content — skip for voice and rich (handled above) */}
+        {memory.type !== 'voice' && memory.type !== 'rich' && (
           <View style={styles.contentSection}>
             {memory.type === 'link' ? (
               <TouchableOpacity
@@ -794,30 +900,7 @@ export default function MemoryDetailScreen() {
                           </Text>
                           <Text style={[styles.relatedMetaDot, { color: colors.textMuted }]}>•</Text>
                           <Text style={[styles.relatedMeta, { color: colors.textSecondary }]}>{linkType}</Text>
-                          <Text style={[styles.relatedMetaDot, { color: colors.textMuted }]}>•</Text>
-                          <Text style={[styles.relatedMeta, { color: colors.textMuted }]}>{relatedAt}</Text>
                         </View>
-                        {item.category_name ? (
-                          <View
-                            style={[
-                              styles.relatedCategoryPill,
-                              {
-                                backgroundColor: categoryTone.bg,
-                                borderColor: categoryTone.border,
-                              },
-                            ]}
-                          >
-                            <Folder size={11} color={categoryTone.text} strokeWidth={2.1} />
-                            <Text
-                              style={[
-                                styles.relatedCategoryText,
-                                { color: categoryTone.text },
-                              ]}
-                            >
-                              {item.category_name}
-                            </Text>
-                          </View>
-                        ) : null}
                       </View>
                       <ChevronRight size={16} color={colors.textMuted} strokeWidth={2.2} />
                     </TouchableOpacity>
@@ -1056,6 +1139,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 10,
+  },
+  navActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   backLink: {
     fontFamily: 'DMSans_600SemiBold',

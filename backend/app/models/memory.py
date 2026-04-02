@@ -14,11 +14,10 @@ from pgvector.sqlalchemy import Vector
 import uuid
 import enum
 from app.database import Base
-from app.config import Settings
+from app.config import settings
 
 # Use configured embedding dimension (defaults to 1536 for pgvector index compatibility)
-_settings = Settings()
-EMBEDDING_DIM = _settings.EMBEDDING_DIM
+EMBEDDING_DIM = settings.EMBEDDING_DIM
 
 
 class MemoryType(str, enum.Enum):

@@ -69,7 +69,7 @@ async def upload_audio(file_bytes: bytes, original_filename: str) -> Optional[st
             endpoint = settings.S3_ENDPOINT.rstrip("/")
             return f"{endpoint}/{settings.S3_BUCKET}/{key}"
 
-        url = await asyncio.get_event_loop().run_in_executor(None, _upload)
+        url = await asyncio.get_running_loop().run_in_executor(None, _upload)
         log.info("Uploaded audio to MinIO: %s", url)
         return url
     except Exception as exc:
@@ -113,7 +113,7 @@ async def upload_image(file_bytes: bytes, original_filename: str) -> Optional[st
             endpoint = settings.S3_ENDPOINT.rstrip("/")
             return f"{endpoint}/{settings.S3_BUCKET}/{key}"
 
-        url = await asyncio.get_event_loop().run_in_executor(None, _upload)
+        url = await asyncio.get_running_loop().run_in_executor(None, _upload)
         log.info("Uploaded image to MinIO: %s", url)
         return url
     except Exception as exc:
