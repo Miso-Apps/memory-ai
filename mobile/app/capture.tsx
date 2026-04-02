@@ -471,7 +471,6 @@ interface ComposerRowProps {
   onDismissClipboard: () => void;
   photoNote: string;
   onChangePhotoNote: (v: string) => void;
-  reduceMotionEnabled: boolean;
 }
 
 function ComposerRow({
@@ -481,7 +480,6 @@ function ComposerRow({
   linkVisible, linkContent, onChangeLinkContent, linkError,
   clipboardUrl, clipOpacity, clipSaving, onQuickSaveLink, onUseClipboardUrl, onDismissClipboard,
   photoNote, onChangePhotoNote,
-  reduceMotionEnabled,
 }: ComposerRowProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
@@ -545,13 +543,13 @@ function ComposerRow({
 
         {/* Inline link input */}
         {linkVisible && (
-          <View style={{ marginTop: 8 }}>
+          <View style={composerStyles.linkInputWrapper}>
             <TextInput
               style={[composerStyles.linkInput, { color: colors.captureText, borderColor: linkError ? colors.error : colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
               placeholder={t('capture.linkInputPlaceholder')}
               placeholderTextColor={colors.captureMuted}
               value={linkContent}
-              onChangeText={(v) => { onChangeLinkContent(v); }}
+              onChangeText={onChangeLinkContent}
               keyboardType="url"
               autoCapitalize="none"
               autoCorrect={false}
@@ -647,6 +645,9 @@ const composerStyles = StyleSheet.create({
     borderWidth: 1,
     textAlignVertical: 'top',
   },
+  linkInputWrapper: {
+    marginTop: 8,
+  },
   linkInput: {
     fontSize: 15,
     lineHeight: 22,
@@ -675,10 +676,12 @@ const composerStyles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    fontFamily: 'DMSans_600SemiBold',
   },
   clipUrl: {
     fontSize: 12,
     marginTop: 2,
+    fontFamily: 'DMSans_400Regular',
   },
   clipActions: {
     flexDirection: 'row',
