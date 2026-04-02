@@ -1,15 +1,25 @@
 -- Migration: Add RICH memory type and blocks column
 -- Run with: docker exec -i memory-ai-postgres psql -U memoryai -d memoryai < migrate_rich_blocks.sql
 
--- Add 'rich' to the memorytype enum if it doesn't already exist
+-- Add 'RICH' to the memorytype enum if it doesn't already exist
+-- Note: existing labels use uppercase convention (TEXT, LINK, VOICE, PHOTO)
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_enum
-        WHERE enumlabel = 'rich'
+        WHERE enumlabel = 'RICH'
           AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'memorytype')
     ) THEN
-        ALTER TYPE memorytype ADD VALUE 'rich';
+        -- Rename lowercase 'rich' to 'RICH' if it was previously added
+        IF EXISTS (
+            SELECT 1 FROM pg_enum
+            WHERE enumlabel = 'rich'
+              AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'memorytype')
+        ) THEN
+            ALTER TYPE memorytype RENAME VALUE 'rich' TO 'RICH';
+        ELSE
+            ALTER TYPE memorytype ADD VALUE 'RICH';
+        END IF;
     END IF;
 END
 $$;
