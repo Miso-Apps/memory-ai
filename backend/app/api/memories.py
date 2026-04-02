@@ -17,6 +17,7 @@ from app.models import Category
 from app.schemas import (
     MemoryCreate,
     MemoryUpdate,
+    MemoryBlock,
     MemoryListResponse,
     MemoryLinkCreate,
     MemoryLinkResponse,
@@ -134,6 +135,7 @@ def _to_dict(m: Memory, category_info: dict = None) -> dict:
         "last_viewed_at": m.last_viewed_at.isoformat() if m.last_viewed_at else None,
         "created_at": m.created_at.isoformat() if m.created_at else None,
         "updated_at": m.updated_at.isoformat() if m.updated_at else None,
+        "blocks": m.blocks if m.blocks else None,
     }
 
     # Add category info if provided
@@ -254,6 +256,17 @@ async def create_memory(
     normalized_input_url = ""
     normalized_canonical_url = ""
 
+    # For RICH memories, derive content from blocks if content is empty
+    if mem_type == "rich" and memory.blocks and not memory.content.strip():
+        text_parts = [
+            b.content or b.transcription or b.url or ""
+            for b in sorted(memory.blocks, key=lambda x: x.order_index)
+            if b.content or b.transcription or b.url
+        ]
+        derived_content = "\n\n".join(text_parts)
+        if derived_content:
+            memory = memory.model_copy(update={"content": derived_content})
+
     # For link memories, enrich metadata with preview fields used by mobile UI.
     if mem_type.lower() == "link":
         normalized_input_url = _normalize_url(memory.content)
@@ -335,6 +348,7 @@ async def create_memory(
         audio_duration=memory.audio_duration,
         image_url=memory.image_url,
         extra_metadata=metadata,
+        blocks=[b.model_dump() for b in memory.blocks] if memory.blocks else None,
     )
     db.add(m)
     await db.flush()
