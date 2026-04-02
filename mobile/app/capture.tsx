@@ -599,10 +599,12 @@ function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onIma
     <View style={[toolbarStyles.wrap, { borderTopColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
       <TouchableOpacity
         onPress={onMic}
-        style={toolbarStyles.toolBtn}
+        style={[toolbarStyles.toolBtn, hasImage && { opacity: 0.35 }]}
         activeOpacity={0.7}
         disabled={hasImage}
+        accessibilityRole="button"
         accessibilityLabel="Record voice"
+        accessibilityState={{ disabled: hasImage }}
       >
         <Mic
           size={22}
@@ -613,10 +615,12 @@ function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onIma
 
       <TouchableOpacity
         onPress={onImage}
-        style={toolbarStyles.toolBtn}
+        style={[toolbarStyles.toolBtn, (isRecording || hasImage) && { opacity: 0.35 }]}
         activeOpacity={0.7}
         disabled={isRecording || hasImage}
+        accessibilityRole="button"
         accessibilityLabel="Attach image"
+        accessibilityState={{ disabled: isRecording || hasImage }}
       >
         <ImageIcon
           size={22}
@@ -627,10 +631,12 @@ function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onIma
 
       <TouchableOpacity
         onPress={onLink}
-        style={toolbarStyles.toolBtn}
+        style={[toolbarStyles.toolBtn, isRecording && { opacity: 0.35 }]}
         activeOpacity={0.7}
         disabled={isRecording}
+        accessibilityRole="button"
         accessibilityLabel="Add link"
+        accessibilityState={{ disabled: isRecording }}
       >
         <Link2
           size={22}
@@ -690,6 +696,8 @@ function HintChips({ onSelect }: { onSelect: (label: string) => void }) {
           onPress={() => onSelect(t(chip.labelKey))}
           style={[hintStyles.chip, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
           activeOpacity={0.75}
+          accessibilityRole="button"
+          accessibilityLabel={t(chip.labelKey)}
         >
           <Text style={[hintStyles.chipText, { color: colors.captureMuted }]}>{t(chip.labelKey)}</Text>
         </TouchableOpacity>
