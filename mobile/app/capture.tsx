@@ -25,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
 import { useSettingsStore } from '../store/settingsStore';
+import { useAuthStore } from '../store/authStore';
 import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
 import {
   FileText,
@@ -445,6 +446,264 @@ const imgWidgetStyles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+});
+
+interface ComposerRowProps {
+  content: string;
+  onChangeContent: (v: string) => void;
+  voiceStatus: 'idle' | 'recording' | 'uploading' | 'done';
+  voiceDuration: number;
+  voiceTranscription: string | null;
+  onStopVoice: () => void;
+  onDiscardVoice: () => void;
+  imageData: ImageUploadData;
+  onDiscardImage: () => void;
+  linkVisible: boolean;
+  linkContent: string;
+  onChangeLinkContent: (v: string) => void;
+  linkError: string;
+  clipboardUrl: string | null;
+  clipOpacity: Animated.Value;
+  clipSaving: boolean;
+  onQuickSaveLink: () => void;
+  onUseClipboardUrl: () => void;
+  onDismissClipboard: () => void;
+  photoNote: string;
+  onChangePhotoNote: (v: string) => void;
+  reduceMotionEnabled: boolean;
+}
+
+function ComposerRow({
+  content, onChangeContent,
+  voiceStatus, voiceDuration, voiceTranscription, onStopVoice, onDiscardVoice,
+  imageData, onDiscardImage,
+  linkVisible, linkContent, onChangeLinkContent, linkError,
+  clipboardUrl, clipOpacity, clipSaving, onQuickSaveLink, onUseClipboardUrl, onDismissClipboard,
+  photoNote, onChangePhotoNote,
+  reduceMotionEnabled,
+}: ComposerRowProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const user = useAuthStore((s) => s.user);
+  const initial = (user?.name?.charAt(0) || user?.email?.charAt(0) || 'M').toUpperCase();
+
+  return (
+    <View style={composerStyles.row}>
+      {/* Avatar column */}
+      <View style={composerStyles.avatarCol}>
+        <View style={[composerStyles.avatar, { backgroundColor: colors.captureAccent }]}>
+          <Text style={composerStyles.avatarText}>{initial}</Text>
+        </View>
+        <View style={[composerStyles.threadLine, { backgroundColor: colors.captureBorder }]} />
+      </View>
+
+      {/* Content column */}
+      <View style={composerStyles.contentCol}>
+        <Text style={[composerStyles.username, { color: colors.captureText }]}>
+          {user?.name || user?.email?.split('@')[0] || 'me'}
+        </Text>
+
+        {/* Main text input */}
+        <TextInput
+          style={[composerStyles.input, { color: colors.captureText, fontFamily: 'DMSans_400Regular' }]}
+          placeholder={t('capture.composerPlaceholder')}
+          placeholderTextColor={colors.captureMuted}
+          multiline
+          autoFocus
+          value={content}
+          onChangeText={onChangeContent}
+          textAlignVertical="top"
+          autoCapitalize="sentences"
+          autoCorrect
+        />
+
+        {/* Voice widget */}
+        <VoiceWidget
+          status={voiceStatus}
+          duration={voiceDuration}
+          transcription={voiceTranscription}
+          onStop={onStopVoice}
+          onDiscard={onDiscardVoice}
+        />
+
+        {/* Image widget */}
+        <ImageWidget imageData={imageData} onDiscard={onDiscardImage} />
+
+        {/* Optional photo note when image picked */}
+        {imageData.picked && !imageData.isUploading && (
+          <TextInput
+            style={[composerStyles.photoNote, { color: colors.captureText, borderColor: colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
+            placeholder={t('capture.photoNotePlaceholder')}
+            placeholderTextColor={colors.captureMuted}
+            multiline
+            value={photoNote}
+            onChangeText={onChangePhotoNote}
+            textAlignVertical="top"
+          />
+        )}
+
+        {/* Inline link input */}
+        {linkVisible && (
+          <View style={{ marginTop: 8 }}>
+            <TextInput
+              style={[composerStyles.linkInput, { color: colors.captureText, borderColor: linkError ? colors.error : colors.captureBorder, fontFamily: 'DMSans_400Regular' }]}
+              placeholder={t('capture.linkInputPlaceholder')}
+              placeholderTextColor={colors.captureMuted}
+              value={linkContent}
+              onChangeText={(v) => { onChangeLinkContent(v); }}
+              keyboardType="url"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {!!linkError && (
+              <Text style={[composerStyles.linkError, { color: colors.error }]}>{linkError}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Clipboard URL banner */}
+        {clipboardUrl ? (
+          <Animated.View style={[composerStyles.clipCard, { opacity: clipOpacity, backgroundColor: colors.subtleBg, borderColor: colors.captureBorder }]}>
+            <View style={composerStyles.clipLeft}>
+              <Link2 size={13} color={colors.brandAccent} strokeWidth={2.4} />
+              <View style={{ flex: 1 }}>
+                <Text style={[composerStyles.clipTitle, { color: colors.captureMuted }]}>{t('capture.clipboardDetected')}</Text>
+                <Text style={[composerStyles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
+              </View>
+            </View>
+            <View style={composerStyles.clipActions}>
+              <TouchableOpacity onPress={onQuickSaveLink} disabled={clipSaving} style={[composerStyles.clipSaveBtn, { backgroundColor: colors.brandAccent }]}>
+                {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={composerStyles.clipSaveText}>{t('capture.quickSave')}</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onUseClipboardUrl} style={[composerStyles.clipUseBtn, { borderColor: colors.brandAccent }]}>
+                <Text style={[composerStyles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onDismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <X size={14} color={colors.captureMuted} strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+const composerStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 12,
+    flex: 1,
+  },
+  avatarCol: {
+    width: 38,
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  threadLine: {
+    width: 1.5,
+    flex: 1,
+    marginTop: 6,
+    borderRadius: 1,
+    opacity: 0.3,
+  },
+  contentCol: {
+    flex: 1,
+    paddingBottom: 12,
+  },
+  username: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  input: {
+    fontSize: 15,
+    lineHeight: 23,
+    minHeight: 40,
+  },
+  photoNote: {
+    marginTop: 10,
+    minHeight: 60,
+    fontSize: 14,
+    lineHeight: 20,
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    textAlignVertical: 'top',
+  },
+  linkInput: {
+    fontSize: 15,
+    lineHeight: 22,
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+  },
+  linkError: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  clipCard: {
+    borderRadius: 12,
+    borderWidth: 1.5,
+    padding: 10,
+    marginTop: 10,
+    gap: 6,
+  },
+  clipLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clipTitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  clipUrl: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  clipActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  clipSaveBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  clipSaveText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  clipUseBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  clipUseText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 
