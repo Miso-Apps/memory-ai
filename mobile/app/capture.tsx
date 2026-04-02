@@ -37,53 +37,6 @@ import {
 
 const SANS_FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
 
-type CaptureMode = 'text' | 'voice' | 'link' | 'photo';
-
-
-const MODE_META: Record<CaptureMode, {
-  labelKey: string;
-  navLabelKey: string;
-  descKey: string;
-  hintKey: string;
-  icon: typeof FileText;
-}> = {
-  text: {
-    labelKey: 'capture.modeText',
-    navLabelKey: 'capture.modeTextNav',
-    descKey: 'capture.modeTextDesc',
-    hintKey: 'capture.smartHintText',
-    icon: FileText,
-  },
-  voice: {
-    labelKey: 'capture.modeVoice',
-    navLabelKey: 'capture.modeVoiceNav',
-    descKey: 'capture.modeVoiceDesc',
-    hintKey: 'capture.smartHintVoice',
-    icon: Mic,
-  },
-  link: {
-    labelKey: 'capture.modeLink',
-    navLabelKey: 'capture.modeLinkNav',
-    descKey: 'capture.modeLinkDesc',
-    hintKey: 'capture.smartHintLink',
-    icon: Link2,
-  },
-  photo: {
-    labelKey: 'capture.modePhoto',
-    navLabelKey: 'capture.modePhotoNav',
-    descKey: 'capture.modePhotoDesc',
-    hintKey: 'capture.smartHintPhoto',
-    icon: ImageIcon,
-  },
-};
-
-const MODE_DEFINITIONS: { key: CaptureMode }[] = [
-  { key: 'text' },
-  { key: 'voice' },
-  { key: 'link' },
-  { key: 'photo' },
-];
-
 function getHttpStatus(error: unknown): number | undefined {
   if (!error || typeof error !== 'object') return undefined;
   const maybeError = error as { response?: { status?: unknown } };
@@ -157,89 +110,6 @@ const HINT_CHIPS: {
     darkText: '#cab8f7',
   },
 ];
-
-function BottomModeBar({
-  mode,
-  onSelect,
-}: {
-  mode: CaptureMode;
-  onSelect: (m: CaptureMode) => void;
-}) {
-  const { t } = useTranslation();
-  const { colors, isDark } = useTheme();
-
-  return (
-    <View style={[modeBarStyles.wrap, { backgroundColor: colors.captureBg }]}>
-      <View style={[modeBarStyles.barShell, { backgroundColor: isDark ? 'rgba(255,255,255,0.07)' : colors.captureCard, borderColor: colors.captureBorder }]}> 
-        {MODE_DEFINITIONS.map(({ key }) => {
-          const active = key === mode;
-          const Icon = MODE_META[key].icon;
-          return (
-            <TouchableOpacity
-              key={key}
-              style={[
-                modeBarStyles.slot,
-                active && {
-                  backgroundColor: colors.captureAccent,
-                  borderColor: colors.captureAccent,
-                  borderRadius: 12,
-                },
-                !active && { opacity: 0.75 },
-              ]}
-              onPress={() => { onSelect(key); Haptics.selectionAsync(); }}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={t(MODE_META[key].labelKey)}
-            >
-              <Icon
-                size={17}
-                color={active ? colors.captureBg : colors.captureMuted}
-                strokeWidth={active ? 2.4 : 2.1}
-              />
-              <Text style={[
-                modeBarStyles.modeTabText,
-                { color: active ? colors.captureBg : colors.captureMuted },
-              ]}>
-                {t(MODE_META[key].navLabelKey)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-const modeBarStyles = StyleSheet.create({
-  wrap: {
-    paddingHorizontal: 16,
-    paddingTop: 4,
-    paddingBottom: 12,
-  },
-  barShell: {
-    flexDirection: 'row',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 16,
-    padding: 5,
-    gap: 3,
-  },
-  slot: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 3,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  modeTabText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 9,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-});
 
 interface VoiceData {
   audioUrl: string | null;
@@ -710,19 +580,160 @@ const composerStyles = StyleSheet.create({
   },
 });
 
+interface BottomToolbarProps {
+  isRecording: boolean;
+  hasImage: boolean;
+  hasLink: boolean;
+  charCount: number;
+  onMic: () => void;
+  onImage: () => void;
+  onLink: () => void;
+}
+
+function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onImage, onLink }: BottomToolbarProps) {
+  const { colors } = useTheme();
+  const MAX_CHARS = 500;
+  const remaining = MAX_CHARS - charCount;
+
+  return (
+    <View style={[toolbarStyles.wrap, { borderTopColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
+      <TouchableOpacity
+        onPress={onMic}
+        style={toolbarStyles.toolBtn}
+        activeOpacity={0.7}
+        disabled={hasImage}
+        accessibilityLabel="Record voice"
+      >
+        <Mic
+          size={22}
+          color={isRecording ? colors.captureAccent : hasImage ? colors.captureBorder : colors.captureMuted}
+          strokeWidth={isRecording ? 2.4 : 1.8}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={onImage}
+        style={toolbarStyles.toolBtn}
+        activeOpacity={0.7}
+        disabled={isRecording || hasImage}
+        accessibilityLabel="Attach image"
+      >
+        <ImageIcon
+          size={22}
+          color={isRecording || hasImage ? colors.captureBorder : colors.captureMuted}
+          strokeWidth={1.8}
+        />
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={onLink}
+        style={toolbarStyles.toolBtn}
+        activeOpacity={0.7}
+        disabled={isRecording}
+        accessibilityLabel="Add link"
+      >
+        <Link2
+          size={22}
+          color={hasLink ? colors.captureAccent : isRecording ? colors.captureBorder : colors.captureMuted}
+          strokeWidth={hasLink ? 2.4 : 1.8}
+        />
+      </TouchableOpacity>
+
+      <Text style={[
+        toolbarStyles.charCount,
+        { color: remaining < 50 ? colors.warning : colors.captureBorder },
+      ]}>
+        {remaining}
+      </Text>
+    </View>
+  );
+}
+
+const toolbarStyles = StyleSheet.create({
+  wrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+  },
+  toolBtn: {
+    padding: 6,
+    borderRadius: 8,
+  },
+  charCount: {
+    marginLeft: 'auto',
+    fontSize: 12,
+    fontWeight: '600',
+    minWidth: 32,
+    textAlign: 'right',
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+  },
+});
+
+function HintChips({ onSelect }: { onSelect: (label: string) => void }) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={hintStyles.scroll}
+      style={[hintStyles.container, { backgroundColor: colors.captureBg }]}
+    >
+      {HINT_CHIPS.map((chip) => (
+        <TouchableOpacity
+          key={chip.labelKey}
+          onPress={() => onSelect(t(chip.labelKey))}
+          style={[hintStyles.chip, { backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
+          activeOpacity={0.75}
+        >
+          <Text style={[hintStyles.chipText, { color: colors.captureMuted }]}>{t(chip.labelKey)}</Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+}
+
+const hintStyles = StyleSheet.create({
+  container: {
+    flexShrink: 0,
+  },
+  scroll: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    paddingTop: 2,
+  },
+  chip: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  chipText: {
+    fontSize: 12,
+    fontFamily: 'DMSans_500Medium',
+  },
+});
+
 export default function CaptureScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
   const preferences = useSettingsStore((s) => s.preferences);
   // Smart default: explicit param > user preference > 'text'
-  const resolveInitialMode = (): CaptureMode => {
-    const validModes: CaptureMode[] = ['text', 'voice', 'link', 'photo'];
-    if (params.mode && validModes.includes(params.mode as CaptureMode)) return params.mode as CaptureMode;
-    if (preferences?.default_capture_type && validModes.includes(preferences.default_capture_type)) return preferences.default_capture_type;
+  const resolveInitialMode = (): 'text' | 'voice' | 'link' | 'photo' => {
+    const validModes: Array<'text' | 'voice' | 'link' | 'photo'> = ['text', 'voice', 'link', 'photo'];
+    if (params.mode && validModes.includes(params.mode as 'text' | 'voice' | 'link' | 'photo')) return params.mode as 'text' | 'voice' | 'link' | 'photo';
+    if (preferences?.default_capture_type && validModes.includes(preferences.default_capture_type as 'text' | 'voice' | 'link' | 'photo')) return preferences.default_capture_type as 'text' | 'voice' | 'link' | 'photo';
     return 'text';
   };
-  const [mode, setMode] = useState<CaptureMode>(resolveInitialMode());
+  const [mode, setMode] = useState<'text' | 'voice' | 'link' | 'photo'>(resolveInitialMode());
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -1198,11 +1209,6 @@ export default function CaptureScreen() {
           </View>
         )}
 
-        {/* ── Bottom mode bar ── */}
-        <BottomModeBar
-          mode={mode}
-          onSelect={(m) => { setMode(m); setContent(''); setLinkError(''); }}
-        />
       </KeyboardAvoidingView>
 
       {/* ── Success overlay ── */}
