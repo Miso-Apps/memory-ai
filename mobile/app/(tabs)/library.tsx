@@ -34,7 +34,7 @@ const PAGE_SIZE = 40;
 interface Memory {
   id: string;
   content: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   imageUrl?: string;
   thumbnailUrl?: string;
   linkPreviewUrl?: string;
@@ -79,6 +79,7 @@ const TYPE_META: Record<Memory['type'], { icon: React.ComponentType<any> }> = {
   voice: { icon: Mic },
   link: { icon: Link2 },
   photo: { icon: ImageIcon },
+  rich: { icon: FileText },
 };
 
 // ── Date grouping utilities ──────────────────────────────────────────────────

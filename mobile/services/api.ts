@@ -158,16 +158,34 @@ export interface UserPreferences {
   updated_at: string;
 }
 
+export interface MemoryBlock {
+  type: 'text' | 'image' | 'voice' | 'link';
+  order_index: number;
+  // text
+  content?: string;
+  // image
+  image_url?: string | null;
+  thumbnail_url?: string | null;
+  caption?: string;
+  // voice
+  audio_url?: string | null;
+  transcription?: string | null;
+  duration?: number;
+  // link
+  url?: string;
+}
+
 export interface Memory {
   id: string;
   user_id: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   content: string;
   transcription?: string;
   audio_url?: string;
   audio_duration?: number;
   image_url?: string;
   ai_summary?: string;
+  blocks?: MemoryBlock[] | null;
   metadata?: Record<string, any>;
   category_id?: string;
   category_name?: string;
@@ -248,7 +266,7 @@ export interface RadarResponse {
 }
 
 export interface CreateMemoryDto {
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   content: string;
   metadata?: Record<string, any>;
   // Voice-specific (optional)
@@ -257,6 +275,8 @@ export interface CreateMemoryDto {
   audio_duration?: number;
   // Photo-specific (optional)
   image_url?: string;
+  // Rich blocks
+  blocks?: MemoryBlock[];
 }
 
 // API Methods

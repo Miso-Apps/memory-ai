@@ -50,7 +50,7 @@ interface RecallMemory {
   id: string;
   content: string;
   reason: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   createdAt: Date;
   imageUrl?: string;
   thumbnailUrl?: string;
@@ -60,7 +60,7 @@ interface RecallMemory {
 interface ReminderMemory {
   id: string;
   content: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   createdAt: Date;
   timeAgo?: string;
   imageUrl?: string;
@@ -93,6 +93,7 @@ const TYPE_META: Record<MemoryType, { icon: typeof FileText; bg: keyof ThemeColo
   voice: { icon: Mic, bg: 'typeBgVoice' },
   link: { icon: Link2, bg: 'typeBgLink' },
   photo: { icon: ImageIcon, bg: 'typeBgPhoto' },
+  rich: { icon: FileText, bg: 'typeBgText' },
 };
 
 function formatRelative(date: Date, t: Function): string {
@@ -594,7 +595,7 @@ export default function HomeScreen() {
     return {
       id: m.id,
       content: m.ai_summary || m.content,
-      type: m.type as 'text' | 'link' | 'voice' | 'photo',
+      type: m.type as 'text' | 'link' | 'voice' | 'photo' | 'rich',
       createdAt: new Date(m.created_at),
       timeAgo: (m as any).time_ago,
       imageUrl,

@@ -1,4 +1,4 @@
-export type MemoryType = 'text' | 'voice' | 'link' | 'photo';
+export type MemoryType = 'text' | 'voice' | 'link' | 'photo' | 'rich';
 
 export interface MemoryLike {
     type: MemoryType;

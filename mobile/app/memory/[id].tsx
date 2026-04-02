@@ -25,7 +25,7 @@ import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 
 interface Memory {
   id: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   content: string;
   audioUrl?: string;
   imageUrl?: string;

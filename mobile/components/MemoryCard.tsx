@@ -14,7 +14,7 @@ import { useTheme } from '../constants/ThemeContext';
 export interface MemoryCardMemory {
   id: string;
   content: string;
-  type: 'text' | 'link' | 'voice' | 'photo';
+  type: 'text' | 'link' | 'voice' | 'photo' | 'rich';
   createdAt: Date;
   imageUrl?: string;
   thumbnailUrl?: string;
@@ -52,6 +52,7 @@ const TYPE_LABEL_KEY: Record<MemoryCardMemory['type'], string> = {
   voice: 'memory.typeVoice',
   link: 'memory.typeLink',
   photo: 'memory.typePhoto',
+  rich: 'memory.typeRich',
 };
 
 export function MemoryCard({ memory, tag, timeAgo, onPress, onDismiss }: MemoryCardProps) {
