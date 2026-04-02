@@ -16,6 +16,26 @@ class MemoryType(str, Enum):
     LINK = "link"
     VOICE = "voice"
     PHOTO = "photo"
+    RICH = "rich"
+
+
+class MemoryBlock(BaseModel):
+    """One block within a rich mixed-media memory."""
+
+    type: str = Field(..., description="'text' | 'image' | 'voice' | 'link'")
+    order_index: int = Field(..., ge=0)
+    # text
+    content: Optional[str] = Field(None, max_length=50000)
+    # image
+    image_url: Optional[str] = Field(None, max_length=512)
+    thumbnail_url: Optional[str] = Field(None, max_length=512)
+    caption: Optional[str] = Field(None, max_length=2000)
+    # voice
+    audio_url: Optional[str] = Field(None, max_length=512)
+    transcription: Optional[str] = Field(None, max_length=50000)
+    duration: Optional[int] = None  # seconds
+    # link
+    url: Optional[str] = Field(None, max_length=512)
 
 
 class MemoryCreate(BaseModel):
@@ -31,6 +51,8 @@ class MemoryCreate(BaseModel):
     audio_duration: Optional[int] = None  # seconds
     # Photo-specific
     image_url: Optional[str] = Field(None, max_length=512)
+    # Rich mixed-media
+    blocks: Optional[List["MemoryBlock"]] = None
 
     class Config:
         json_schema_extra = {
@@ -67,6 +89,7 @@ class MemoryResponse(BaseModel):
     category_icon: Optional[str] = None
     category_color: Optional[str] = None
     category_confidence: Optional[int] = None
+    blocks: Optional[List["MemoryBlock"]] = None
     created_at: datetime
     updated_at: datetime
 
