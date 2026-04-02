@@ -24,11 +24,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { memoriesApi, storageApi } from '../services/api';
 import { useTheme } from '../constants/ThemeContext';
-import { useSettingsStore } from '../store/settingsStore';
 import { useAuthStore } from '../store/authStore';
 import { optimizeImage, OPTIMIZED_RECORDING_OPTIONS } from '../utils/mediaOptimizer';
 import {
-  FileText,
   Mic,
   Link2,
   Image as ImageIcon,
@@ -53,7 +51,6 @@ function getExistingMemoryId(error: unknown): string | undefined {
   return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-const TEXT_WARN_THRESHOLD = 300;
 
 const HINT_CHIPS: {
   labelKey: string;
@@ -733,15 +730,6 @@ export default function CaptureScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ mode?: string }>();
-  const preferences = useSettingsStore((s) => s.preferences);
-  // Smart default: explicit param > user preference > 'text'
-  const resolveInitialMode = (): 'text' | 'voice' | 'link' | 'photo' => {
-    const validModes: Array<'text' | 'voice' | 'link' | 'photo'> = ['text', 'voice', 'link', 'photo'];
-    if (params.mode && validModes.includes(params.mode as 'text' | 'voice' | 'link' | 'photo')) return params.mode as 'text' | 'voice' | 'link' | 'photo';
-    if (preferences?.default_capture_type && validModes.includes(preferences.default_capture_type as 'text' | 'voice' | 'link' | 'photo')) return preferences.default_capture_type as 'text' | 'voice' | 'link' | 'photo';
-    return 'text';
-  };
-  const [mode, setMode] = useState<'text' | 'voice' | 'link' | 'photo'>(resolveInitialMode());
   const [content, setContent] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -845,11 +833,18 @@ export default function CaptureScreen() {
 
   const useClipboardUrl = () => {
     if (!clipboardUrl) return;
-    setContent(clipboardUrl);
-    setMode('link');
+    setLinkContent(clipboardUrl);
+    setLinkVisible(true);
     dismissClipboard();
   };
   // ── End clipboard detection ──
+
+  // ── Deep-link mode bootstrap ──
+  useEffect(() => {
+    if (params.mode === 'link') setLinkVisible(true);
+    if (params.mode === 'voice') startVoiceRecording();
+  }, []);
+  // ── End deep-link mode bootstrap ──
 
   // ── Voice recording (lifted state) ──
   const startVoiceRecording = async () => {
@@ -977,9 +972,8 @@ export default function CaptureScreen() {
 
   const handleSave = async () => {
     // --- Link validation ---
-    if (mode === 'link') {
-      const url = content.trim();
-      if (!url) return;
+    if (linkVisible && linkContent.trim()) {
+      const url = linkContent.trim();
       if (!/^https?:\/\/.+/i.test(url)) {
         setLinkError(t('capture.linkError'));
         return;
@@ -987,30 +981,29 @@ export default function CaptureScreen() {
       setLinkError('');
     }
 
-    if (!content.trim() && mode !== 'voice' && mode !== 'photo') return;
-
     setIsSaving(true);
     try {
-      if (mode === 'voice') {
+      if (voiceStatus === 'done' && voiceData.recorded) {
         await memoriesApi.create({
           type: 'voice',
           content: voiceData.transcription || t('capture.voiceNote'),
           transcription: voiceData.transcription ?? undefined,
           audio_url: voiceData.audioUrl ?? undefined,
         });
-      } else if (mode === 'photo') {
-        const photoMetadata: Record<string, any> = {};
+      } else if (imageData.picked && imageData.imageUrl) {
+        const photoMetadata: Record<string, unknown> = {};
         if (photoNote.trim()) photoMetadata.user_note = photoNote.trim();
         if (imageData.thumbnailUrl) photoMetadata.thumbnail_url = imageData.thumbnailUrl;
-
         await memoriesApi.create({
           type: 'photo',
           content: imageData.description || t('capture.imageNote'),
-          image_url: imageData.imageUrl ?? undefined,
+          image_url: imageData.imageUrl,
           metadata: Object.keys(photoMetadata).length > 0 ? photoMetadata : undefined,
         });
+      } else if (linkVisible && linkContent.trim()) {
+        await memoriesApi.create({ type: 'link', content: linkContent.trim() });
       } else {
-        await memoriesApi.create({ type: mode, content: content.trim() });
+        await memoriesApi.create({ type: 'text', content: content.trim() });
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setSaveSuccess(true);
@@ -1052,174 +1045,91 @@ export default function CaptureScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Header ── */}
+        {/* Header */}
         <View style={[styles.header, { borderBottomColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
-          <TouchableOpacity
-            onPress={handleCancel}
-            style={styles.closeBtn}
-            activeOpacity={0.7}
-          >
-            <X size={20} color={colors.captureMuted} strokeWidth={2.2} />
+          <TouchableOpacity onPress={handleCancel} style={styles.cancelBtn} activeOpacity={0.7}>
+            <Text style={[styles.cancelText, { color: colors.captureMuted }]}>{t('capture.cancel')}</Text>
           </TouchableOpacity>
 
-          <View style={styles.titleWrap}>
-            <Text style={[styles.title, { color: colors.captureText }]}>
-              {t('capture.title')}
-            </Text>
-          </View>
+          <Text style={[styles.title, { color: colors.captureText }]}>{t('capture.title')}</Text>
 
           <TouchableOpacity
             onPress={handleSave}
             disabled={!canSave || isSaving}
-            style={styles.saveBtn}
+            style={[styles.saveBtn, { backgroundColor: canSave && !isSaving ? '#fff' : colors.captureCard }]}
             activeOpacity={0.85}
           >
             {isSaving ? (
-              <ActivityIndicator color={colors.captureAccent} size="small" />
+              <ActivityIndicator color={canSave ? '#000' : colors.captureMuted} size="small" />
             ) : (
-              <Text style={[styles.saveBtnText, { color: canSave && !isSaving ? colors.captureAccent : colors.captureMuted }]}>{t('capture.save')}</Text>
+              <Text style={[styles.saveBtnText, { color: canSave && !isSaving ? '#000' : colors.captureMuted }]}>
+                {t('capture.save')}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
 
-        {mode === 'text' || mode === 'link' ? (
-          <View style={styles.composerScreenWrap}>
-            <View style={[styles.inputCard, {
-              backgroundColor: colors.captureCard,
-              borderColor: colors.captureBorder,
-              borderWidth: 1,
-            }]}>
-              {/* ── Composer header (text mode) ── */}
-              {mode === 'text' && (
-                <View style={styles.composerHeaderRow}>
-                  <View style={[styles.composerBadge, { backgroundColor: 'rgba(232,132,74,0.15)' }]}>
-                    <FileText size={16} color={colors.captureAccent} strokeWidth={2.3} />
-                  </View>
-                  <Text style={[styles.composerHeaderLabel, { color: colors.captureMuted }]}>
-                    {t('capture.modeTextDesc')}
-                  </Text>
-                </View>
-              )}
-              <TextInput
-                style={[styles.composerInput, {
-                  color: colors.captureText,
-                  fontFamily: 'DMSans_400Regular',
-                  fontSize: 16,
-                }]}
-                placeholder={mode === 'text' ? t('capture.textPlaceholder') : t('capture.linkPlaceholder')}
-                placeholderTextColor={colors.captureMuted}
-                multiline={mode === 'text'}
-                autoFocus
-                value={content}
-                onChangeText={(v) => { setContent(v); if (mode === 'link' && linkError) setLinkError(''); }}
-                textAlignVertical="top"
-                keyboardType={mode === 'link' ? 'url' : 'default'}
-                autoCapitalize={mode === 'link' ? 'none' : 'sentences'}
-                autoCorrect={mode !== 'link'}
-              />
-              {mode === 'link' && linkError ? (
-                <Text style={[styles.errorText, { color: colors.error }]}>{linkError}</Text>
-              ) : null}
-              {mode === 'link' && clipboardUrl ? (
-                <Animated.View
-                  style={[styles.clipInCard, {
-                    opacity: clipOpacity,
-                    backgroundColor: colors.subtleBg,
-                    borderColor: colors.captureBorder,
-                  }]}
-                >
-                  <View style={styles.clipInCardLeft}>
-                    <Link2 size={13} color={colors.brandAccent} strokeWidth={2.4} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.clipTitle, { color: colors.captureMuted }]}>{t('capture.clipboardDetected')}</Text>
-                      <Text style={[styles.clipUrl, { color: colors.brandAccent }]} numberOfLines={1}>{clipboardUrl}</Text>
-                    </View>
-                  </View>
-                  <View style={styles.clipActions}>
-                    <TouchableOpacity onPress={handleQuickSaveLink} disabled={clipSaving} style={[styles.clipSaveBtn, { backgroundColor: colors.brandAccent }]}>
-                      {clipSaving ? <ActivityIndicator color="#FFF" size="small" /> : <Text style={styles.clipSaveText}>{t('capture.quickSave')}</Text>}
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={useClipboardUrl} style={[styles.clipUseBtn, { borderColor: colors.brandAccent }]}>
-                      <Text style={[styles.clipUseText, { color: colors.brandAccent }]}>{t('capture.useLink')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={dismissClipboard} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={[styles.clipDismiss, { color: colors.captureMuted }]}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                </Animated.View>
-              ) : null}
-              {mode === 'text' && (
-                <View>
-                  <View style={[styles.inputDivider, { borderColor: colors.captureBorder }]} />
-                  <View style={styles.composerFooterRow}>
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.hintsScroll}
-                      style={styles.composerHintsScroll}
-                    >
-                      {HINT_CHIPS.map((chip) => (
-                        <TouchableOpacity
-                          key={chip.labelKey}
-                          onPress={() => {
-                            const label = t(chip.labelKey);
-                            setContent((prev) => (prev ? `${label} ${prev}` : `${label} `));
-                          }}
-                          style={[styles.hintChip, {
-                            backgroundColor: 'rgba(232,132,74,0.18)',
-                            borderColor: 'rgba(232,132,74,0.5)',
-                          }]}
-                        >
-                          <Text style={[styles.hintChipText, { color: colors.captureAccent }]}>{t(chip.labelKey)}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                    {content.length > 0 && (
-                      <Text style={[styles.charCounter, {
-                        color: content.length > TEXT_WARN_THRESHOLD ? colors.warning : colors.captureMuted,
-                      }]}>
-                        {content.length}
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={[styles.aiHint, { color: colors.captureMuted }]}>
-                    AI sẽ tóm tắt sau khi lưu
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        ) : mode === 'voice' ? (
-          <View style={styles.modePanel}>
-            <VoiceWidget
-              status={voiceStatus}
-              duration={voiceDuration}
-              transcription={voiceData.transcription}
-              onStop={stopVoiceRecording}
-              onDiscard={discardVoice}
-            />
-          </View>
-        ) : (
-          /* Photo */
-          <View style={styles.modePanel}>
-            <ImageWidget imageData={imageData} onDiscard={discardImage} />
-            {imageData.picked && !imageData.isUploading && (
-              <TextInput
-                style={[styles.photoNoteInput, { color: colors.captureText, backgroundColor: colors.captureCard, borderColor: colors.captureBorder }]}
-                placeholder={t('capture.photoNotePlaceholder')}
-                placeholderTextColor={colors.captureMuted}
-                multiline
-                value={photoNote}
-                onChangeText={setPhotoNote}
-                textAlignVertical="top"
-              />
-            )}
-          </View>
-        )}
+        {/* Composer */}
+        <ScrollView
+          style={{ flex: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <ComposerRow
+            content={content}
+            onChangeContent={setContent}
+            voiceStatus={voiceStatus}
+            voiceDuration={voiceDuration}
+            voiceTranscription={voiceData.transcription}
+            onStopVoice={stopVoiceRecording}
+            onDiscardVoice={discardVoice}
+            imageData={imageData}
+            onDiscardImage={discardImage}
+            linkVisible={linkVisible}
+            linkContent={linkContent}
+            onChangeLinkContent={(v) => { setLinkContent(v); if (linkError) setLinkError(''); }}
+            linkError={linkError}
+            clipboardUrl={clipboardUrl}
+            clipOpacity={clipOpacity}
+            clipSaving={clipSaving}
+            onQuickSaveLink={handleQuickSaveLink}
+            onUseClipboardUrl={useClipboardUrl}
+            onDismissClipboard={dismissClipboard}
+            photoNote={photoNote}
+            onChangePhotoNote={setPhotoNote}
+          />
+        </ScrollView>
 
+        {/* Toolbar */}
+        <BottomToolbar
+          isRecording={voiceStatus === 'recording' || voiceStatus === 'uploading'}
+          hasImage={imageData.picked}
+          hasLink={linkVisible}
+          charCount={content.length}
+          onMic={() => {
+            if (voiceStatus === 'recording') {
+              stopVoiceRecording();
+            } else if (voiceStatus === 'idle') {
+              startVoiceRecording();
+            }
+          }}
+          onImage={pickImage}
+          onLink={() => {
+            setLinkVisible((v) => !v);
+            setLinkError('');
+          }}
+        />
+
+        {/* Hint chips — visible only when empty */}
+        {content.length === 0 && voiceStatus === 'idle' && !imageData.picked && !linkVisible && (
+          <HintChips
+            onSelect={(label) => setContent((prev) => (prev ? `${label} ${prev}` : `${label} `))}
+          />
+        )}
       </KeyboardAvoidingView>
 
-      {/* ── Success overlay ── */}
+      {/* Success overlay */}
       {saveSuccess && (
         <Animated.View style={[styles.successOverlay, { opacity: successOpacity }]} pointerEvents="none">
           <Animated.View style={[styles.successBubble, { transform: [{ scale: successScale }] }]}>
@@ -1245,154 +1155,28 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  closeBtn: {
-    minWidth: 56,
-    minHeight: 32,
-    alignItems: 'center',
+  cancelBtn: {
+    minWidth: 64,
+    alignItems: 'flex-start',
     justifyContent: 'center',
+    paddingVertical: 6,
   },
-  titleWrap: {
-    alignItems: 'center',
+  cancelText: {
+    fontSize: 15,
+    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
   },
   title: { fontSize: 17, fontWeight: '600', fontFamily: SANS_FONT },
   saveBtn: {
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 20,
     paddingVertical: 7,
     paddingHorizontal: 16,
-    minWidth: 56,
-    minHeight: 32,
   },
   saveBtnText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 15,
-  },
-
-  // ── Composer (text / link) ──
-  composerScreenWrap: {
-    flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-  },
-  inputCard: {
-    borderRadius: 22,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 18,
-    elevation: 3,
-    flex: 1,
-  },
-  composerInput: {
-    fontSize: 16,
-    lineHeight: 26,
-    minHeight: 120,
-    fontFamily: SANS_FONT,
-  },
-  inputDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    marginVertical: 10,
-  },
-
-  // ── Composer header ──
-  composerHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 14,
-  },
-  composerBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  composerHeaderLabel: {
-    fontSize: 13,
-    fontFamily: 'DMSans_500Medium',
-  },
-
-  // ── Composer footer (hints + char counter) ──
-  composerHintsScroll: { flex: 1 },
-  composerFooterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 2,
-  },
-  charCounter: {
-    fontSize: 12,
-    fontFamily: SANS_FONT,
-    fontWeight: '500',
-    minWidth: 32,
-    textAlign: 'right',
-    paddingLeft: 8,
-  },
-  errorText: { marginTop: 6, fontSize: 13, fontFamily: SANS_FONT },
-
-  // ── Voice / Photo panel ──
-  modePanel: { flex: 1, paddingHorizontal: 20, paddingTop: 12 },
-  photoNoteInput: {
-    marginTop: 14,
-    minHeight: 80,
-    fontSize: 15,
-    lineHeight: 22,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    textAlignVertical: 'top',
-    fontFamily: SANS_FONT,
-  },
-
-  // ── Clipboard banner (in-card) ──
-  clipInCard: {
-    borderRadius: 12,
-    borderWidth: 1.5,
-    padding: 10,
-    marginTop: 10,
-    gap: 6,
-  },
-  clipInCardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  clipTitle: { fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, fontFamily: SANS_FONT },
-  clipUrl: { fontSize: 12, marginTop: 2, fontFamily: SANS_FONT },
-  clipActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  clipSaveBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8 },
-  clipSaveText: { color: '#FFF', fontSize: 12, fontWeight: '600', fontFamily: SANS_FONT },
-  clipUseBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1 },
-  clipUseText: { fontSize: 12, fontWeight: '600', fontFamily: SANS_FONT },
-  clipDismiss: { fontSize: 16, paddingLeft: 4, fontFamily: SANS_FONT },
-
-  // ── Quick-tag hints ──
-  hintsScroll: {
-    gap: 6,
-    flexDirection: 'row',
-    paddingVertical: 2,
-  },
-  hintChip: {
-    borderRadius: 100,
-    borderWidth: 1.5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  hintChipText: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  // ── AI hint ──
-  aiHint: {
-    fontSize: 11,
-    opacity: 0.7,
-    marginTop: 6,
-    paddingHorizontal: 2,
-    fontFamily: SANS_FONT,
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 14,
   },
 
   // ── Success overlay ──
