@@ -28,6 +28,7 @@ class MemoryType(str, enum.Enum):
     LINK = "link"
     VOICE = "voice"
     PHOTO = "photo"
+    RICH = "rich"
 
 
 class Memory(Base):
@@ -63,6 +64,9 @@ class Memory(Base):
 
     # Photo-specific fields
     image_url = Column(String(512), nullable=True)
+
+    # Rich mixed-media blocks (ordered array of {type, order_index, ...})
+    blocks = Column(JSONB, nullable=True)
 
     # AI-generated fields
     ai_summary = Column(Text, nullable=True)
