@@ -580,6 +580,7 @@ const composerStyles = StyleSheet.create({
 interface BottomToolbarProps {
   isRecording: boolean;
   hasImage: boolean;
+  hasVoice: boolean;
   hasLink: boolean;
   charCount: number;
   onMic: () => void;
@@ -587,7 +588,7 @@ interface BottomToolbarProps {
   onLink: () => void;
 }
 
-function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onImage, onLink }: BottomToolbarProps) {
+function BottomToolbar({ isRecording, hasImage, hasVoice, hasLink, charCount, onMic, onImage, onLink }: BottomToolbarProps) {
   const { colors } = useTheme();
   const MAX_CHARS = 500;
   const remaining = MAX_CHARS - charCount;
@@ -612,16 +613,16 @@ function BottomToolbar({ isRecording, hasImage, hasLink, charCount, onMic, onIma
 
       <TouchableOpacity
         onPress={onImage}
-        style={[toolbarStyles.toolBtn, (isRecording || hasImage) && { opacity: 0.35 }]}
+        style={[toolbarStyles.toolBtn, (isRecording || hasImage || hasVoice) && { opacity: 0.35 }]}
         activeOpacity={0.7}
-        disabled={isRecording || hasImage}
+        disabled={isRecording || hasImage || hasVoice}
         accessibilityRole="button"
         accessibilityLabel="Attach image"
-        accessibilityState={{ disabled: isRecording || hasImage }}
+        accessibilityState={{ disabled: isRecording || hasImage || hasVoice }}
       >
         <ImageIcon
           size={22}
-          color={isRecording || hasImage ? colors.captureBorder : colors.captureMuted}
+          color={isRecording || hasImage || hasVoice ? colors.captureBorder : colors.captureMuted}
           strokeWidth={1.8}
         />
       </TouchableOpacity>
@@ -843,7 +844,8 @@ export default function CaptureScreen() {
   useEffect(() => {
     if (params.mode === 'link') setLinkVisible(true);
     if (params.mode === 'voice') startVoiceRecording();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // mount-only: params.mode is a stable nav param; startVoiceRecording reads refs not state
   // ── End deep-link mode bootstrap ──
 
   // ── Voice recording (lifted state) ──
@@ -971,6 +973,12 @@ export default function CaptureScreen() {
   };
 
   const handleSave = async () => {
+    // Prevent save if link panel is open but URL is empty
+    if (linkVisible && !linkContent.trim()) {
+      setLinkError(t('capture.linkError'));
+      return;
+    }
+
     // --- Link validation ---
     if (linkVisible && linkContent.trim()) {
       const url = linkContent.trim();
@@ -1105,6 +1113,7 @@ export default function CaptureScreen() {
         <BottomToolbar
           isRecording={voiceStatus === 'recording' || voiceStatus === 'uploading'}
           hasImage={imageData.picked}
+          hasVoice={voiceStatus === 'done'}
           hasLink={linkVisible}
           charCount={content.length}
           onMic={() => {
