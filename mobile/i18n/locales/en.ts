@@ -183,6 +183,13 @@ const en = {
     recallBannerLabel: 'Recall today',
     recallBannerNew: '{{count}} new',
     recallBannerCta: 'See now →',
+    // Threads-style home redesign
+    captureBarHint: 'Save a memory…',
+    insightUnreviewed: '{{count}} memories unreviewed',
+    insightRecall: '{{count}} memories ready for recall',
+    insightStreak: '{{count}}-day streak · keep going!',
+    insightDefault: 'Save a memory to start your streak',
+    insightGreat: '{{count}} memories saved today · great work!',
   },
 
   // Library screen
@@ -484,7 +491,7 @@ const en = {
   // Login screen
   login: {
     title: 'Memory AI',
-    subtitle: 'Your personal memory companion',
+    subtitle: 'Your memories, always with you',
     signIn: 'Sign in',
     createAccount: 'Create account',
     namePlaceholder: 'Name (optional)',
@@ -498,6 +505,9 @@ const en = {
     genericError: 'Something went wrong. Please try again.',
     continueWithGoogle: 'Continue with Google',
     orDivider: 'or',
+    forgotPassword: 'Forgot password?',
+    forgotPasswordSent: 'If an account exists for that email, a reset link has been sent.',
+    forgotPasswordEmailRequired: 'Please enter your email address first.',
   },
 
   // Navigation titles

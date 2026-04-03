@@ -182,6 +182,13 @@ const vi = {
     recallBannerLabel: 'Nhắc lại hôm nay',
     recallBannerNew: '{{count}} mới',
     recallBannerCta: 'Xem ngay →',
+    // Threads-style home redesign
+    captureBarHint: 'Lưu một ký ức…',
+    insightUnreviewed: '{{count}} ký ức chưa xem',
+    insightRecall: '{{count}} ký ức gợi nhớ hôm nay',
+    insightStreak: 'Chuỗi {{count}} ngày · tiếp tục nào!',
+    insightDefault: 'Lưu ký ức để bắt đầu chuỗi ngày',
+    insightGreat: '{{count}} ký ức hôm nay · tuyệt vời!',
   },
 
   // Library screen
@@ -481,7 +488,7 @@ const vi = {
   // Login screen
   login: {
     title: 'Memory AI',
-    subtitle: 'Trợ lý ghi nhớ cá nhân của bạn',
+    subtitle: 'Ký ức của bạn, luôn bên bạn',
     signIn: 'Đăng nhập',
     createAccount: 'Tạo tài khoản',
     namePlaceholder: 'Tên (tùy chọn)',
@@ -495,6 +502,9 @@ const vi = {
     genericError: 'Đã xảy ra lỗi. Vui lòng thử lại.',
     continueWithGoogle: 'Tiếp tục với Google',
     orDivider: 'hoặc',
+    forgotPassword: 'Quên mật khẩu?',
+    forgotPasswordSent: 'Nếu tài khoản tồn tại, liên kết đặt lại mật khẩu đã được gửi.',
+    forgotPasswordEmailRequired: 'Vui lòng nhập địa chỉ email trước.',
   },
 
   // Navigation titles
