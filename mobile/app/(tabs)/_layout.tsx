@@ -93,6 +93,7 @@ function EnhancedTabButton({ children, onPress, ...rest }: any) {
 // ─── Circular dark FAB ────────────────────────────────────────────────────────
 function CreateTabButton({ style, ...rest }: any) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const { colors } = useTheme();
 
   const handlePress = () => {
     if (Platform.OS === 'ios') {
@@ -133,8 +134,12 @@ function CreateTabButton({ style, ...rest }: any) {
       accessibilityLabel="Lưu nhanh"
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
-      <Animated.View style={[styles.fab, { transform: [{ scale: scaleAnim }] }]}>
-        <Plus size={22} color="#FFFFFF" strokeWidth={2.2} />
+      <Animated.View style={[styles.fab, {
+        backgroundColor: colors.textPrimary,
+        shadowColor: colors.textPrimary,
+        transform: [{ scale: scaleAnim }],
+      }]}>
+        <Plus size={22} color={colors.bg} strokeWidth={2.2} />
       </Animated.View>
     </TouchableOpacity>
   );
@@ -266,17 +271,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -10,
+    backgroundColor: 'transparent',
   },
   fab: {
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: '#2C1810',
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#2C1810',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.22,
         shadowRadius: 18,

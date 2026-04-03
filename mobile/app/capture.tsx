@@ -1269,14 +1269,14 @@ export default function CaptureScreen() {
     .reduce((s, b) => s + b.content.length, 0);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.captureBg }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.cardBg }]} edges={['top', 'bottom']}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
-        <View style={[styles.header, { borderBottomColor: colors.captureBorder, backgroundColor: colors.captureBg }]}>
+        <View style={[styles.header, { borderBottomColor: colors.captureBorder, backgroundColor: colors.cardBg }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.cancelBtn} activeOpacity={0.7}>
             <Text style={[styles.cancelText, { color: colors.captureMuted }]}>{t('capture.cancel')}</Text>
           </TouchableOpacity>
@@ -1342,7 +1342,7 @@ export default function CaptureScreen() {
         </ScrollView>
 
         {/* Bottom bar: privacy signal + char count */}
-        <View style={[styles.bottomBar, { backgroundColor: colors.captureBg, borderTopColor: colors.captureBorder }]}>
+        <View style={[styles.bottomBar, { backgroundColor: colors.cardBg, borderTopColor: colors.captureBorder }]}>
           <View style={styles.bottomBarLeft}>
             <Lock size={13} color={colors.captureMuted} strokeWidth={2} />
             <Text style={[styles.bottomBarText, { color: colors.captureMuted }]}>{t('capture.alwaysPrivate')}</Text>

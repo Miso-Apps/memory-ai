@@ -201,14 +201,15 @@ const vi = {
     filterCategory: 'Lọc theo danh mục',
     pressEnterToSearch: 'Nhấn return để tìm kiếm',
     synthesize: '✦ Tổng hợp',
+    synthesizeTitle: 'Tổng hợp',
     cancelSelect: 'Hủy',
     selectedCount: 'Đã chọn {{count}}',
     synthesizing: 'Đang tổng hợp...',
     synthesizeAction: 'Tổng hợp →',
     selectMode: 'CHỌN KÝ ỨC',
     selectHint: 'Chọn 2 hoặc nhiều hơn để tổng hợp',
-    memoriesCount: '{{count}} ký ức',
-  },
+    memoriesCount: '{{count}} ký ức',    sortNewest: 'Mới nhất',
+    sortOldest: 'Cũ nhất',  },
 
   // System category names (used in library, memory badges)
   categories: {

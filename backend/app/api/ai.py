@@ -443,6 +443,12 @@ async def create_radar_event(
         context=body.context or {},
     )
     db.add(event)
+
+    # When user opens a memory from the Recall tab, stamp last_viewed_at so
+    # the 24-hour de-duplication filter in get_radar can suppress it.
+    if body.event_type in ("opened", "dismissed"):
+        memory.last_viewed_at = datetime.now(timezone.utc)
+
     await db.flush()
 
     return {"status": "ok", "event_id": str(event.id)}

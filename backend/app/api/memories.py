@@ -714,12 +714,13 @@ async def list_memories(
     ),
     category_id: Optional[str] = Query(None, description="Filter by category ID"),
     search: Optional[str] = Query(None, description="Text search in content"),
+    sort: Optional[str] = Query("newest", description="Sort order: newest (default) or oldest"),
     limit: int = Query(100, le=200, ge=1),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List memories for the current user, newest first."""
+    """List memories for the current user."""
     conditions = [
         Memory.user_id == current_user.id,
         Memory.is_deleted == False,  # noqa: E712
@@ -746,10 +747,12 @@ async def list_memories(
     total_result = await db.execute(select(func.count()).where(and_(*conditions)))
     total = total_result.scalar() or 0
 
+    order_clause = Memory.created_at.asc() if sort == "oldest" else Memory.created_at.desc()
+
     result = await db.execute(
         select(Memory)
         .where(and_(*conditions))
-        .order_by(Memory.created_at.desc())
+        .order_by(order_clause)
         .limit(limit)
         .offset(offset)
     )

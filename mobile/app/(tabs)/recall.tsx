@@ -78,9 +78,6 @@ function FeaturedRecallCard({
             </View>
 
             <Text style={[styles.featuredTitle, { color: colors.textPrimary }]}>{preview}</Text>
-            <Text style={[styles.featuredMeta, { color: colors.textMuted }]}>
-                {item.memory.type === 'voice' ? '🎤' : '📝'} {item.memory.category_name ?? t('common.other')}
-            </Text>
 
             <View style={styles.confRow}>
                 <View style={[styles.confBarBg, { backgroundColor: progressTrackColor }]}>

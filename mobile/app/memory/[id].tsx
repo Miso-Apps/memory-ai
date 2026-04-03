@@ -20,7 +20,7 @@ import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { aiApi, memoriesApi, insightsApi, MemoryLink, MemoryBlock, RelatedMemory } from '../../services/api';
 import { useTheme } from '../../constants/ThemeContext';
-import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Share2, Sparkles, Trash2 } from 'lucide-react-native';
+import { ChevronRight, FileText, Folder, Image as ImageIcon, Link2, Mic, Pencil, Share2, Sparkles, Trash2 } from 'lucide-react-native';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 
 interface Memory {
@@ -348,6 +348,7 @@ export default function MemoryDetailScreen() {
   const [isReflecting, setIsReflecting] = useState(false);
   const [reflectionMarkdown, setReflectionMarkdown] = useState<string>('');
   const [showReflectionModal, setShowReflectionModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
 
   useEffect(() => {
@@ -514,26 +515,20 @@ export default function MemoryDetailScreen() {
 
   const handleDelete = useCallback(() => {
     if (!memory) return;
-    Alert.alert(
-      t('memory.deleteTitle'),
-      t('memory.deleteMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await memoriesApi.delete(memory.id);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              router.back();
-            } catch {
-              Alert.alert(t('common.error'), t('memory.deleteFailed'));
-            }
-          },
-        },
-      ],
-    );
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setShowDeleteModal(true);
+  }, [memory]);
+
+  const confirmDelete = useCallback(async () => {
+    if (!memory) return;
+    try {
+      setShowDeleteModal(false);
+      await memoriesApi.delete(memory.id);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.back();
+    } catch {
+      Alert.alert(t('common.error'), t('memory.deleteFailed'));
+    }
   }, [memory, t]);
 
   const handleShare = useCallback(async () => {
@@ -638,7 +633,10 @@ export default function MemoryDetailScreen() {
             </Text>
           </TouchableOpacity>
           <View style={styles.navActions}>
-            <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity onPress={() => setIsEditing(true)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Pencil size={17} color={colors.textMuted} strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginLeft: 16 }}>
               <Share2 size={18} color={colors.textMuted} strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} style={{ marginLeft: 16 }}>
@@ -648,19 +646,6 @@ export default function MemoryDetailScreen() {
         </View>
         {/* Identity row */}
         <View style={styles.eyebrowRow}>
-          {(() => {
-            const typeConf = TYPE_CONFIG[memory.type] || TYPE_CONFIG.text;
-            return (
-              <View style={[styles.typeBadge, { backgroundColor: colors.brandAccentLight, borderColor: 'rgba(184,92,32,0.22)' }]}>
-                <View style={styles.typeBadgeInner}>
-                  <typeConf.Icon size={11} color={colors.brandAccent} strokeWidth={2.2} />
-                  <Text style={[styles.typeBadgeText, { color: colors.brandAccent }]}>
-                    {memory.type?.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-            );
-          })()}
           <Text style={[styles.eyebrowDate, { color: colors.textMuted }]}>
             {new Date(memory.createdAt).toLocaleDateString(undefined, {
               weekday: 'short', month: 'short', day: 'numeric',
@@ -1044,55 +1029,61 @@ export default function MemoryDetailScreen() {
             </Text>
           )}
         </TouchableOpacity>
-        {/* Secondary row */}
-        <View style={styles.secondaryActionRow}>
-          {memory.type === 'voice' ? (
-            <>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                onPress={() => {
-                  audioPlayerRef.current?.togglePlayback();
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionPlay')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                onPress={handleShare}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionShare')}
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                onPress={() => setIsEditing(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionEdit')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
-                onPress={handleShare}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
-                  {t('memory.actionShare')}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        {/* Secondary row — only shown for voice (Play button) */}
+        {memory.type === 'voice' && (
+          <TouchableOpacity
+            style={[styles.secondaryActionBtn, { borderColor: colors.border }]}
+            onPress={() => audioPlayerRef.current?.togglePlayback()}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.secondaryActionBtnText, { color: colors.textSecondary }]}>
+              {t('memory.actionPlay')}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <View style={styles.deleteBackdrop}>
+          <View style={[styles.deleteCard, { backgroundColor: colors.modalBg, borderColor: colors.border }]}>
+            <View style={[styles.deleteIconWrap, { backgroundColor: colors.errorBg }]}>
+              <Trash2 size={24} color={colors.error} strokeWidth={2} />
+            </View>
+            <Text style={[styles.deleteCardTitle, { color: colors.textPrimary }]}>
+              {t('memory.deleteTitle')}
+            </Text>
+            <Text style={[styles.deleteCardMessage, { color: colors.textSecondary }]}>
+              {t('memory.deleteMessage')}
+            </Text>
+            <View style={styles.deleteCardButtons}>
+              <TouchableOpacity
+                style={[styles.deleteCancelBtn, { borderColor: colors.border, backgroundColor: colors.inputBg }]}
+                onPress={() => setShowDeleteModal(false)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.deleteCancelBtnText, { color: colors.textPrimary }]}>
+                  {t('common.cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.deleteConfirmBtn, { backgroundColor: colors.error }]}
+                onPress={confirmDelete}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.deleteConfirmBtnText}>
+                  {t('common.delete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={showReflectionModal}
@@ -1549,6 +1540,74 @@ const styles = StyleSheet.create({
   secondaryActionBtnText: {
     fontFamily: 'DMSans_500Medium',
     fontSize: 13,
+  },
+
+  // Delete confirmation modal
+  deleteBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  deleteCard: {
+    width: '100%',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 24,
+    paddingTop: 28,
+    paddingBottom: 24,
+    alignItems: 'center',
+    gap: 10,
+  },
+  deleteIconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  deleteCardTitle: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 18,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  deleteCardMessage: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  deleteCardButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+    marginTop: 4,
+  },
+  deleteCancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 11,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  deleteCancelBtnText: {
+    fontFamily: 'DMSans_600SemiBold',
+    fontSize: 15,
+  },
+  deleteConfirmBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 11,
+    alignItems: 'center',
+  },
+  deleteConfirmBtnText: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 15,
+    color: '#FFFFFF',
   },
 
   // Edit panel

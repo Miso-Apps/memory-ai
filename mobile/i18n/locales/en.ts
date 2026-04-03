@@ -202,6 +202,7 @@ const en = {
     filterCategory: 'Filter by category',
     pressEnterToSearch: 'Press return to search',
     synthesize: '✦ Synthesize',
+    synthesizeTitle: 'Synthesize',
     cancelSelect: 'Cancel',
     selectedCount: '{{count}} selected',
     synthesizing: 'Synthesizing...',
@@ -209,6 +210,8 @@ const en = {
     selectMode: 'SELECT MEMORIES',
     selectHint: 'Select 2 or more to synthesize',
     memoriesCount: '{{count}} memories',
+    sortNewest: 'Newest first',
+    sortOldest: 'Oldest first',
   },
 
   // System category names (used in library, memory badges)

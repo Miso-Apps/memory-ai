@@ -14,6 +14,7 @@ import {
   Image,
   PanResponder,
   Animated,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -24,7 +25,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import { SimpleMarkdown } from '../../components/SimpleMarkdown';
 import { buildMemoryTypeCounts, filterMemoriesByType } from '../../utils/memoryOps';
-import { FileText, Mic, Link2, Image as ImageIcon, Search, Sparkles, X } from 'lucide-react-native';
+import { FileText, Mic, Link2, Image as ImageIcon, Search, Sparkles, X, Check, ArrowUpDown } from 'lucide-react-native';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { MemoryCard, type MemoryCardMemory } from '../../components/MemoryCard';
 
@@ -269,6 +270,7 @@ export default function LibraryScreen() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const categoryEffectInitialized = useRef(false);
   const loadMemoriesRef = useRef<(reset?: boolean) => Promise<void>>(async () => { });
   // Tracks whether a streaming search is still in-flight so we can cancel on re-search
@@ -324,9 +326,10 @@ export default function LibraryScreen() {
     }
 
     try {
-      const params: { limit: number; offset: number; category_id?: string } = {
+      const params: { limit: number; offset: number; category_id?: string; sort?: 'newest' | 'oldest' } = {
         limit: PAGE_SIZE,
         offset: nextOffset,
+        sort: sortOrder,
       };
       if (selectedCategory) {
         params.category_id = selectedCategory;
@@ -380,7 +383,7 @@ export default function LibraryScreen() {
         setLoadingMore(false);
       }
     }
-  }, [hasMore, loading, loadingMore, offset, selectedCategory]);
+  }, [hasMore, loading, loadingMore, offset, selectedCategory, sortOrder]);
 
   useEffect(() => {
     loadMemoriesRef.current = loadMemories;
@@ -414,6 +417,13 @@ export default function LibraryScreen() {
     setHasMore(true);
     loadMemoriesRef.current(true);
   }, [selectedCategory]);
+
+  // Reload when sort order changes
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+    loadMemoriesRef.current(true);
+  }, [sortOrder]);
 
   // performSearch — called on Enter press or when category changes while a query is active
   const performSearch = useCallback(async (query: string, catId: string | null) => {
@@ -609,10 +619,11 @@ export default function LibraryScreen() {
             {selectMode && (
               <View style={[
                 styles.checkbox,
+                { borderColor: colors.borderMed, backgroundColor: colors.inputBg },
                 selectedIds.has(memory.id) && { backgroundColor: colors.brandAccent, borderColor: colors.brandAccent },
               ]}>
                 {selectedIds.has(memory.id) && (
-                  <Text style={styles.checkboxTick}>✓</Text>
+                  <Check size={13} color="#FFFFFF" strokeWidth={2.8} />
                 )}
               </View>
             )}
@@ -644,19 +655,28 @@ export default function LibraryScreen() {
       {/* ── Header ── */}
       {selectMode ? (
         <View style={[styles.selectHeader, { paddingHorizontal: 16 }]}>
-          <Text style={[styles.selectEyebrow, { color: colors.brandAccent }]}>
-            {t('library.selectMode')}
-          </Text>
           <View style={styles.selectTitleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.selectTitle, { color: colors.textPrimary }]}>
+                {t('library.synthesizeTitle')}
+              </Text>
+              <Text style={[styles.selectSubtitle, { color: colors.textSecondary }]}>
+                {t('library.selectHint')}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={toggleSelectMode}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={[styles.selectCloseBtn, { backgroundColor: colors.inputBg }]}
+            >
+              <X size={16} color={colors.textSecondary} strokeWidth={2.2} />
+            </TouchableOpacity>
+          </View>
+          {selectedIds.size > 0 && (
             <Text style={[styles.selectCount, { color: colors.brandAccent }]}>
               {t('library.selectedCount', { count: selectedIds.size })}
             </Text>
-            <TouchableOpacity onPress={toggleSelectMode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={[styles.cancelLink, { color: colors.brandAccent }]}>
-                {t('library.cancelSelect')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
       ) : (
         <ScreenHeader
@@ -745,6 +765,23 @@ export default function LibraryScreen() {
               <Text style={[styles.catFilterChevron, { color: colors.textMuted }]}>×</Text>
             </TouchableOpacity>
           )}
+        </TouchableOpacity>
+
+        {/* Sort order toggle */}
+        <TouchableOpacity
+          style={[styles.sortBtn, {
+            backgroundColor: sortOrder === 'oldest' ? colors.brandAccentLight : colors.cardBg,
+            borderColor: sortOrder === 'oldest' ? colors.brandAccent : colors.border,
+          }]}
+          onPress={() => setSortOrder((prev) => prev === 'newest' ? 'oldest' : 'newest')}
+          activeOpacity={0.7}
+          accessibilityLabel={sortOrder === 'newest' ? t('library.sortNewest') : t('library.sortOldest')}
+        >
+          <ArrowUpDown
+            size={14}
+            color={sortOrder === 'oldest' ? colors.brandAccent : colors.textMuted}
+            strokeWidth={2.2}
+          />
         </TouchableOpacity>
       </View>
 
@@ -852,29 +889,37 @@ export default function LibraryScreen() {
 
       {/* ── Synthesize action bar ── */}
       {selectMode && (
-        <View style={[styles.actionBar, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccent }]}>
-          {selectedIds.size < 2 ? (
-            <Text style={[styles.actionBarText, { color: colors.textMuted, fontStyle: 'italic' }]}>
-              {t('library.selectHint')}
-            </Text>
-          ) : (
-            <Text style={[styles.actionBarText, { color: colors.textSecondary }]}>
-              {t('library.memoriesCount', { count: selectedIds.size })}
-            </Text>
-          )}
-          <TouchableOpacity
-            onPress={handleSynthesize}
-            disabled={selectedIds.size < 2 || isSynthesizing}
-            style={[
-              styles.synthesizeActionBtn,
-              { backgroundColor: colors.brandAccent },
-              (selectedIds.size < 2 || isSynthesizing) && { opacity: 0.35 },
-            ]}
-          >
-            <Text style={[styles.synthesizeActionBtnText, { color: colors.buttonText }]}>
-              {isSynthesizing ? t('library.synthesizing') : t('library.synthesizeAction')}
-            </Text>
-          </TouchableOpacity>
+        <View style={styles.actionBarOuter}>
+          <View style={[styles.actionBar, {
+            backgroundColor: colors.modalBg,
+            borderColor: colors.borderMed,
+            shadowColor: colors.textPrimary,
+          }]}>
+            <View style={styles.actionBarLeft}>
+              <View style={[styles.sparklesWrap, { backgroundColor: colors.accentSubtle }]}>
+                <Sparkles size={14} color={colors.accent} strokeWidth={2} />
+              </View>
+              <Text style={[styles.actionBarText, { color: selectedIds.size < 2 ? colors.textMuted : colors.textSecondary }]}>
+                {selectedIds.size < 2
+                  ? t('library.selectHint')
+                  : t('library.memoriesCount', { count: selectedIds.size })}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleSynthesize}
+              disabled={selectedIds.size < 2 || isSynthesizing}
+              style={[
+                styles.synthesizeActionBtn,
+                { backgroundColor: colors.brandAccent },
+                (selectedIds.size < 2 || isSynthesizing) && { opacity: 0.35 },
+              ]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.synthesizeActionBtnText, { color: colors.buttonText }]}>
+                {isSynthesizing ? t('library.synthesizing') : t('library.synthesizeAction')}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -1019,32 +1064,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  sortBtn: {
+    width: 40,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   // ── Select mode header ──────────────────────────────────
   selectHeader: {
     paddingTop: 16,
-    paddingBottom: 12,
-  },
-  selectEyebrow: {
-    fontFamily: 'DMSans_600SemiBold',
-    fontSize: 10,
-    letterSpacing: 0.8,
-    marginBottom: 4,
+    paddingBottom: 8,
   },
   selectTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+  },
+  selectTitle: {
+    fontFamily: 'DMSans_700Bold',
+    fontSize: 30,
+    letterSpacing: -0.5,
+    lineHeight: 36,
+  },
+  selectSubtitle: {
+    fontFamily: 'DMSans_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 2,
   },
   selectCount: {
-    fontFamily: 'DMSans_700Bold',
-    fontSize: 24,
-    letterSpacing: -0.5,
-    lineHeight: 32,
-  },
-  cancelLink: {
     fontFamily: 'DMSans_600SemiBold',
-    fontSize: 15,
+    fontSize: 13,
+    marginTop: 6,
+  },
+  selectCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
   synthIconBtn: {
     width: 34,
@@ -1300,18 +1362,16 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   memoryCardSelectPadding: {
-    paddingRight: 36,
+    paddingRight: 40,
   },
   checkbox: {
     position: 'absolute',
     top: 12,
     right: 10,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.25)',
-    backgroundColor: 'rgba(0,0,0,0.15)',
     zIndex: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1321,30 +1381,54 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
   },
-  actionBar: {
+  actionBarOuter: {
     position: 'absolute',
     bottom: 90,
     left: 16,
     right: 16,
+  },
+  actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  actionBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 10,
+  },
+  sparklesWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   actionBarText: {
+    fontFamily: 'DMSans_400Regular',
     fontSize: 13,
+    flex: 1,
   },
   synthesizeActionBtn: {
     borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 9,
+    flexShrink: 0,
   },
   synthesizeActionBtnText: {
+    fontFamily: 'DMSans_600SemiBold',
     fontSize: 13,
-    fontWeight: '600',
   },
 });
 

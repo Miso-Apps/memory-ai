@@ -529,47 +529,6 @@ function EmptyState({ t }: { t: Function }) {
   );
 }
 
-function RecallBanner({
-  count,
-  topTopic,
-  onPress,
-  colors,
-  t,
-}: {
-  count: number;
-  topTopic: string;
-  onPress: () => void;
-  colors: ThemeColors;
-  t: (key: string, options?: Record<string, any>) => string;
-}) {
-  if (count === 0) return null;
-  return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
-      <LinearGradient
-        colors={['#FFF3E8', '#FFE5CB']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.recallBanner}
-      >
-        <View style={styles.recallBannerTop}>
-          <Text style={[styles.recallBannerLabel, { color: colors.accent }]}>
-            🔔 {t('home.recallBannerLabel')}
-          </Text>
-          <View style={[styles.recallBadge, { backgroundColor: colors.badgeRed }]}>
-            <Text style={styles.recallBadgeText}>{t('home.recallBannerNew', { count })}</Text>
-          </View>
-        </View>
-        <Text style={[styles.recallBannerTitle, { color: colors.textPrimary }]}>
-          {topTopic}
-        </Text>
-        <Text style={[styles.recallBannerCta, { color: colors.accent }]}>
-          {t('home.recallBannerCta')}
-        </Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  );
-}
-
 export default function HomeScreen() {
   const { t } = useTranslation();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -874,15 +833,6 @@ export default function HomeScreen() {
                 <Text style={[styles.statLabel, { color: colors.accent }]}>{t('home.newRecalls')}</Text>
               </TouchableOpacity>
             </View>
-
-            {/* ── Recall Banner ── */}
-            <RecallBanner
-              count={recallCount}
-              topTopic={recallTopTopic}
-              onPress={() => router.push('/(tabs)/recall')}
-              colors={colors}
-              t={t}
-            />
           </>
         )}
       </ScrollView>
