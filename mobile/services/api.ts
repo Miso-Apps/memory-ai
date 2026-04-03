@@ -952,23 +952,58 @@ export const storageApi = {
 };
 
 export const authApi = {
-  // Register new user
+  // Register new user.
+  // When EMAIL_VERIFICATION_ENABLED is true on the backend, the response will
+  // contain email_verification_required=true and no tokens — the user must
+  // verify their email before they can sign in.
   register: async (email: string, password: string, name?: string) => {
-    const response = await api.post<{
-      user: { id: string; email: string; name?: string };
-      access_token: string;
-      refresh_token: string;
-    }>('/auth/register', { email, password, name });
+    const response = await api.post<
+      | {
+          user: { id: string; email: string; name?: string; email_verified?: boolean; auth_provider?: string };
+          access_token: string;
+          refresh_token: string;
+          email_verification_required?: false;
+        }
+      | {
+          message: string;
+          email_verification_required: true;
+        }
+    >('/auth/register', { email, password, name });
     return response.data;
   },
 
   // Login
   login: async (email: string, password: string) => {
     const response = await api.post<{
-      user: { id: string; email: string; name?: string };
+      user: { id: string; email: string; name?: string; email_verified?: boolean; auth_provider?: string };
       access_token: string;
       refresh_token: string;
     }>('/auth/login', { email, password });
+    return response.data;
+  },
+
+  // Resend verification email (public — requires email + password)
+  resendVerificationPublic: async (email: string, password: string) => {
+    const response = await api.post<{ message: string }>(
+      '/auth/resend-verification-public',
+      { email, password },
+    );
+    return response.data;
+  },
+
+  // Verify a 6-digit OTP code. Returns tokens on success.
+  verifyOtp: async (email: string, code: string) => {
+    const response = await api.post<{
+      user: { id: string; email: string; name?: string; email_verified?: boolean; auth_provider?: string };
+      access_token: string;
+      refresh_token: string;
+    }>('/auth/verify-otp', { email, code });
+    return response.data;
+  },
+
+  // Request a new 6-digit OTP to be sent to the given email.
+  resendOtp: async (email: string) => {
+    const response = await api.post<{ message: string }>('/auth/resend-otp', { email });
     return response.data;
   },
 
@@ -1064,6 +1099,49 @@ export const authApi = {
   logout: async () => {
     await api.post('/auth/logout');
     await AsyncStorage.multiRemove(['accessToken', 'refreshToken', 'user']);
+  },
+};
+
+// ─── User Account Management API ─────────────────────────────────────────────
+export const userApi = {
+  // Change email address — requires current password for local accounts
+  changeEmail: async (newEmail: string, password?: string) => {
+    const response = await api.post<{ message: string; user: { id: string; email: string; name?: string } }>(
+      '/auth/change-email',
+      { new_email: newEmail, password },
+    );
+    return response.data;
+  },
+
+  // Change password — local accounts only
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await api.post<{ message: string }>('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return response.data;
+  },
+
+  // Permanently delete account and all data
+  deleteAccount: async (password?: string) => {
+    const response = await api.delete<{ message: string }>('/auth/me', {
+      data: { password },
+    });
+    return response.data;
+  },
+
+  // Export all user data as JSON
+  exportData: async (): Promise<string> => {
+    const response = await api.get<object>('/auth/export');
+    return JSON.stringify(response.data, null, 2);
+  },
+
+  // Delete all memories but keep account
+  deleteAllMemories: async (password?: string) => {
+    const response = await api.delete<{ message: string; count: number }>('/auth/me/memories', {
+      data: { password },
+    });
+    return response.data;
   },
 };
 

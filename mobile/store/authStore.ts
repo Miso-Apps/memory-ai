@@ -6,6 +6,8 @@ interface User {
   id: string;
   email: string;
   name?: string;
+  email_verified?: boolean;
+  auth_provider?: string;
 }
 
 interface AuthState {
@@ -17,13 +19,15 @@ interface AuthState {
 
   // Actions
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<{ emailVerificationRequired?: boolean }>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   loadStoredAuth: () => Promise<void>;
+  updateUser: (patch: Partial<User>) => Promise<void>;
+  _storeTokens: (accessToken: string, refreshToken: string, user: User) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   refreshToken: null,
@@ -60,6 +64,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ isLoading: true });
       const response = await authApi.register(email, password, name);
 
+      // Backend returns email_verification_required=true when verification is
+      // enabled. In that case no tokens are issued — the user must verify first.
+      if (response.email_verification_required) {
+        set({ isLoading: false });
+        return { emailVerificationRequired: true };
+      }
+
       await AsyncStorage.multiSet([
         ['accessToken', response.access_token],
         ['refreshToken', response.refresh_token],
@@ -74,6 +85,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         isAuthenticated: true,
         isLoading: false,
       });
+
+      return {};
     } catch (error) {
       set({ isLoading: false });
       throw error;
@@ -166,4 +179,23 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.error('Load stored auth error:', error);
     }
   },
+
+  updateUser: async (patch: Partial<User>) => {
+    const current = get().user;
+    if (!current) return;
+    const updated = { ...current, ...patch };
+    await AsyncStorage.setItem('user', JSON.stringify(updated));
+    set({ user: updated });
+  },
+
+  _storeTokens: async (accessToken: string, refreshToken: string, user: User) => {
+    await AsyncStorage.multiSet([
+      ['accessToken', accessToken],
+      ['refreshToken', refreshToken],
+      ['user', JSON.stringify(user)],
+    ]);
+    setApiAccessToken(accessToken);
+    set({ user, accessToken, refreshToken, isAuthenticated: true });
+  },
 }));
+
