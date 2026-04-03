@@ -19,21 +19,9 @@ import { useTheme } from '../constants/ThemeContext';
 import { BrandMark } from '../components/BrandMark';
 import api from '../services/api';
 
-// ─── Login-scoped warm palette (does not affect theme.ts) ─────────────────────
-const W = {
-  screenBg: '#FAF8F5',
-  cardBg: '#FFFFFF',
-  inputBg: '#F5F2EE',
-  focusBorder: '#C4A882',
-  submitBg: '#2C1A1A',
-  toggleActiveBg: '#2C1A1A',
-  toggleInactiveBg: '#EDE8E1',
-  muted: '#8C7B6E',
-} as const;
-
 export default function LoginScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -100,13 +88,13 @@ export default function LoginScreen() {
 
   const inputStyle = (field: string) => [
     styles.input,
-    { backgroundColor: W.inputBg, color: colors.textPrimary },
-    focusedField === field && styles.inputFocused,
+    { backgroundColor: colors.inputBg, color: colors.textPrimary },
+    focusedField === field && { borderColor: colors.accent },
   ];
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -119,16 +107,30 @@ export default function LoginScreen() {
           <Text style={[styles.title, { color: colors.textPrimary }]}>
             {t('login.title')}
           </Text>
-          <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('login.subtitle')}</Text>
         </View>
 
         {/* ── Card ── */}
-        <View style={styles.card}>
+        <View style={[
+          styles.card,
+          { backgroundColor: isDark ? colors.modalBg : colors.cardBg },
+          isDark
+            ? { borderWidth: 1, borderColor: colors.border }
+            : Platform.select({
+                ios: {
+                  shadowColor: colors.textPrimary,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.08,
+                  shadowRadius: 16,
+                },
+                android: { elevation: 4 },
+              }),
+        ]}>
           {/* Google Sign In */}
           <TouchableOpacity
             style={[
               styles.googleButton,
-              { borderColor: colors.borderMed },
+              { backgroundColor: isDark ? colors.modalBg : colors.cardBg, borderColor: colors.borderMed },
               isLoading && styles.disabled,
             ]}
             onPress={handleGoogleLogin}
@@ -151,11 +153,11 @@ export default function LoginScreen() {
           </View>
 
           {/* Mode toggle */}
-          <View style={styles.modeToggle}>
+          <View style={[styles.modeToggle, { backgroundColor: colors.subtleBg }]}>
             <TouchableOpacity
               style={[
                 styles.modeButton,
-                mode === 'login' && styles.modeButtonActive,
+                mode === 'login' && { backgroundColor: colors.accent },
               ]}
               onPress={() => setMode('login')}
             >
@@ -164,7 +166,7 @@ export default function LoginScreen() {
                   styles.modeButtonText,
                   mode === 'login'
                     ? styles.modeButtonTextActive
-                    : { color: W.muted },
+                    : { color: colors.textMuted },
                 ]}
               >
                 {t('login.signIn')}
@@ -173,7 +175,7 @@ export default function LoginScreen() {
             <TouchableOpacity
               style={[
                 styles.modeButton,
-                mode === 'register' && styles.modeButtonActive,
+                mode === 'register' && { backgroundColor: colors.accent },
               ]}
               onPress={() => setMode('register')}
             >
@@ -182,7 +184,7 @@ export default function LoginScreen() {
                   styles.modeButtonText,
                   mode === 'register'
                     ? styles.modeButtonTextActive
-                    : { color: W.muted },
+                    : { color: colors.textMuted },
                 ]}
               >
                 {t('login.createAccount')}
@@ -238,9 +240,9 @@ export default function LoginScreen() {
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color={W.muted} />
+                  <EyeOff size={20} color={colors.textMuted} />
                 ) : (
-                  <Eye size={20} color={W.muted} />
+                  <Eye size={20} color={colors.textMuted} />
                 )}
               </TouchableOpacity>
             </View>
@@ -251,7 +253,7 @@ export default function LoginScreen() {
                 style={styles.forgotPasswordRow}
                 onPress={handleForgotPassword}
               >
-                <Text style={styles.forgotPasswordText}>
+                <Text style={[styles.forgotPasswordText, { color: colors.textMuted }]}>
                   {t('login.forgotPassword')}
                 </Text>
               </TouchableOpacity>
@@ -259,7 +261,7 @@ export default function LoginScreen() {
 
             {/* Submit */}
             <TouchableOpacity
-              style={[styles.submitButton, isLoading && styles.disabled]}
+              style={[styles.submitButton, { backgroundColor: colors.accent }, isLoading && styles.disabled]}
               onPress={handleSubmit}
               disabled={isLoading}
               activeOpacity={0.8}
@@ -282,7 +284,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: W.screenBg,
   },
   scroll: {
     flexGrow: 1,
@@ -305,24 +306,13 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     lineHeight: 22,
-    color: W.muted,
     textAlign: 'center',
   },
 
   // Card
   card: {
-    backgroundColor: W.cardBg,
     borderRadius: 24,
     padding: 24,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#2C1A1A',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.08,
-        shadowRadius: 16,
-      },
-      android: { elevation: 4 },
-    }),
   },
 
   // Google button
@@ -335,7 +325,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     gap: 10,
-    backgroundColor: W.cardBg,
   },
   googleIcon: {
     fontSize: 20,
@@ -365,7 +354,6 @@ const styles = StyleSheet.create({
   // Mode toggle
   modeToggle: {
     flexDirection: 'row',
-    backgroundColor: W.toggleInactiveBg,
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
@@ -376,9 +364,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-  },
-  modeButtonActive: {
-    backgroundColor: W.toggleActiveBg,
   },
   modeButtonText: {
     fontSize: 14,
@@ -399,9 +384,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     borderWidth: 1.5,
     borderColor: 'transparent',
-  },
-  inputFocused: {
-    borderColor: W.focusBorder,
   },
 
   // Password row
@@ -426,12 +408,10 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 13,
-    color: W.muted,
   },
 
   // Submit
   submitButton: {
-    backgroundColor: W.submitBg,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
