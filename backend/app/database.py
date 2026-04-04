@@ -55,3 +55,33 @@ async def init_db():
                 "ADD COLUMN IF NOT EXISTS proactive_recall_opt_in BOOLEAN DEFAULT TRUE"
             )
         )
+
+        # Email verification columns added to users table
+        await conn.execute(
+            text(
+                "ALTER TABLE users "
+                "ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'local'"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE users "
+                "ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE users "
+                "ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(255)"
+            )
+        )
+        await conn.execute(
+            text(
+                "ALTER TABLE users "
+                "ADD COLUMN IF NOT EXISTS email_verification_expires TIMESTAMPTZ"
+            )
+        )
+        # password_hash is now nullable (OAuth users have no password)
+        await conn.execute(
+            text("ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL")
+        )

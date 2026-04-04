@@ -697,7 +697,7 @@ export default function LibraryScreen() {
         />
       )}
 
-      {/* ── Search bar + Category filter button ── */}
+      {/* ── Search bar (full width) ── */}
       <View style={styles.searchBarRow}>
         <View style={[styles.searchInputWrap, {
           backgroundColor: colors.cardBg,
@@ -739,53 +739,9 @@ export default function LibraryScreen() {
             </TouchableOpacity>
           )}
         </View>
-
-        {/* Category filter pill */}
-        <TouchableOpacity
-          style={[
-            styles.catFilterBtn,
-            { backgroundColor: colors.cardBg, borderColor: selectedCategory ? colors.accent : colors.border },
-          ]}
-          onPress={() => setCategoryModalVisible(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.catFilterIcon}>
-            {selectedCategory
-              ? (categories.find((c) => c.id === selectedCategory)?.icon ?? '📂')
-              : '📂'}
-          </Text>
-          {!selectedCategory && (
-            <Text style={[styles.catFilterChevron, { color: colors.textMuted }]}>▾</Text>
-          )}
-          {selectedCategory && (
-            <TouchableOpacity
-              onPress={(e) => { e.stopPropagation(); setSelectedCategory(null); }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.catFilterChevron, { color: colors.textMuted }]}>×</Text>
-            </TouchableOpacity>
-          )}
-        </TouchableOpacity>
-
-        {/* Sort order toggle */}
-        <TouchableOpacity
-          style={[styles.sortBtn, {
-            backgroundColor: sortOrder === 'oldest' ? colors.brandAccentLight : colors.cardBg,
-            borderColor: sortOrder === 'oldest' ? colors.brandAccent : colors.border,
-          }]}
-          onPress={() => setSortOrder((prev) => prev === 'newest' ? 'oldest' : 'newest')}
-          activeOpacity={0.7}
-          accessibilityLabel={sortOrder === 'newest' ? t('library.sortNewest') : t('library.sortOldest')}
-        >
-          <ArrowUpDown
-            size={14}
-            color={sortOrder === 'oldest' ? colors.brandAccent : colors.textMuted}
-            strokeWidth={2.2}
-          />
-        </TouchableOpacity>
       </View>
 
-      {/* ── Filter chips (type) — hidden during active search ── */}
+      {/* ── Unified filter chips — sort + type + category (hidden during search) ── */}
       {!hasSearched && (
         <ScrollView
           horizontal
@@ -793,6 +749,33 @@ export default function LibraryScreen() {
           style={styles.filterRow}
           contentContainerStyle={styles.filterContent}
         >
+          {/* Sort toggle chip */}
+          <TouchableOpacity
+            style={sortOrder === 'oldest'
+              ? [styles.chip, styles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccentLight }]
+              : [styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+            onPress={() => setSortOrder((prev) => prev === 'newest' ? 'oldest' : 'newest')}
+            activeOpacity={0.7}
+            accessibilityLabel={sortOrder === 'newest' ? t('library.sortNewest') : t('library.sortOldest')}
+          >
+            <View style={styles.chipInner}>
+              <ArrowUpDown
+                size={12}
+                color={sortOrder === 'oldest' ? colors.brandAccent : colors.textMuted}
+                strokeWidth={2.2}
+              />
+              <Text style={sortOrder === 'oldest'
+                ? [styles.chipText, { color: colors.brandAccent }]
+                : [styles.chipText, { color: colors.textMuted }]}>
+                {t(sortOrder === 'newest' ? 'library.sortNewest' : 'library.sortOldest')}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Thin vertical separator */}
+          <View style={[styles.chipSeparator, { backgroundColor: colors.border }]} />
+
+          {/* Type filter chips */}
           {FILTERS.map(({ key, label, icon }) => (
             <TouchableOpacity
               key={key}
@@ -818,6 +801,48 @@ export default function LibraryScreen() {
               </View>
             </TouchableOpacity>
           ))}
+
+          {/* Thin vertical separator */}
+          <View style={[styles.chipSeparator, { backgroundColor: colors.border }]} />
+
+          {/* Active category chip (shows selected category with × to clear) */}
+          {selectedCategory && (() => {
+            const cat = categories.find((c) => c.id === selectedCategory);
+            return (
+              <TouchableOpacity
+                style={[styles.chip, styles.chipActive, { backgroundColor: colors.brandAccentLight, borderColor: colors.brandAccentLight }]}
+                onPress={() => setCategoryModalVisible(true)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.chipInner}>
+                  <Text style={{ fontSize: 13, lineHeight: 16 }}>{cat?.icon ?? '📂'}</Text>
+                  <Text style={[styles.chipText, { color: colors.brandAccent }]} numberOfLines={1}>
+                    {getCategoryDisplayName(cat?.name ?? '', t)}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={(e) => { e.stopPropagation(); setSelectedCategory(null); }}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                  >
+                    <X size={11} color={colors.brandAccent} strokeWidth={2.6} />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          })()}
+
+          {/* Category picker chip (no category selected) */}
+          {!selectedCategory && (
+            <TouchableOpacity
+              style={[styles.chip, { backgroundColor: colors.cardBg, borderColor: colors.border }]}
+              onPress={() => setCategoryModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.chipInner}>
+                <Text style={{ fontSize: 13, lineHeight: 16 }}>📂</Text>
+                <Text style={[styles.chipText, { color: colors.textMuted }]}>{t('library.allCategories')}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       )}
 
@@ -1135,6 +1160,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   chipActive: {},
+  chipSeparator: {
+    width: 1,
+    height: 18,
+    marginHorizontal: 2,
+    alignSelf: 'center',
+  },
   chipInner: {
     flexDirection: 'row',
     alignItems: 'center',

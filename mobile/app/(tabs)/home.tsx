@@ -13,14 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { aiApi, memoriesApi, Memory as ApiMemory } from '../../services/api';
 import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 import { useTheme, type ThemeColors } from '../../constants/ThemeContext';
 import { BrandMark } from '../../components/BrandMark';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { CapturePrompt } from '../../components/CapturePrompt';
 import { MemoryCard as SharedMemoryCard, type MemoryCardMemory } from '../../components/MemoryCard';
 import {
   ChevronRight,
@@ -504,6 +501,129 @@ function SectionHeader({
   );
 }
 
+// ─── Compact top bar: wordmark + streak badge ─────────────────────────────────
+function HomeTopBar({ streak, t }: { streak: number; t: Function }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.topBar, { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
+      <View style={styles.topBarLeft}>
+        <BrandMark size={22} backgroundColor={colors.brandAccent} foregroundColor="#FFF8F2" />
+        <Text style={[styles.topBarWordmark, { color: colors.textPrimary }]}>Memory AI</Text>
+      </View>
+      {streak > 0 && (
+        <View style={[styles.streakBadge, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}>
+          <Text style={[styles.streakBadgeText, { color: colors.accent }]}>🔥 {t('home.streak', { count: streak })}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Threads-style composer bar ───────────────────────────────────────────────
+function ThreadsComposer({ t }: { t: Function }) {
+  const { colors } = useTheme();
+  const modes: { key: string; icon: typeof Mic }[] = [
+    { key: 'voice', icon: Mic },
+    { key: 'link', icon: Link2 },
+    { key: 'photo', icon: ImageIcon },
+  ];
+  return (
+    <View style={[styles.composerRow, { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
+      <View style={[styles.composerAvatar, { backgroundColor: colors.brandAccent }]} />
+      <Pressable
+        style={[styles.composerInput, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+        onPress={() => router.push('/capture')}
+        accessibilityRole="button"
+        accessibilityLabel={t('home.captureBarHint')}
+      >
+        <Text style={[styles.composerPlaceholder, { color: colors.textMuted }]}>{t('home.captureBarHint')}</Text>
+      </Pressable>
+      <View style={styles.composerIcons}>
+        {modes.map(({ key, icon: Icon }) => (
+          <Pressable
+            key={key}
+            style={({ pressed }) => [
+              styles.composerIconBtn,
+              { backgroundColor: colors.inputBg, borderColor: colors.border },
+              pressed && { opacity: 0.7 },
+            ]}
+            onPress={() => router.push({ pathname: '/capture', params: { mode: key } })}
+            accessibilityRole="button"
+            accessibilityLabel={t(`home.capture${key.charAt(0).toUpperCase() + key.slice(1)}`)}
+          >
+            <Icon size={14} color={colors.textSecondary} strokeWidth={2.4} />
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ─── AI insight strip (replaces FocusCard) ────────────────────────────────────
+function InsightStrip({
+  stats,
+  reminders,
+  recallCount,
+  t,
+}: {
+  stats: Stats | null;
+  reminders: Reminders | null;
+  recallCount: number;
+  t: Function;
+}) {
+  const { colors } = useTheme();
+  const unreviewedCount = reminders?.unreviewed?.length ?? 0;
+  const streak = stats?.streak ?? 0;
+  const todayCount = stats?.today ?? 0;
+
+  let message: string;
+  let route: string;
+  if (todayCount >= 3) {
+    message = t('home.insightGreat', { count: todayCount });
+    route = '/(tabs)/library';
+  } else if (unreviewedCount > 0) {
+    message = t('home.insightUnreviewed', { count: unreviewedCount });
+    route = '/(tabs)/library';
+  } else if (recallCount > 0) {
+    message = t('home.insightRecall', { count: recallCount });
+    route = '/(tabs)/recall';
+  } else if (streak >= 3) {
+    message = t('home.insightStreak', { count: streak });
+    route = '/(tabs)/library';
+  } else {
+    message = t('home.insightDefault');
+    route = '/capture';
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.insightStrip,
+        { backgroundColor: pressed ? colors.accentLight : colors.inputBg, borderColor: colors.recallBannerBorder },
+      ]}
+      onPress={() => router.push(route as any)}
+      accessibilityRole="button"
+      accessibilityLabel={message}
+    >
+      <Sparkles size={13} color={colors.accent} strokeWidth={2.4} />
+      <Text style={[styles.insightStripText, { color: colors.textSecondary }]} numberOfLines={1}>{message}</Text>
+      <ChevronRight size={13} color={colors.accent} strokeWidth={2.4} />
+    </Pressable>
+  );
+}
+
+// ─── Thin feed divider (Threads-style section separator) ─────────────────────
+function FeedDivider({ label }: { label: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.feedDivider}>
+      <View style={[styles.feedDividerLine, { backgroundColor: colors.border }]} />
+      <Text style={[styles.feedDividerText, { color: colors.textMuted }]}>{label}</Text>
+      <View style={[styles.feedDividerLine, { backgroundColor: colors.border }]} />
+    </View>
+  );
+}
+
 function EmptyState({ t }: { t: Function }) {
   const { colors } = useTheme();
   return (
@@ -670,23 +790,8 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]} edges={['top']}>
-      {/* ── Header ── */}
-      {(() => {
-        const { eyebrow, title } = getGreeting(t);
-        return (
-          <View style={[styles.headerWrap, { borderBottomColor: colors.border }]}>
-            <ScreenHeader
-              eyebrow={eyebrow}
-              title={title}
-              titleSize={30}
-              paddingHorizontal={16}
-            />
-            <View style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
-              <CapturePrompt />
-            </View>
-          </View>
-        );
-      })()}
+      <HomeTopBar streak={streak} t={t} />
+      <ThreadsComposer t={t} />
 
       {/* Content */}
       <ScrollView
@@ -711,8 +816,7 @@ export default function HomeScreen() {
         {/* Loaded Content */}
         {!loading && (
           <>
-            {/* Daily Focus Card */}
-            {hasAnyContent && <FocusCard stats={stats} reminders={reminders} t={t} colors={colors} />}
+            {hasAnyContent && <InsightStrip stats={stats} reminders={reminders} recallCount={recallCount} t={t} />}
 
             {!hasAnyContent ? (
               <EmptyState t={t} />
@@ -721,13 +825,7 @@ export default function HomeScreen() {
                 {/* Unreviewed memories */}
                 {reminders && reminders.unreviewed.length > 0 && (
                   <View style={styles.section}>
-                    <SectionHeader
-                      icon={<Inbox size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.sectionUnreviewed')}
-                      count={reminders.unreviewed.length}
-                      actionLabel={t('home.seeAll')}
-                      onAction={() => router.push('/(tabs)/library')}
-                    />
+                    <FeedDivider label={t('home.sectionUnreviewed')} />
                     {reminders.unreviewed.slice(0, 2).map((m) => (
                       <SharedMemoryCard
                         key={m.id}
@@ -742,20 +840,14 @@ export default function HomeScreen() {
                 {/* Grouped recall (AI-powered) */}
                 {groups.length > 0 ? (
                   <View style={styles.section}>
-                    <SectionHeader
-                      icon={<Brain size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.connectedIdeas')}
-                    />
+                    <FeedDivider label={t('home.connectedIdeas')} />
                     {groups.map((group) => (
                       <ConnectedIdeaCard key={group.title} group={group} t={t} />
                     ))}
                   </View>
                 ) : recentRecall.length > 0 ? (
                   <View style={styles.section}>
-                    <SectionHeader
-                      icon={<Sparkles size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.sectionRecalled')}
-                    />
+                    <FeedDivider label={t('home.sectionRecalled')} />
                     {recentRecall.slice(0, 2).map((m) => (
                       <SharedMemoryCard
                         key={m.id}
@@ -771,13 +863,7 @@ export default function HomeScreen() {
                 {/* Worth revisiting */}
                 {reminders && reminders.revisit.length > 0 && (
                   <View style={styles.section}>
-                    <SectionHeader
-                      icon={<RotateCcw size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.revisit')}
-                      count={reminders.revisit.length}
-                      actionLabel={t('home.seeAll')}
-                      onAction={() => router.push('/(tabs)/recall')}
-                    />
+                    <FeedDivider label={t('home.revisit')} />
                     {reminders.revisit.slice(0, 2).map((m) => (
                       <SharedMemoryCard
                         key={m.id}
@@ -792,11 +878,7 @@ export default function HomeScreen() {
                 {/* On this day */}
                 {reminders && reminders.on_this_day.length > 0 && (
                   <View style={styles.section}>
-                    <SectionHeader
-                      icon={<RotateCcw size={14} color={colors.textSecondary} strokeWidth={2.3} />}
-                      title={t('home.sectionOnThisDay')}
-                      count={reminders.on_this_day.length}
-                    />
+                    <FeedDivider label={t('home.sectionOnThisDay')} />
                     {reminders.on_this_day.slice(0, 2).map((m) => (
                       <SharedMemoryCard
                         key={m.id}
@@ -809,30 +891,6 @@ export default function HomeScreen() {
                 )}
               </>
             )}
-
-            {/* ── Stats row ── */}
-            <View style={styles.statsRow}>
-              <View style={[styles.statPill, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <Text style={[styles.statVal, { color: colors.textPrimary }]}>
-                  {stats?.this_week ?? 0}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.thisWeek')}</Text>
-              </View>
-              <View style={[styles.statPill, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
-                <Text style={[styles.statVal, { color: colors.textPrimary }]}>
-                  {stats?.streak ?? 0}🔥
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('home.statsStreak')}</Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.statPill, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}
-                onPress={() => router.push('/(tabs)/recall')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.statVal, { color: colors.accent }]}>{recallCount}</Text>
-                <Text style={[styles.statLabel, { color: colors.accent }]}>{t('home.newRecalls')}</Text>
-              </TouchableOpacity>
-            </View>
           </>
         )}
       </ScrollView>
@@ -843,6 +901,112 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
+  // ── Threads-style header & composer ───────────────────────────────────────
+  topBar: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  topBarWordmark: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.3,
+    fontFamily: 'DMSans_700Bold',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  streakBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: SANS_FONT,
+  },
+  composerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  composerAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  composerInput: {
+    flex: 1,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  composerPlaceholder: {
+    fontSize: 13,
+    fontFamily: SANS_FONT,
+  },
+  composerIcons: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  composerIconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insightStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  insightStripText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: SANS_FONT,
+  },
+  feedDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  feedDividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  feedDividerText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    fontFamily: SANS_FONT,
+  },
+
   headerWrap: {
     borderBottomWidth: StyleSheet.hairlineWidth,
   },

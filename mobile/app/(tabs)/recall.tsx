@@ -20,6 +20,10 @@ import { aiApi, RadarItem } from '../../services/api';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { useRecallBadgeStore } from '../../store/recallBadgeStore';
 
+// Module-level set persists across navigation within the app session.
+// Prevents dismissed/opened memories from reappearing when the tab regains focus.
+const _sessionDismissedIds = new Set<string>();
+
 const REASON_KEYS: Record<string, string> = {
     category_match: 'recall.reasonCategoryMatch',
     repeated_topic: 'recall.reasonRepeatedTopic',
@@ -167,10 +171,12 @@ export default function RecallScreen() {
         try {
             setError(null);
             const response = await aiApi.getRadar(6);
-            setItems(response.items || []);
-            useRecallBadgeStore.getState().setCount(response.items?.length ?? 0);
+            const allItems: RadarItem[] = response.items || [];
+            const filtered = allItems.filter((item) => !_sessionDismissedIds.has(item.memory.id));
+            setItems(filtered);
+            useRecallBadgeStore.getState().setCount(filtered.length);
 
-            for (const item of response.items || []) {
+            for (const item of allItems) {
                 aiApi.trackRadarEvent({
                     memory_id: item.memory.id,
                     event_type: 'served',
@@ -198,6 +204,7 @@ export default function RecallScreen() {
     );
 
     const onOpen = useCallback((item: RadarItem) => {
+        _sessionDismissedIds.add(item.memory.id);
         setItems((prev) => {
             const next = prev.filter((x) => x.memory.id !== item.memory.id);
             useRecallBadgeStore.getState().setCount(next.length);
@@ -216,6 +223,7 @@ export default function RecallScreen() {
     }, [router]);
 
     const onDismiss = useCallback((item: RadarItem) => {
+        _sessionDismissedIds.add(item.memory.id);
         setItems((prev) => {
             const next = prev.filter((x) => x.memory.id !== item.memory.id);
             useRecallBadgeStore.getState().setCount(next.length);

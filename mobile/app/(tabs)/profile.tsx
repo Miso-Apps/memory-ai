@@ -14,11 +14,13 @@ import {
   Alert,
   Linking,
   Platform,
+  TextInput,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
-import { memoriesApi, insightsApi } from '../../services/api';
+import { memoriesApi, insightsApi, userApi } from '../../services/api';
 import {
   Sparkles,
   ChevronRight,
@@ -38,6 +40,9 @@ import {
   Bell,
   Palette,
   FolderOpen,
+  ArrowLeft,
+  Eye,
+  EyeOff,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -327,10 +332,22 @@ function buildHeatmapSeries(entries: { date: string; count: number }[], totalDay
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser } = useAuthStore();
   const { language, setLanguage, preferences, loadPreferences, updatePreferences } = useSettingsStore();
   type ModalType = 'account' | 'privacy' | 'about' | 'language' | 'appearance' | 'aiFeatures' | null;
+  type AccountSubView = 'main' | 'changeEmail' | 'changePassword';
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [accountSubView, setAccountSubView] = useState<AccountSubView>('main');
+  // Inline form state
+  const [formEmail, setFormEmail] = useState('');
+  const [formCurrentPwd, setFormCurrentPwd] = useState('');
+  const [formNewPwd, setFormNewPwd] = useState('');
+  const [formConfirmPwd, setFormConfirmPwd] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [dismissedCount, setDismissedCount] = useState(0);
   const [totalMemories, setTotalMemories] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -419,6 +436,19 @@ export default function ProfileScreen() {
     }, [loadProfileInsights])
   );
 
+  const closeAccountModal = () => {
+    setActiveModal(null);
+    setAccountSubView('main');
+    setFormEmail('');
+    setFormCurrentPwd('');
+    setFormNewPwd('');
+    setFormConfirmPwd('');
+    setFormError('');
+    setShowCurrentPwd(false);
+    setShowNewPwd(false);
+    setShowConfirmPwd(false);
+  };
+
   const handleLogout = () => {
     Alert.alert(t('alerts.signOutTitle'), t('alerts.signOutMessage'), [
       { text: t('common.cancel'), style: 'cancel' },
@@ -426,7 +456,7 @@ export default function ProfileScreen() {
         text: t('common.signOut'),
         style: 'destructive',
         onPress: async () => {
-          setActiveModal(null);
+          closeAccountModal();
           await logout();
           router.replace('/login');
         },
@@ -434,18 +464,148 @@ export default function ProfileScreen() {
     ]);
   };
 
+  const handleSubmitChangeEmail = async () => {
+    const trimmedEmail = formEmail.trim().toLowerCase();
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setFormError(t('login.emailRequired'));
+      return;
+    }
+    setFormLoading(true);
+    setFormError('');
+    try {
+      const result = await userApi.changeEmail(
+        trimmedEmail,
+        user?.auth_provider === 'google' ? undefined : formCurrentPwd,
+      );
+      await updateUser({ email: result.user.email });
+      closeAccountModal();
+      Alert.alert('✓', t('account.emailUpdated'));
+    } catch (e: any) {
+      setFormError(e?.response?.data?.detail ?? t('common.error'));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleSubmitChangePassword = async () => {
+    if (formNewPwd.length < 8) {
+      setFormError(t('login.passwordMinLength'));
+      return;
+    }
+    if (formNewPwd !== formConfirmPwd) {
+      setFormError(t('account.passwordsMustMatch'));
+      return;
+    }
+    setFormLoading(true);
+    setFormError('');
+    try {
+      await userApi.changePassword(formCurrentPwd, formNewPwd);
+      closeAccountModal();
+      Alert.alert('✓', t('account.passwordUpdated'));
+    } catch (e: any) {
+      setFormError(e?.response?.data?.detail ?? t('common.error'));
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const handleDeleteAccount = () => {
-    Alert.alert(t('alerts.deleteAccountTitle'), t('alerts.deleteAccountMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => { } },
-    ]);
+    const isGoogle = user?.auth_provider === 'google';
+    const doDelete = async (password?: string) => {
+      try {
+        await userApi.deleteAccount(password);
+        closeAccountModal();
+        await logout();
+        router.replace('/login');
+      } catch (e: any) {
+        Alert.alert(t('common.error'), e?.response?.data?.detail ?? t('common.error'));
+      }
+    };
+
+    if (isGoogle) {
+      Alert.alert(t('alerts.deleteAccountTitle'), t('alerts.deleteAccountMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => doDelete() },
+      ]);
+    } else if (Platform.OS === 'ios') {
+      Alert.prompt(
+        t('alerts.deleteAccountTitle'),
+        t('alerts.deleteAccountMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.delete'),
+            style: 'destructive',
+            onPress: (pwd) => { if (pwd) doDelete(pwd); },
+          },
+        ],
+        'secure-text',
+      );
+    } else {
+      // Android: confirm-only (already authenticated)
+      Alert.alert(t('alerts.deleteAccountTitle'), t('alerts.deleteAccountMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => doDelete(formCurrentPwd || undefined) },
+      ]);
+    }
+  };
+
+  const handleDownloadData = async () => {
+    try {
+      const jsonData = await userApi.exportData();
+      await Share.share({
+        title: 'memory-ai-export.json',
+        message: jsonData,
+      });
+    } catch (e: any) {
+      Alert.alert(t('common.error'), t('privacy.exportError'));
+    }
   };
 
   const handleDeleteAllData = () => {
-    Alert.alert(t('alerts.deleteDataTitle'), t('alerts.deleteDataMessage'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.delete'), style: 'destructive', onPress: () => { } },
-    ]);
+    const isGoogle = user?.auth_provider === 'google';
+    const doDeleteData = async (password?: string) => {
+      try {
+        await userApi.deleteAllMemories(password);
+        setTotalMemories(0);
+        setHeatmapData(Array(28).fill(0));
+        setWeeklyInsight(null);
+        setActiveModal(null);
+        Alert.alert('✓', t('privacy.dataDeleted'));
+      } catch (e: any) {
+        Alert.alert(t('common.error'), e?.response?.data?.detail ?? t('common.error'));
+      }
+    };
+
+    if (isGoogle) {
+      Alert.alert(t('alerts.deleteDataTitle'), t('alerts.deleteDataMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => doDeleteData() },
+      ]);
+    } else if (Platform.OS === 'ios') {
+      Alert.prompt(
+        t('alerts.deleteDataTitle'),
+        t('alerts.deleteDataMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.delete'),
+            style: 'destructive',
+            onPress: (pwd) => { if (pwd) doDeleteData(pwd); },
+          },
+        ],
+        'secure-text',
+      );
+    } else {
+      Alert.alert(t('alerts.deleteDataTitle'), t('alerts.deleteDataMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => doDeleteData(undefined) },
+      ]);
+    }
+  };
+
+  const handleContactSupport = () => {
+    Linking.openURL('mailto:support@memory-ai.app?subject=Memory%20AI%20Support');
   };
 
   const handleLanguageSelect = async (lang: SupportedLanguage) => {
@@ -634,28 +794,156 @@ export default function ProfileScreen() {
       </ScrollView>
 
       {/* Account Modal */}
-      <BottomSheetModal visible={activeModal === 'account'} onClose={() => setActiveModal(null)} title={t('account.title')}>
-        <View style={m.section}>
-          <InfoRow icon={<Mail size={20} color={colors.accent} />} label={t('account.email')} value={user?.email ?? '—'} />
-          <ActionButton label={t('account.changeEmail')} />
-        </View>
-        <SectionDivider />
-        <View style={m.section}>
-          <InfoRow icon={<Lock size={20} color={colors.accent} />} label={t('account.password')} value="••••••••" />
-          <ActionButton label={t('account.changePassword')} />
-        </View>
-        <SectionDivider />
-        <View style={m.section}>
-          <TouchableOpacity style={[r.actionBtn, { backgroundColor: colors.inputBg }]} onPress={handleLogout} activeOpacity={0.7}>
-            <LogOut size={16} color={colors.brandAccent} style={{ marginRight: 6 }} />
-            <Text style={[s.signOutText, { color: colors.brandAccent }]}>{t('account.signOut')}</Text>
-          </TouchableOpacity>
-        </View>
-        <SectionDivider />
-        <View style={m.section}>
-          <View style={[m.warningBox, { backgroundColor: colors.errorBg }]}><Text style={[m.warningText, { color: colors.errorText }]}>{t('account.deleteWarning')}</Text></View>
-          <ActionButton label={t('account.deleteAccount')} icon={<Trash2 size={16} color={colors.error} style={{ marginRight: 6 }} />} variant="danger" onPress={handleDeleteAccount} />
-        </View>
+      <BottomSheetModal visible={activeModal === 'account'} onClose={closeAccountModal} title={
+        accountSubView === 'changeEmail' ? t('account.changeEmailTitle') :
+        accountSubView === 'changePassword' ? t('account.changePasswordTitle') :
+        t('account.title')
+      }>
+        {accountSubView === 'main' && (
+          <>
+            <View style={m.section}>
+              <InfoRow icon={<Mail size={20} color={colors.accent} />} label={t('account.email')} value={user?.email ?? '—'} />
+              <ActionButton label={t('account.changeEmail')} onPress={() => { setFormError(''); setAccountSubView('changeEmail'); }} />
+            </View>
+            <SectionDivider />
+            <View style={m.section}>
+              {user?.auth_provider === 'google' ? (
+                <View style={[m.infoNote, { backgroundColor: colors.accentSubtle }]}>
+                  <Text style={[m.infoNoteText, { color: colors.textSecondary }]}>{t('account.googleNoPassword')}</Text>
+                </View>
+              ) : (
+                <>
+                  <InfoRow icon={<Lock size={20} color={colors.accent} />} label={t('account.password')} value="••••••••" />
+                  <ActionButton label={t('account.changePassword')} onPress={() => { setFormError(''); setAccountSubView('changePassword'); }} />
+                </>
+              )}
+            </View>
+            <SectionDivider />
+            <View style={m.section}>
+              <TouchableOpacity style={[r.actionBtn, { backgroundColor: colors.inputBg }]} onPress={handleLogout} activeOpacity={0.7}>
+                <LogOut size={16} color={colors.brandAccent} style={{ marginRight: 6 }} />
+                <Text style={[s.signOutText, { color: colors.brandAccent }]}>{t('account.signOut')}</Text>
+              </TouchableOpacity>
+            </View>
+            <SectionDivider />
+            <View style={m.section}>
+              <View style={[m.warningBox, { backgroundColor: colors.errorBg }]}><Text style={[m.warningText, { color: colors.errorText }]}>{t('account.deleteWarning')}</Text></View>
+              <ActionButton label={t('account.deleteAccount')} icon={<Trash2 size={16} color={colors.error} style={{ marginRight: 6 }} />} variant="danger" onPress={handleDeleteAccount} />
+            </View>
+          </>
+        )}
+
+        {accountSubView === 'changeEmail' && (
+          <View style={m.section}>
+            <TouchableOpacity style={m.backRow} onPress={() => { setAccountSubView('main'); setFormError(''); }} activeOpacity={0.7}>
+              <ArrowLeft size={16} color={colors.accent} />
+              <Text style={[m.backText, { color: colors.accent }]}>{t('common.back')}</Text>
+            </TouchableOpacity>
+            <Text style={[m.fieldLabel, { color: colors.textMuted }]}>{t('account.newEmail')}</Text>
+            <TextInput
+              style={[m.textInput, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.border }]}
+              value={formEmail}
+              onChangeText={setFormEmail}
+              placeholder={t('login.emailPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {user?.auth_provider !== 'google' && (
+              <>
+                <Text style={[m.fieldLabel, { color: colors.textMuted, marginTop: 12 }]}>{t('account.confirmWithPassword')}</Text>
+                <View style={m.pwdRow}>
+                  <TextInput
+                    style={[m.textInputPwd, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.border }]}
+                    value={formCurrentPwd}
+                    onChangeText={setFormCurrentPwd}
+                    placeholder={t('account.currentPassword')}
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showCurrentPwd}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity style={m.eyeBtn} onPress={() => setShowCurrentPwd(v => !v)} activeOpacity={0.7}>
+                    {showCurrentPwd ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+            {!!formError && <Text style={[m.formError, { color: colors.error }]}>{formError}</Text>}
+            <TouchableOpacity
+              style={[m.submitBtn, { backgroundColor: colors.accent }, formLoading && { opacity: 0.6 }]}
+              onPress={handleSubmitChangeEmail}
+              disabled={formLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={m.submitBtnText}>{formLoading ? '…' : t('account.changeEmail')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {accountSubView === 'changePassword' && (
+          <View style={m.section}>
+            <TouchableOpacity style={m.backRow} onPress={() => { setAccountSubView('main'); setFormError(''); }} activeOpacity={0.7}>
+              <ArrowLeft size={16} color={colors.accent} />
+              <Text style={[m.backText, { color: colors.accent }]}>{t('common.back')}</Text>
+            </TouchableOpacity>
+            <Text style={[m.fieldLabel, { color: colors.textMuted }]}>{t('account.currentPassword')}</Text>
+            <View style={m.pwdRow}>
+              <TextInput
+                style={[m.textInputPwd, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.border }]}
+                value={formCurrentPwd}
+                onChangeText={setFormCurrentPwd}
+                placeholder={t('account.currentPassword')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={!showCurrentPwd}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity style={m.eyeBtn} onPress={() => setShowCurrentPwd(v => !v)} activeOpacity={0.7}>
+                {showCurrentPwd ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />}
+              </TouchableOpacity>
+            </View>
+            <Text style={[m.fieldLabel, { color: colors.textMuted, marginTop: 12 }]}>{t('account.newPassword')}</Text>
+            <View style={m.pwdRow}>
+              <TextInput
+                style={[m.textInputPwd, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.border }]}
+                value={formNewPwd}
+                onChangeText={setFormNewPwd}
+                placeholder={t('account.newPassword')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={!showNewPwd}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity style={m.eyeBtn} onPress={() => setShowNewPwd(v => !v)} activeOpacity={0.7}>
+                {showNewPwd ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />}
+              </TouchableOpacity>
+            </View>
+            <Text style={[m.fieldLabel, { color: colors.textMuted, marginTop: 12 }]}>{t('account.confirmNewPassword')}</Text>
+            <View style={m.pwdRow}>
+              <TextInput
+                style={[m.textInputPwd, { backgroundColor: colors.inputBg, color: colors.textPrimary, borderColor: colors.border }]}
+                value={formConfirmPwd}
+                onChangeText={setFormConfirmPwd}
+                placeholder={t('account.confirmNewPassword')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={!showConfirmPwd}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity style={m.eyeBtn} onPress={() => setShowConfirmPwd(v => !v)} activeOpacity={0.7}>
+                {showConfirmPwd ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />}
+              </TouchableOpacity>
+            </View>
+            {!!formError && <Text style={[m.formError, { color: colors.error }]}>{formError}</Text>}
+            <TouchableOpacity
+              style={[m.submitBtn, { backgroundColor: colors.accent }, formLoading && { opacity: 0.6 }]}
+              onPress={handleSubmitChangePassword}
+              disabled={formLoading}
+              activeOpacity={0.8}
+            >
+              <Text style={m.submitBtnText}>{formLoading ? '…' : t('account.changePassword')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={m.bottomPad} />
       </BottomSheetModal>
 
@@ -681,7 +969,7 @@ export default function ProfileScreen() {
         </View>
         <SectionDivider />
         <View style={m.section}>
-          <ActionButton label={t('privacy.downloadData')} icon={<Download size={16} color={colors.accent} style={{ marginRight: 6 }} />} variant="accent" />
+          <ActionButton label={t('privacy.downloadData')} icon={<Download size={16} color={colors.accent} style={{ marginRight: 6 }} />} variant="accent" onPress={handleDownloadData} />
         </View>
         <SectionDivider />
         <View style={m.section}>
@@ -719,7 +1007,7 @@ export default function ProfileScreen() {
         </View>
         <SectionDivider />
         <View style={m.section}>
-          <ActionButton label={t('about.contactSupport')} icon={<MessageCircle size={16} color={colors.accent} style={{ marginRight: 6 }} />} variant="accent" />
+          <ActionButton label={t('about.contactSupport')} icon={<MessageCircle size={16} color={colors.accent} style={{ marginRight: 6 }} />} variant="accent" onPress={handleContactSupport} />
         </View>
         <SectionDivider />
         <View style={[m.section, m.centeredSection]}>
@@ -881,6 +1169,33 @@ const m = StyleSheet.create({
   langLabel: { fontSize: 15 },
   langLabelActive: { fontWeight: '600' },
   langCheck: { width: 10, height: 10, borderRadius: 5 },
+  // Inline form styles
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
+  backText: { fontSize: 14, fontWeight: '600' },
+  fieldLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.4 },
+  textInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  pwdRow: { flexDirection: 'row', alignItems: 'center' },
+  textInputPwd: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    paddingRight: 44,
+  },
+  eyeBtn: { position: 'absolute', right: 12, padding: 4 },
+  formError: { fontSize: 13, marginTop: 8, lineHeight: 18 },
+  submitBtn: { borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
+  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  infoNote: { borderRadius: 12, padding: 12 },
+  infoNoteText: { fontSize: 13, lineHeight: 19 },
 });
 
 const r = StyleSheet.create({

@@ -49,6 +49,23 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
 
+    # Gmail API (preferred email transport — set GMAIL_REFRESH_TOKEN to enable)
+    # Run scripts/get_gmail_token.py once to obtain the refresh token.
+    GMAIL_REFRESH_TOKEN: str = ""
+
+    # Email / SMTP (fallback when GMAIL_REFRESH_TOKEN is not set)
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@memory-ai.app"
+
+    # Email verification (gate new personal-email registrations behind email confirm)
+    EMAIL_VERIFICATION_ENABLED: bool = False
+
+    # Backend public URL (used in verification email links)
+    BACKEND_URL: str = "http://localhost:8000"
+
     # Vector Database
     USE_PINECONE: bool = False  # If True, use Pinecone; if False, use pgvector
     PINECONE_API_KEY: Optional[str] = None
