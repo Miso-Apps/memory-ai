@@ -46,8 +46,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="Memory AI API",
-    description="Backend API for Memory AI - Your personal memory companion",
+    title="DukiAI Memory API",
+    description="Backend API for DukiAI Memory - Your personal memory companion",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -87,7 +87,7 @@ app.include_router(agent.router, prefix="/agent", tags=["Agent"])
 @app.get("/")
 async def root():
     """Root endpoint"""
-    return {"message": "Memory AI API", "status": "running", "version": "1.0.0"}
+    return {"message": "DukiAI Memory API", "status": "running", "version": "1.0.0"}
 
 
 @app.get("/health")

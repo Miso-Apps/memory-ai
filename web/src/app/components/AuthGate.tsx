@@ -46,7 +46,7 @@ export function AuthGate({ onAuthenticated }: AuthGateProps) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-2xl font-medium mb-2">Memory AI</h1>
+        <h1 className="text-2xl font-medium mb-2">DukiAI Memory</h1>
         <p className="text-sm text-muted-foreground/80 mb-6">
           Dang nhap de dong bo kho ghi nho cua ban tren web.
         </p>

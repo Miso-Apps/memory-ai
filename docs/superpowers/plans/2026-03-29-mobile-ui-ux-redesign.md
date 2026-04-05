@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Redesign the Memory AI mobile app with a Threads × Anthropic aesthetic — near-black dark palette with warm off-white text, DM Serif Display italic headers, DM Sans body, and a shared MemoryCard component with inline thumbnails across all 6 screens.
+**Goal:** Redesign the DukiAI Memory mobile app with a Threads × Anthropic aesthetic — near-black dark palette with warm off-white text, DM Serif Display italic headers, DM Sans body, and a shared MemoryCard component with inline thumbnails across all 6 screens.
 
 **Architecture:** Design system first (color tokens → fonts → shared components), then navigation shell, then screens in dependency order. All screens use the same `MemoryCard`, `ScreenHeader`, and `CapturePrompt` components. No backend changes required — thumbnail data is already in the API response.
 

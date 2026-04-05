@@ -130,8 +130,8 @@ Rate-limiting: existing per-endpoint behaviour (no new infra needed).
 `email_service.py` — add `send_otp_email(to_email, code, user_name, locale)`:
 
 ```
-Subject (EN): Your Memory AI verification code: 123456
-Subject (VI): Mã xác nhận Memory AI của bạn: 123456
+Subject (EN): Your DukiAI Memory verification code: 123456
+Subject (VI): Mã xác nhận DukiAI Memory của bạn: 123456
 
 Body:
   Branded header (already exists via _base_template)
@@ -171,7 +171,7 @@ SMTP_FROM=yourname@gmail.com
 How to generate an App Password:
 1. Go to myaccount.google.com → Security → 2-Step Verification (must be ON)
 2. Scroll down → "App passwords"
-3. Select app: "Mail", device: "Other" → name it "Memory AI Dev"
+3. Select app: "Mail", device: "Other" → name it "DukiAI Memory Dev"
 4. Copy the 16-char password into `SMTP_PASSWORD` (spaces OK, strip when reading)
 
 Production: add same vars to `deployment/.env`.

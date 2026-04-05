@@ -79,7 +79,7 @@ def main() -> None:
             print(f"[error] Missing required SVG: {svg}")
             sys.exit(1)
 
-    print("\n📦  Generating Memory AI brand assets ...\n")
+    print("\n📦  Generating DukiAI Memory brand assets ...\n")
 
     # ── Extension icons ──────────────────────────────────────────────────────
     print("🧩  Extension icons:")

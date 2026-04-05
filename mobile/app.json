@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Memory AI",
+    "name": "DukiAI Memory",
     "slug": "memory-ai",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -40,19 +40,19 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Memory AI to access your camera to capture memories."
+          "cameraPermission": "Allow DukiAI Memory to access your camera to capture memories."
         }
       ],
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Memory AI to access your microphone to record voice memories."
+          "microphonePermission": "Allow DukiAI Memory to access your microphone to record voice memories."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Memory AI to access your photo library to save image memories."
+          "photosPermission": "Allow DukiAI Memory to access your photo library to save image memories."
         }
       ]
     ],

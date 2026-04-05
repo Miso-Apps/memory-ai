@@ -1,6 +1,6 @@
-# Memory AI — DigitalOcean Deployment Guide
+# DukiAI Memory — DigitalOcean Deployment Guide
 
-Full production deployment for the Memory AI backend stack on DigitalOcean.
+Full production deployment for the DukiAI Memory backend stack on DigitalOcean.
 
 ## Architecture
 
@@ -332,7 +332,7 @@ eas init --id YOUR_EXPO_PROJECT_ID
 
 **Create the app in App Store Connect** (if not done yet):
 1. Go to [appstoreconnect.apple.com](https://appstoreconnect.apple.com/) → **My Apps → +**.
-2. Bundle ID: `com.dukiai.app`, Name: **Memory AI**, Primary language.
+2. Bundle ID: `com.dukiai.app`, Name: **DukiAI Memory**, Primary language.
 3. Save — note the **Apple ID** number (10 digits).
 
 **Set the API base URL** in `mobile/services/api.ts`:
@@ -384,7 +384,7 @@ eas build --platform ios --profile production --auto-submit
 
 When you're ready to release publicly:
 
-1. In App Store Connect, go to **My Apps → Memory AI → + Version**.
+1. In App Store Connect, go to **My Apps → DukiAI Memory → + Version**.
 2. Select the TestFlight build you tested.
 3. Fill in: **What's New**, screenshots (6.7" + 5.5" required), description, keywords, category.
 4. Submit for Review — typical review time is **24–48 hours**.
@@ -520,13 +520,13 @@ zip -r ../memory-ai-extension-v1.0.0.zip . \
 
 1. Click **New Item → Upload** and select the `.zip`.
 2. Fill in:
-   - **Name**: Memory AI
-   - **Short description**: Capture any thought, link, or selection to your Memory AI second brain — one keystroke.
+   - **Name**: DukiAI Memory
+   - **Short description**: Capture any thought, link, or selection to your DukiAI Memory second brain — one keystroke.
    - **Detailed description**: (use the `extension/README.md` as a base)
    - **Category**: Productivity
    - **Screenshots**: at least 1 × 1280×800 or 640×400 image of the popup
    - **Privacy policy URL**: `https://dukiai.com/privacy`
-   - **Single purpose**: "Save web content to Memory AI"
+   - **Single purpose**: "Save web content to DukiAI Memory"
 3. Under **Permissions**, justify each permission in the form:
    - `storage` — save user preferences and offline queue locally
    - `tabs` — read current tab URL/title when the user saves a link

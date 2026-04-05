@@ -1,4 +1,4 @@
-# Design Review - Memory AI
+# Design Review - DukiAI Memory
 
 ## 📊 Executive Summary
 

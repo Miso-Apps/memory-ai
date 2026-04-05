@@ -1,6 +1,6 @@
-# Memory AI - Backend API
+# DukiAI Memory - Backend API
 
-FastAPI backend for Memory AI application.
+FastAPI backend for DukiAI Memory application.
 
 ## Getting Started
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-#  Memory AI — Production Deploy Script
+#  DukiAI Memory — Production Deploy Script
 #  Usage: ./deploy.sh [--init]
 #    --init  First-time setup: obtain SSL cert, create DB, run migrations
 # ─────────────────────────────────────────────────────────────────────────────

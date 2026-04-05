@@ -285,7 +285,7 @@ const en = {
     dismiss: 'Dismiss',
     openLink: 'Open ↗',
     linkPreview: 'Link preview',
-    viaApp: '— via Memory AI',
+    viaApp: '— via DukiAI Memory',
     contentPlaceholder: 'Memory content…',
     typeText: 'Text',
     typeVoice: 'Voice',
@@ -506,7 +506,7 @@ const en = {
 
   // Login screen
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Your memories, always with you',
     signIn: 'Sign in',
     createAccount: 'Create account',

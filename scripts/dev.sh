@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Memory AI - Development Script
+# DukiAI Memory - Development Script
 # Starts all development services
 # Usage: ./scripts/dev.sh [--ios|--android|--web|--backend-only]
 
@@ -41,7 +41,7 @@ cleanup_ports() {
     sleep 1
 }
 
-echo "🚀 Starting Memory AI Development Environment"
+echo "🚀 Starting DukiAI Memory Development Environment"
 echo "=============================================="
 echo ""
 

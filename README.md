@@ -1,4 +1,4 @@
-# Memory AI 🧠✨
+# DukiAI Memory 🧠✨
 
 > Your personal memory companion - Capture, recall, and reflect on everything happening in your daily life.
 

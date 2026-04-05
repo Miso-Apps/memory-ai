@@ -1,8 +1,8 @@
-# Memory AI - Quick Start Guide 🚀
+# DukiAI Memory - Quick Start Guide 🚀
 
 ## What You Have Now
 
-Your Memory AI monorepo is **fully scaffolded** with:
+Your DukiAI Memory monorepo is **fully scaffolded** with:
 
 ✅ **Mobile App** (React Native + Expo)  
 ✅ **Backend API** (Python FastAPI)  

@@ -1,5 +1,5 @@
 /**
- * Memory AI Extension — API Service
+ * DukiAI Memory Extension — API Service
  * Auth, memory CRUD, offline queue, badge counter.
  */
 

@@ -508,7 +508,7 @@ function HomeTopBar({ streak, t }: { streak: number; t: Function }) {
     <View style={[styles.topBar, { backgroundColor: colors.bg, borderBottomColor: colors.border }]}>
       <View style={styles.topBarLeft}>
         <BrandMark size={22} backgroundColor={colors.brandAccent} foregroundColor="#FFF8F2" />
-        <Text style={[styles.topBarWordmark, { color: colors.textPrimary }]}>Memory AI</Text>
+        <Text style={[styles.topBarWordmark, { color: colors.textPrimary }]}>DukiAI Memory</Text>
       </View>
       {streak > 0 && (
         <View style={[styles.streakBadge, { backgroundColor: colors.accentLight, borderColor: colors.recallBannerBorder }]}>

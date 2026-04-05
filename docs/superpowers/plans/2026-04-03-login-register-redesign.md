@@ -261,8 +261,8 @@
 
       subject = _text(
           lang,
-          f"Your Memory AI verification code: {code}",
-          f"Mã xác nhận Memory AI của bạn: {code}",
+          f"Your DukiAI Memory verification code: {code}",
+          f"Mã xác nhận DukiAI Memory của bạn: {code}",
       )
 
       greeting = _text(lang, f"Hi {name},", f"Chào {name},")
@@ -549,7 +549,7 @@
   ```
   # Gmail SMTP (App Password)
   # Setup: myaccount.google.com → Security → 2-Step Verification → App passwords
-  # App: Mail, Device: Other → name it "Memory AI Dev" → copy 16-char password
+  # App: Mail, Device: Other → name it "DukiAI Memory Dev" → copy 16-char password
   SMTP_HOST=smtp.gmail.com
   SMTP_PORT=587
   SMTP_USER=your-gmail@gmail.com
@@ -565,7 +565,7 @@
   # How to generate an App Password:
   #   1. Go to myaccount.google.com → Security
   #   2. Enable 2-Step Verification (required)
-  #   3. Search for "App passwords" → create one for "Mail" + "Other (Memory AI)"
+  #   3. Search for "App passwords" → create one for "Mail" + "Other (DukiAI Memory)"
   #   4. Copy the 16-char password shown (spaces are OK, or remove them)
   # For development: leave SMTP_HOST empty → emails are printed to the terminal
   SMTP_HOST=smtp.gmail.com
@@ -1636,7 +1636,7 @@ SMTP_FROM=<your-gmail>@gmail.com
 Steps to generate a Gmail App Password:
 1. `myaccount.google.com → Security → 2-Step Verification` (must be ON)
 2. Search "App passwords" in the Security page
-3. App: **Mail**, Device: **Other** → name it **Memory AI Dev**
+3. App: **Mail**, Device: **Other** → name it **DukiAI Memory Dev**
 4. Copy the 16-char password (spaces optional)
 5. Paste into `SMTP_PASSWORD` in `backend/.env`
 

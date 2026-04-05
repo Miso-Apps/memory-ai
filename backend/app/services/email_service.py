@@ -1,4 +1,4 @@
-"""Email service — templated email delivery for Memory AI.
+"""Email service — templated email delivery for DukiAI Memory.
 
 Sending strategy (in priority order):
     1. Gmail API  — used when GMAIL_REFRESH_TOKEN is set in config.
@@ -96,12 +96,12 @@ def _safe_name(name: str | None, locale: str) -> str:
 
 
 def _base_template(body_html: str, preheader: str = "", locale: str = "en") -> str:
-    """Wrap content in a Memory AI branded email shell."""
+    """Wrap content in a DukiAI Memory branded email shell."""
     lang = _normalize_locale(locale)
     footer_title = _text(
         lang,
-        "Memory AI — Your personal memory companion",
-        "Memory AI — Trợ lý ký ức cá nhân của bạn",
+        "DukiAI Memory — Your personal memory companion",
+        "DukiAI Memory — Trợ lý ký ức cá nhân của bạn",
     )
     tagline = _text(
         lang,
@@ -117,7 +117,7 @@ def _base_template(body_html: str, preheader: str = "", locale: str = "en") -> s
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
-<title>Memory AI</title>
+<title>DukiAI Memory</title>
 <style>
     :root {{ color-scheme: light dark; }}
     body {{ margin:0; padding:0; background:#F5F3F0; color:#1A1A2E; font-family:'Segoe UI',Roboto,Arial,sans-serif; }}
@@ -174,7 +174,7 @@ def _base_template(body_html: str, preheader: str = "", locale: str = "en") -> s
     <div class="outer">
       <div class="container">
         <div class="brand">
-          <span class="brand-chip"><span class="brand-mark">M</span> Memory AI</span>
+          <span class="brand-chip"><span class="brand-mark">M</span> DukiAI Memory</span>
         </div>
         <div class="card">
           <div class="card-top"></div>
@@ -368,14 +368,14 @@ async def send_verification_email(
     greeting = _text(lang, "Hi", "Xin chào")
     intro = _text(
         lang,
-        "Thanks for signing up! Click the button below to verify your email address and activate your Memory AI account.",
-        "Cảm ơn bạn đã đăng ký! Nhấn vào nút bên dưới để xác minh địa chỉ email và kích hoạt tài khoản Memory AI của bạn.",
+        "Thanks for signing up! Click the button below to verify your email address and activate your DukiAI Memory account.",
+        "Cảm ơn bạn đã đăng ký! Nhấn vào nút bên dưới để xác minh địa chỉ email và kích hoạt tài khoản DukiAI Memory của bạn.",
     )
     cta = _text(lang, "Verify Email", "Xác minh email")
     expiry = _text(
         lang,
-        "This link expires in 24 hours. If you did not create a Memory AI account, you can safely ignore this email.",
-        "Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không tạo tài khoản Memory AI, bạn có thể bỏ qua email này.",
+        "This link expires in 24 hours. If you did not create a DukiAI Memory account, you can safely ignore this email.",
+        "Liên kết này sẽ hết hạn sau 24 giờ. Nếu bạn không tạo tài khoản DukiAI Memory, bạn có thể bỏ qua email này.",
     )
 
     body = f"""\
@@ -395,7 +395,7 @@ async def send_verification_email(
         locale=lang,
     )
     subject = _text(
-        lang, "Verify your Memory AI email", "Xác minh email Memory AI của bạn"
+        lang, "Verify your DukiAI Memory email", "Xác minh email DukiAI Memory của bạn"
     )
     await send_email(email, subject, html_content)
 
@@ -416,8 +416,8 @@ async def send_otp_email(
 
     subject = _text(
         lang,
-        f"Your Memory AI verification code: {code}",
-        f"Mã xác nhận Memory AI của bạn: {code}",
+        f"Your DukiAI Memory verification code: {code}",
+        f"Mã xác nhận DukiAI Memory của bạn: {code}",
     )
 
     greeting = _text(lang, f"Hi {name},", f"Chào {name},")
@@ -472,12 +472,12 @@ async def send_welcome_email(
     lang = _normalize_locale(locale)
     display_name = _safe_name(name, lang)
 
-    title = _text(lang, "Welcome to Memory AI", "Chào mừng đến với Memory AI")
+    title = _text(lang, "Welcome to DukiAI Memory", "Chào mừng đến với DukiAI Memory")
     greeting = _text(lang, "Hi", "Xin chào")
     intro = _text(
         lang,
-        "Your account is ready. Start capturing memories — thoughts, voice notes, links, and photos — and Memory AI will help you recall what matters when it matters.",
-        "Tài khoản của bạn đã sẵn sàng. Bắt đầu lưu ký ức — suy nghĩ, ghi âm, liên kết và ảnh — và Memory AI sẽ giúp bạn nhớ lại những điều quan trọng khi cần.",
+        "Your account is ready. Start capturing memories — thoughts, voice notes, links, and photos — and DukiAI Memory will help you recall what matters when it matters.",
+        "Tài khoản của bạn đã sẵn sàng. Bắt đầu lưu ký ức — suy nghĩ, ghi âm, liên kết và ảnh — và DukiAI Memory sẽ giúp bạn nhớ lại những điều quan trọng khi cần.",
     )
     tagline = _text(
         lang,
@@ -498,5 +498,5 @@ async def send_welcome_email(
         ),
         locale=lang,
     )
-    subject = _text(lang, "Welcome to Memory AI", "Chào mừng đến với Memory AI")
+    subject = _text(lang, "Welcome to DukiAI Memory", "Chào mừng đến với DukiAI Memory")
     await send_email(email, subject, html_content)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PNG icons for the Memory AI Chrome extension."""
+"""Generate PNG icons for the DukiAI Memory Chrome extension."""
 
 import struct
 import zlib

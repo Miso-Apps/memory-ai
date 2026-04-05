@@ -31,13 +31,13 @@
 In `mobile/i18n/locales/en.ts`, find the `login:` block and replace:
 ```ts
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Your personal memory companion',
 ```
 with:
 ```ts
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Your memories, always with you',
 ```
 
@@ -55,13 +55,13 @@ Then add the three new keys after `orDivider`:
 In `mobile/i18n/locales/vi.ts`, find the `login:` block and replace:
 ```ts
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Trợ lý ghi nhớ cá nhân của bạn',
 ```
 with:
 ```ts
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Ký ức của bạn, luôn bên bạn',
 ```
 

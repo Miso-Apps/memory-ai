@@ -1,4 +1,4 @@
-# Memory AI Execution Backlog: Epics, Stories, Proof
+# DukiAI Memory Execution Backlog: Epics, Stories, Proof
 
 Date: 2026-03-29
 Derived from: docs/COMPETITOR_FEATURE_PLAN_2026-03-29.md

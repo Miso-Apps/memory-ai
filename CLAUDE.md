@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Memory AI is a personal memory companion app — multi-platform monorepo with:
+DukiAI Memory is a personal memory companion app — multi-platform monorepo with:
 - **`backend/`** — Python FastAPI REST API
 - **`mobile/`** — React Native + Expo (iOS/Android)
 - **`web/`** — React + Vite design prototype

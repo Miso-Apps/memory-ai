@@ -256,16 +256,16 @@ async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_d
         if success:
             heading = "Email verified!" if not already else "Already verified"
             body_text = (
-                "Your Memory AI account is now active. Return to the app and sign in."
+                "Your DukiAI Memory account is now active. Return to the app and sign in."
                 if not already
-                else "Your email was already confirmed. You can sign in to Memory AI."
+                else "Your email was already confirmed. You can sign in to DukiAI Memory."
             )
             color = "#6C63FF"
         else:
             heading = "Verification failed"
             body_text = (
                 "This link is invalid or has expired. "
-                "Open Memory AI and request a new verification email."
+                "Open DukiAI Memory and request a new verification email."
             )
             color = "#EF4444"
 
@@ -273,7 +273,7 @@ async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_d
             content=f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Memory AI — Email Verification</title>
+<title>DukiAI Memory — Email Verification</title>
 <style>
   body{{margin:0;background:#F5F3F0;font-family:'Segoe UI',Roboto,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;}}
   .card{{background:#fff;border-radius:20px;padding:40px 32px;max-width:420px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.08);text-align:center;}}
@@ -288,7 +288,7 @@ async def verify_email(token: str = Query(...), db: AsyncSession = Depends(get_d
     <div class="icon">{"✓" if success else "✗"}</div>
     <h1>{heading}</h1>
     <p>{body_text}</p>
-    <a href="memoryai://">Open Memory AI</a>
+    <a href="memoryai://">Open DukiAI Memory</a>
   </div>
 </body>
 </html>""",

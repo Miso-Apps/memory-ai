@@ -82,7 +82,7 @@
   <text x="380" y="280"
     font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
     font-size="84" font-weight="800" fill="white"
-    letter-spacing="-3">Memory AI</text>
+    letter-spacing="-3">DukiAI Memory</text>
 
   <!-- Tagline -->
   <text x="380" y="350"

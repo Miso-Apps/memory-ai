@@ -1,6 +1,6 @@
-# Memory AI — Chrome Extension
+# DukiAI Memory — Chrome Extension
 
-Save thoughts, links, and text snippets to Memory AI instantly from your browser.
+Save thoughts, links, and text snippets to DukiAI Memory instantly from your browser.
 
 ## Features
 
@@ -50,7 +50,7 @@ mem https://example.com/article        → saves as link
 
 Click the **Settings** icon in the popup or go to the extension options page:
 
-- **API URL** — Point to your Memory AI server (default: `http://localhost:8000`)
+- **API URL** — Point to your DukiAI Memory server (default: `http://localhost:8000`)
 - **Language** — English or Tiếng Việt
 
 ## Architecture
@@ -77,4 +77,4 @@ extension/
 ## Requirements
 
 - Chrome 110+ (Manifest V3)
-- Memory AI backend running (see main project README)
+- DukiAI Memory backend running (see main project README)

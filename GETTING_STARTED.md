@@ -1,4 +1,4 @@
-# Getting Started - Memory AI Implementation Guide
+# Getting Started - DukiAI Memory Implementation Guide
 
 ## 🎯 Decision Matrix
 
@@ -184,8 +184,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
-    title="Memory AI API",
-    description="Backend for Memory AI - Your personal memory companion",
+    title="DukiAI Memory API",
+    description="Backend for DukiAI Memory - Your personal memory companion",
     version="0.1.0"
 )
 
@@ -200,7 +200,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Memory AI API", "status": "running"}
+    return {"message": "DukiAI Memory API", "status": "running"}
 
 @app.get("/health")
 async def health():
@@ -345,7 +345,7 @@ mkdir -p scripts
 cat > scripts/dev.sh << 'EOF'
 #!/bin/bash
 
-echo "🚀 Starting Memory AI Development Environment"
+echo "🚀 Starting DukiAI Memory Development Environment"
 echo ""
 
 # Start Docker services
@@ -391,7 +391,7 @@ chmod +x scripts/dev.sh
 cat > scripts/setup.sh << 'EOF'
 #!/bin/bash
 
-echo "🛠️  Setting up Memory AI Development Environment"
+echo "🛠️  Setting up DukiAI Memory Development Environment"
 echo ""
 
 # Check prerequisites

@@ -2,7 +2,7 @@
   "name": "memory-ai",
   "version": "1.0.0",
   "private": true,
-  "description": "Memory AI - Your personal memory companion",
+  "description": "DukiAI Memory - Your personal memory companion",
   "scripts": {
     "setup": "./scripts/setup.sh",
     "dev": "./scripts/dev.sh",

@@ -61,7 +61,7 @@
     text-anchor="middle"
     font-family="-apple-system, 'Helvetica Neue', sans-serif"
     font-size="64" font-weight="700" fill="white"
-    letter-spacing="-1.5">Memory AI</text>
+    letter-spacing="-1.5">DukiAI Memory</text>
 
   <!-- Tagline -->
   <text x="642" y="1510"

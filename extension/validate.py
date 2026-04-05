@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the Memory AI Chrome extension."""
+"""Validate the DukiAI Memory Chrome extension."""
 
 import json
 import os

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Memory AI - Setup Script
+# DukiAI Memory - Setup Script
 # This script sets up the development environment
 
 set -e  # Exit on error
 
-echo "🛠️  Memory AI - Development Setup"
+echo "🛠️  DukiAI Memory - Development Setup"
 echo "=================================="
 echo ""
 

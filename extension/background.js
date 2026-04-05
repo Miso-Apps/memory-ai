@@ -1,5 +1,5 @@
 /**
- * Memory AI Extension — Background Service Worker
+ * DukiAI Memory Extension — Background Service Worker
  * Context menus, omnibox, keyboard shortcuts, offline sync, badge.
  */
 
@@ -10,10 +10,10 @@ importScripts('api.js');
 // ═══════════════════════════════════════════════════════════
 
 chrome.runtime.onInstalled.addListener(async () => {
-  chrome.contextMenus.create({ id: 'save-selection', title: 'Save to Memory AI', contexts: ['selection'] });
-  chrome.contextMenus.create({ id: 'save-page-link', title: 'Save page link to Memory AI', contexts: ['page'] });
-  chrome.contextMenus.create({ id: 'save-link', title: 'Save link to Memory AI', contexts: ['link'] });
-  chrome.contextMenus.create({ id: 'save-image', title: 'Save image to Memory AI', contexts: ['image'] });
+  chrome.contextMenus.create({ id: 'save-selection', title: 'Save to DukiAI Memory', contexts: ['selection'] });
+  chrome.contextMenus.create({ id: 'save-page-link', title: 'Save page link to DukiAI Memory', contexts: ['page'] });
+  chrome.contextMenus.create({ id: 'save-link', title: 'Save link to DukiAI Memory', contexts: ['link'] });
+  chrome.contextMenus.create({ id: 'save-image', title: 'Save image to DukiAI Memory', contexts: ['image'] });
 
   // Restore badge on install/update
   const count = await memoryApi.getTodaySaves();
@@ -47,7 +47,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         url: tab?.url || '', title: tab?.title || '', menuId: info.menuItemId,
       },
     });
-    notify('Sign in required', 'Click the Memory AI icon to sign in first.');
+    notify('Sign in required', 'Click the DukiAI Memory icon to sign in first.');
     return;
   }
 
@@ -85,7 +85,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
 chrome.omnibox.onInputStarted.addListener(() => {
   chrome.omnibox.setDefaultSuggestion({
-    description: 'Save to Memory AI: type a thought, URL, or note',
+    description: 'Save to DukiAI Memory: type a thought, URL, or note',
   });
 });
 
@@ -111,7 +111,7 @@ chrome.omnibox.onInputChanged.addListener((text, suggest) => {
 
 chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
   if (!await memoryApi.isAuthenticated()) {
-    notify('Sign in required', 'Click the Memory AI icon to sign in first.');
+    notify('Sign in required', 'Click the DukiAI Memory icon to sign in first.');
     return;
   }
 
@@ -134,7 +134,7 @@ chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
     if (result?._queued) {
       notify('Queued', 'You\'re offline — memory will sync when connected.');
     } else {
-      notify('Saved!', `${type === 'link' ? 'Link' : 'Note'} saved to Memory AI`);
+      notify('Saved!', `${type === 'link' ? 'Link' : 'Note'} saved to DukiAI Memory`);
     }
   } catch (err) {
     notify('Error', err.message || 'Failed to save');
@@ -147,7 +147,7 @@ chrome.omnibox.onInputEntered.addListener(async (text, disposition) => {
 
 chrome.commands.onCommand.addListener(async (command) => {
   if (!await memoryApi.isAuthenticated()) {
-    notify('Sign in required', 'Click the Memory AI icon to sign in first.');
+    notify('Sign in required', 'Click the DukiAI Memory icon to sign in first.');
     return;
   }
 
@@ -166,7 +166,7 @@ chrome.commands.onCommand.addListener(async (command) => {
         if (result?._queued) {
           chrome.tabs.sendMessage(tab.id, { type: 'SHOW_FEEDBACK', message: 'Queued — will sync later' });
         } else {
-          chrome.tabs.sendMessage(tab.id, { type: 'SHOW_FEEDBACK', message: 'Saved to Memory AI' });
+          chrome.tabs.sendMessage(tab.id, { type: 'SHOW_FEEDBACK', message: 'Saved to DukiAI Memory' });
         }
       } else {
         notify('No selection', 'Select some text first, then try again.');
@@ -203,7 +203,7 @@ chrome.commands.onCommand.addListener(async (command) => {
       if (result?._queued) {
         feedbackToTab(tab, 'Link queued — will sync later');
       } else {
-        feedbackToTab(tab, 'Page link saved to Memory AI');
+        feedbackToTab(tab, 'Page link saved to DukiAI Memory');
       }
     } catch (err) {
       notify('Error', err.message || 'Failed to save link');

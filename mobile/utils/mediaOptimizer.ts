@@ -74,7 +74,7 @@ export async function optimizeImage(
  *
  * Uses AAC encoding at 64 kbps / 22 050 Hz mono — roughly **4× smaller** than
  * the default HIGH_QUALITY preset while retaining excellent speech clarity
- * (the main use-case for Memory AI voice memos).
+ * (the main use-case for DukiAI Memory voice memos).
  */
 export const OPTIMIZED_RECORDING_OPTIONS: Audio.RecordingOptions = {
     isMeteringEnabled: false,

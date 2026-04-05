@@ -1,5 +1,5 @@
 /**
- * Memory AI Extension — Content Script
+ * DukiAI Memory Extension — Content Script
  * Selected text capture, page metadata extraction, on-page feedback toast.
  */
 
@@ -20,14 +20,14 @@
       }
 
       case 'SHOW_FEEDBACK': {
-        showFeedback(msg.message || 'Saved to Memory AI');
+        showFeedback(msg.message || 'Saved to DukiAI Memory');
         reply({ ok: true });
         break;
       }
 
       // Legacy compat
       case 'SHOW_SAVE_FEEDBACK': {
-        showFeedback('Saved to Memory AI');
+        showFeedback('Saved to DukiAI Memory');
         reply({ ok: true });
         break;
       }

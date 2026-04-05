@@ -1,4 +1,4 @@
-"""Shared pytest configuration for the Memory AI backend.
+"""Shared pytest configuration for the DukiAI Memory backend.
 
 Disables email verification in all integration tests so that
 POST /auth/register returns tokens immediately (as before), while

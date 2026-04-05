@@ -1,5 +1,5 @@
 /**
- * Memory AI Extension — Popup Controller
+ * DukiAI Memory Extension — Popup Controller
  * Smart capture: clipboard detection, auto-type switching, page metadata,
  * character count, recent memories, offline queue status, keyboard shortcuts.
  */

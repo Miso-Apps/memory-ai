@@ -2,7 +2,7 @@
 
 ## What Was Created
 
-Your Memory AI monorepo is now fully scaffolded and ready for development! Here's everything that was set up:
+Your DukiAI Memory monorepo is now fully scaffolded and ready for development! Here's everything that was set up:
 
 ---
 
@@ -313,7 +313,7 @@ npx expo start -c
 
 ## 🎉 You're Ready!
 
-Your full-stack Memory AI application is scaffolded and ready for development!
+Your full-stack DukiAI Memory application is scaffolded and ready for development!
 
 **Start building:** Follow [QUICKSTART.md](./QUICKSTART.md)
 

@@ -1,4 +1,4 @@
-# Memory AI - Mobile App
+# DukiAI Memory - Mobile App
 
 React Native mobile application built with Expo.
 

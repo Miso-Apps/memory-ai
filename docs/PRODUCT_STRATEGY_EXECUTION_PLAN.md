@@ -1,4 +1,4 @@
-# Memory AI Product Strategy Execution Plan
+# DukiAI Memory Product Strategy Execution Plan
 
 Date: 2026-03-28
 Scope: 6-week execution plan for competitor-informed killer features

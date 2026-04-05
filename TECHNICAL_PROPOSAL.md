@@ -1,4 +1,4 @@
-# Memory AI - Technical Proposal & Architecture
+# DukiAI Memory - Technical Proposal & Architecture
 
 ## 📋 Design Review Summary
 
@@ -292,7 +292,7 @@ export const storageApi = {
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Memory AI API")
+app = FastAPI(title="DukiAI Memory API")
 
 app.add_middleware(
     CORSMiddleware,

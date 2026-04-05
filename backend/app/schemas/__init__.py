@@ -1,5 +1,5 @@
 """
-Pydantic schemas for Memory AI API
+Pydantic schemas for DukiAI Memory API
 """
 
 from pydantic import BaseModel, Field

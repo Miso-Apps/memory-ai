@@ -1,5 +1,5 @@
 /**
- * Memory AI Extension — Options / Settings Controller
+ * DukiAI Memory Extension — Options / Settings Controller
  */
 
 (async () => {

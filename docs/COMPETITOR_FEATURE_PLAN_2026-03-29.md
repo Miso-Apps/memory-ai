@@ -1,4 +1,4 @@
-# Memory AI Competitor Research + Feature Completion Plan
+# DukiAI Memory Competitor Research + Feature Completion Plan
 
 Date: 2026-03-29
 Owner: Product + Engineering
@@ -9,7 +9,7 @@ Execution backlog:
 
 ## 1) Executive Summary
 
-Memory AI already has a strong base: multi-modal capture, semantic search, related memories, insights, and weekly recap. The next winning move is not "more features" in general, but sharper execution on three differentiators:
+DukiAI Memory already has a strong base: multi-modal capture, semantic search, related memories, insights, and weekly recap. The next winning move is not "more features" in general, but sharper execution on three differentiators:
 
 1. Timely proactive recall with measurable trust (reason + confidence + action loop).
 2. Decision intelligence (capture decisions, revisit, compare outcomes).

@@ -282,7 +282,7 @@ const vi = {
     dismiss: 'Bỏ qua',
     openLink: 'Mở ↗',
     linkPreview: 'Xem trước liên kết',
-    viaApp: '— qua Memory AI',
+    viaApp: '— qua DukiAI Memory',
     contentPlaceholder: 'Nội dung ký ức…',
     typeText: 'Văn bản',
     typeVoice: 'Giọng nói',
@@ -503,7 +503,7 @@ const vi = {
 
   // Login screen
   login: {
-    title: 'Memory AI',
+    title: 'DukiAI Memory',
     subtitle: 'Ký ức của bạn, luôn bên bạn',
     signIn: 'Đăng nhập',
     createAccount: 'Tạo tài khoản',

@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # App
-    APP_NAME: str = "Memory AI"
+    APP_NAME: str = "DukiAI Memory"
     DEBUG: bool = False
     BACKEND_CORS_ORIGINS: str = (
         "http://localhost:3000,"

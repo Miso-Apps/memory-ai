@@ -1,4 +1,4 @@
-# Memory AI — The Memory Loop Redesign
+# DukiAI Memory — The Memory Loop Redesign
 
 **Date:** 2026-03-31
 **Status:** Approved
