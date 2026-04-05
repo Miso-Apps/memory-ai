@@ -120,52 +120,60 @@ def _base_template(body_html: str, preheader: str = "", locale: str = "en") -> s
 <title>DukiAI Memory</title>
 <style>
     :root {{ color-scheme: light dark; }}
-    body {{ margin:0; padding:0; background:#F5F3F0; color:#1A1A2E; font-family:'Segoe UI',Roboto,Arial,sans-serif; }}
-    .preheader {{ display:none; font-size:1px; color:#F5F3F0; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; }}
+    body {{ margin:0; padding:0; background:#FBF7F2; color:#2C1810; font-family:'Segoe UI',Roboto,Arial,sans-serif; }}
+    .preheader {{ display:none; font-size:1px; color:#FBF7F2; line-height:1px; max-height:0; max-width:0; opacity:0; overflow:hidden; }}
     .outer {{ width:100%; padding:28px 12px; box-sizing:border-box; }}
     .container {{ max-width:560px; margin:0 auto; }}
     .brand {{ margin:0 0 14px; }}
-    .brand-chip {{ display:inline-flex; align-items:center; gap:8px; background:#1A1A2E; color:#FFFFFF; border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700; letter-spacing:0.4px; }}
-    .brand-mark {{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background:#6C63FF; color:#FFFFFF; font-size:12px; font-weight:700; }}
-    .card {{ background:#FFFFFF; border:1px solid #E8E4DF; border-radius:20px; overflow:hidden; box-shadow:0 12px 40px rgba(26,26,46,0.08); }}
-    .card-top {{ height:6px; background:linear-gradient(90deg,#6C63FF 0%,#A78BFA 50%,#F472B6 100%); }}
+    .brand-chip {{ display:inline-flex; align-items:center; gap:8px; background:#2C1810; color:#FFF8F2; border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700; letter-spacing:0.4px; }}
+    .brand-logo {{ display:inline-block; vertical-align:middle; line-height:0; }}
+    .code-wrap {{ text-align:center; margin:28px 0 20px; }}
+    .code-box {{ display:inline-block; background:linear-gradient(160deg,#FFF3E8 0%,#FFE5CB 100%); border:2px solid #E07840; border-radius:20px; padding:20px 40px; box-shadow:0 8px 24px rgba(194,96,10,0.12); }}
+    .code-label {{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:2.5px; color:#C2600A; font-weight:700; margin-bottom:10px; }}
+    .code-digits {{ display:block; font-family:'Courier New',Courier,monospace; font-size:44px; font-weight:900; letter-spacing:12px; color:#8B3A00; text-align:center; min-width:220px; }}
+    .card {{ background:#FFFFFF; border:1px solid #E8DDD0; border-radius:20px; overflow:hidden; box-shadow:0 12px 40px rgba(44,24,16,0.08); }}
+    .card-top {{ height:6px; background:linear-gradient(90deg,#C2600A 0%,#E07840 60%,#F5A870 100%); }}
     .card-body {{ padding:28px 24px 24px; }}
-    h2 {{ margin:0 0 10px; color:#1A1A2E; font-size:24px; line-height:1.3; font-weight:700; }}
-    p {{ margin:0 0 12px; color:#374151; font-size:14px; line-height:1.65; }}
-    .muted {{ color:#6B7280; font-size:12px; line-height:1.6; }}
-    .highlight {{ color:#6C63FF; font-weight:700; }}
+    h2 {{ margin:0 0 10px; color:#2C1810; font-size:24px; line-height:1.3; font-weight:700; }}
+    p {{ margin:0 0 12px; color:#5A4035; font-size:14px; line-height:1.65; }}
+    .muted {{ color:#8B5E3C; font-size:12px; line-height:1.6; }}
+    .highlight {{ color:#C2600A; font-weight:700; }}
     .btn-wrap {{ text-align:center; margin:22px 0 10px; }}
     .btn {{
-        display:inline-block; text-decoration:none; color:#FFFFFF !important;
-        background:#6C63FF;
-        background-image:linear-gradient(135deg,#6C63FF 0%,#A78BFA 100%);
-        border:1px solid #5B52EE; border-radius:999px;
+        display:inline-block; text-decoration:none; color:#FFF8F2 !important;
+        background:#C2600A;
+        background-image:linear-gradient(135deg,#C2600A 0%,#E07840 100%);
+        border:1px solid #A84E08; border-radius:999px;
         padding:13px 28px; min-width:172px; box-sizing:border-box;
         text-align:center; font-size:14px; line-height:1.2; font-weight:800;
         letter-spacing:0.2px;
-        box-shadow:0 8px 20px rgba(108,99,255,0.30), inset 0 1px 0 rgba(255,255,255,0.20);
+        box-shadow:0 8px 20px rgba(194,96,10,0.30), inset 0 1px 0 rgba(255,255,255,0.20);
     }}
-    .btn:visited {{ color:#FFFFFF !important; }}
-    .divider {{ border:none; border-top:1px solid #E5E7EB; margin:16px 0; }}
-    .footer {{ text-align:center; padding:16px 6px 4px; color:#6B7280; font-size:11px; line-height:1.7; }}
+    .btn:visited {{ color:#FFF8F2 !important; }}
+    .divider {{ border:none; border-top:1px solid #E8DDD0; margin:16px 0; }}
+    .footer {{ text-align:center; padding:16px 6px 4px; color:#8B5E3C; font-size:11px; line-height:1.7; }}
     @media (max-width: 480px) {{
         .card-body {{ padding:22px 18px 20px; }}
         h2 {{ font-size:21px; }}
         .btn {{ width:100%; min-width:0; box-sizing:border-box; }}
     }}
     @media (prefers-color-scheme: dark) {{
-        body {{ background:#0F0F1A !important; color:#E2E8F0 !important; }}
-        .brand-chip {{ background:#1E1E3A !important; }}
-        .card {{ background:#1A1A2E !important; border-color:#2D2D4E !important; box-shadow:none !important; }}
-        h2 {{ color:#F8FAFC !important; }}
-        p, li {{ color:#CBD5E1 !important; }}
-        .muted {{ color:#94A3B8 !important; }}
+        body {{ background:#12100E !important; color:#F5EDE5 !important; }}
+        .brand-chip {{ background:#2C1810 !important; color:#FFF8F2 !important; }}
+        .card {{ background:#1C1410 !important; border-color:#3A2018 !important; box-shadow:none !important; }}
+        h2 {{ color:#FDF7F0 !important; }}
+        p, li {{ color:#E8D8CC !important; }}
+        .muted {{ color:#B89080 !important; }}
         .btn {{
-            background:#7C74FF !important;
-            background-image:linear-gradient(135deg,#7C74FF 0%,#B49AFF 100%) !important;
-            border-color:#6C63FF !important;
+            background:#D97520 !important;
+            background-image:linear-gradient(135deg,#D97520 0%,#F59A50 100%) !important;
+            border-color:#C2600A !important;
+            color:#FFF8F2 !important;
         }}
-        .footer {{ color:#94A3B8 !important; }}
+        .footer {{ color:#B89080 !important; }}
+        .code-box {{ background:linear-gradient(160deg,#3A1E08 0%,#2A1404 100%) !important; border-color:#C2600A !important; box-shadow:none !important; }}
+        .code-label {{ color:#E07840 !important; }}
+        .code-digits {{ color:#F5A870 !important; }}
     }}
 </style>
 </head>
@@ -174,7 +182,7 @@ def _base_template(body_html: str, preheader: str = "", locale: str = "en") -> s
     <div class="outer">
       <div class="container">
         <div class="brand">
-          <span class="brand-chip"><span class="brand-mark">M</span> DukiAI Memory</span>
+          <span class="brand-chip"><span class="brand-logo"><svg width="24" height="24" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="40" height="40" rx="11" fill="#C2600A"/><rect x="5.2" y="9.2" width="29.6" height="20" rx="10" fill="none" stroke="#FFF8F2" stroke-width="2.2"/><rect x="19.1" y="11.2" width="1.8" height="13.2" rx="2" fill="#FFF8F2" opacity="0.58"/><rect x="10.4" y="19.2" width="8.8" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9" transform="rotate(35,14.8,20.1)"/><rect x="20.8" y="19.2" width="8.8" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9" transform="rotate(-35,25.2,20.1)"/><rect x="15.2" y="20" width="9.6" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9"/><circle cx="12" cy="16.8" r="2.4" fill="#FFF8F2"/><circle cx="28" cy="16.8" r="2.4" fill="#FFF8F2"/><circle cx="20.1" cy="25.7" r="2.5" fill="#FFF8F2"/></svg></span> DukiAI Memory</span>
         </div>
         <div class="card">
           <div class="card-top"></div>
@@ -284,14 +292,14 @@ def _send_via_console(to: str, subject: str, html_content: str) -> None:
     verification URL directly from the terminal output.
     """
     import re
+
     links = re.findall(r'href=["\']([^"\']+)["\']', html_content)
     # Filter out mailto: and javascript: hrefs
     links = [lnk for lnk in links if lnk.startswith("http")]
 
     border = "=" * 70
     logger.info(
-        "\n%s\n📧  [DEV EMAIL — not sent] To: %s\n    Subject: %s\n%s\n"
-        "    %s\n%s\n",
+        "\n%s\n📧  [DEV EMAIL — not sent] To: %s\n    Subject: %s\n%s\n    %s\n%s\n",
         border,
         to,
         subject,
@@ -436,21 +444,24 @@ async def send_otp_email(
         "If you didn't request this, you can safely ignore this email.",
         "Nếu bạn không yêu cầu điều này, bạn có thể bỏ qua email này.",
     )
+    title = _text(
+        lang,
+        "Verify your identity",
+        "Xác minh danh tính của bạn",
+    )
+    code_label = _text(lang, "Verification Code", "Mã xác nhận")
 
     body_html = f"""\
-<p style="margin:0 0 12px;color:#374151;font-size:15px;">{greeting}</p>
-<p style="margin:0 0 20px;color:#374151;font-size:15px;">{intro}</p>
-<div style="text-align:center;margin:24px 0;">
-  <div style="display:inline-block;background:#F5F3FF;border:2px solid #DDD6FE;
-              border-radius:16px;padding:20px 36px;">
-    <span style="font-family:'Courier New',Courier,monospace;font-size:42px;
-                 font-weight:900;letter-spacing:12px;color:#6C63FF;
-                 display:inline-block;min-width:220px;text-align:center;">
-      {escape(code)}
-    </span>
+<h2>{title}</h2>
+<p style="margin:0 0 6px;color:#374151;font-size:15px;">{greeting}</p>
+<p style="margin:0 0 4px;color:#374151;font-size:15px;">{intro}</p>
+<div class="code-wrap">
+  <div class="code-box">
+    <span class="code-label">{code_label}</span>
+    <span class="code-digits">{escape(code)}</span>
   </div>
 </div>
-<p style="margin:16px 0 12px;color:#374151;font-size:14px;">{expiry_note}</p>
+<p style="margin:0 0 12px;color:#374151;font-size:14px;">{expiry_note}</p>
 <p style="margin:0;color:#9CA3AF;font-size:13px;font-style:italic;">{ignore_note}</p>
 """
 
@@ -468,35 +479,139 @@ async def send_welcome_email(
     name: str | None = None,
     locale: str | None = None,
 ) -> None:
-    """Send a welcome email after registration or email verification."""
+    """Send a rich welcome email after registration or email verification."""
     lang = _normalize_locale(locale)
     display_name = _safe_name(name, lang)
 
-    title = _text(lang, "Welcome to DukiAI Memory", "Chào mừng đến với DukiAI Memory")
-    greeting = _text(lang, "Hi", "Xin chào")
+    subject = _text(
+        lang, "Welcome to DukiAI Memory ✨", "Chào mừng đến với DukiAI Memory ✨"
+    )
+
+    greeting = _text(lang, f"Hi {display_name},", f"Xin chào {display_name},")
     intro = _text(
         lang,
-        "Your account is ready. Start capturing memories — thoughts, voice notes, links, and photos — and DukiAI Memory will help you recall what matters when it matters.",
-        "Tài khoản của bạn đã sẵn sàng. Bắt đầu lưu ký ức — suy nghĩ, ghi âm, liên kết và ảnh — và DukiAI Memory sẽ giúp bạn nhớ lại những điều quan trọng khi cần.",
+        "Your memory companion is ready. Here's what you can do:",
+        "Trợ lý ký ức của bạn đã sẵn sàng. Đây là những gì bạn có thể làm:",
     )
-    tagline = _text(
+    cta = _text(lang, "Open DukiAI Memory", "Mở DukiAI Memory")
+    closing = _text(
+        lang,
+        "Capture anything. Remember everything. DukiAI Memory works quietly in the background — surfacing the right memory at the right moment.",
+        "Lưu bất cứ điều gì. Nhớ tất cả mọi thứ. DukiAI Memory hoạt động lặng lẽ — đưa ký ức đúng ra vào đúng lúc.",
+    )
+    tagline_quote = _text(
         lang,
         '"Saving is central. Forgetting is normal."',
         '"Lưu giữ là trọng tâm. Quên là bình thường."',
     )
 
+    # Feature tiles: (icon_html, title, description) ordered for 2×2 grid
+    features = [
+        (
+            "&#x270F;&#xFE0F;",
+            _text(lang, "Text Notes", "Ghi chú văn bản"),
+            _text(
+                lang,
+                "Capture any thought in seconds",
+                "Lưu bất kỳ suy nghĩ nào trong vài giây",
+            ),
+        ),
+        (
+            "&#x1F399;&#xFE0F;",
+            _text(lang, "Voice Memos", "Ghi âm giọng nói"),
+            _text(
+                lang,
+                "Speak &amp; AI transcribes for you",
+                "Nói chuyện &amp; AI ghi chép lại",
+            ),
+        ),
+        (
+            "&#x1F517;",
+            _text(lang, "Save Links", "Lưu liên kết"),
+            _text(
+                lang,
+                "Bookmark pages with full context",
+                "Lưu trang web kèm ngữ cảnh đầy đủ",
+            ),
+        ),
+        (
+            "&#x1F9E0;",
+            _text(lang, "AI Recall", "Nhớ lại bằng AI"),
+            _text(
+                lang,
+                "Relevant memories surface when you need them",
+                "Ký ức liên quan tự hiện khi cần",
+            ),
+        ),
+    ]
+
+    # Pixel-perfect SVG of BrandMark (viewBox=40×40)
+    # bg=#C2600A (brandAccent), fg=#FFF8F2 — all proportions from BrandMark.tsx
+    logo_svg = (
+        '<svg width="80" height="80" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+        '<rect width="40" height="40" rx="11" fill="#C2600A"/>'
+        '<rect x="5.2" y="9.2" width="29.6" height="20" rx="10" fill="none" stroke="#FFF8F2" stroke-width="2.2"/>'
+        '<rect x="19.1" y="11.2" width="1.8" height="13.2" rx="2" fill="#FFF8F2" opacity="0.58"/>'
+        '<rect x="10.4" y="19.2" width="8.8" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9" transform="rotate(35,14.8,20.1)"/>'
+        '<rect x="20.8" y="19.2" width="8.8" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9" transform="rotate(-35,25.2,20.1)"/>'
+        '<rect x="15.2" y="20" width="9.6" height="1.8" rx="2" fill="#FFF8F2" opacity="0.9"/>'
+        '<circle cx="12" cy="16.8" r="2.4" fill="#FFF8F2"/>'
+        '<circle cx="28" cy="16.8" r="2.4" fill="#FFF8F2"/>'
+        '<circle cx="20.1" cy="25.7" r="2.5" fill="#FFF8F2"/>'
+        "</svg>"
+    )
+
+    welcome_title = _text(
+        lang, "Welcome to DukiAI Memory!", "Chào mừng đến với DukiAI Memory!"
+    )
+
+    def _tile(icon: str, title: str, desc: str) -> str:
+        return (
+            '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"'
+            ' style="background:#FFF3E8;border:1px solid #F5C49A;border-radius:14px;">'
+            '<tr><td style="padding:16px 14px;">'
+            f'<div style="font-size:22px;line-height:1;margin-bottom:8px;">{icon}</div>'
+            f'<p style="margin:0 0 3px;color:#2C1810;font-size:13px;font-weight:700;line-height:1.3;">{title}</p>'
+            f'<p style="margin:0;color:#8B5E3C;font-size:12px;line-height:1.45;">{desc}</p>'
+            "</td></tr></table>"
+        )
+
+    row1_left, row1_right, row2_left, row2_right = [_tile(*f) for f in features]
+
     body = f"""\
-<h2>{title}</h2>
-<p>{greeting} {display_name},</p>
-<p>{intro}</p>
-<p class="muted">{tagline}</p>"""
+<div style="text-align:center;padding:8px 0 22px;">
+  {logo_svg}
+  <h2 style="margin:16px 0 4px;font-size:26px;text-align:center;color:#2C1810;">{welcome_title}</h2>
+  <p style="margin:0;color:#8B5E3C;font-size:14px;text-align:center;">{greeting}</p>
+</div>
+<p style="margin:0 0 18px;color:#5A4035;font-size:14px;line-height:1.65;">{intro}</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+  style="border-collapse:separate;border-spacing:0;">
+  <tr>
+    <td style="padding:0 5px 10px 0;width:50%;vertical-align:top;">{row1_left}</td>
+    <td style="padding:0 0 10px 5px;width:50%;vertical-align:top;">{row1_right}</td>
+  </tr>
+  <tr>
+    <td style="padding:0 5px 0 0;width:50%;vertical-align:top;">{row2_left}</td>
+    <td style="padding:0 0 0 5px;width:50%;vertical-align:top;">{row2_right}</td>
+  </tr>
+</table>
+
+<div class="btn-wrap" style="margin-top:28px;margin-bottom:4px;">
+  <a href="memoryai://" class="btn">{cta}</a>
+</div>
+<hr class="divider" style="margin-top:24px;">
+<p style="margin:0 0 6px;color:#5A4035;font-size:13px;line-height:1.65;text-align:center;">{closing}</p>
+<p class="muted" style="text-align:center;font-style:italic;">{tagline_quote}</p>"""
 
     html_content = _base_template(
         body,
         preheader=_text(
-            lang, "Your memory companion is ready", "Trợ lý ký ức của bạn đã sẵn sàng"
+            lang,
+            "Your memory companion is ready — start capturing now",
+            "Trợ lý ký ức của bạn đã sẵn sàng — bắt đầu lưu ngay",
         ),
         locale=lang,
     )
-    subject = _text(lang, "Welcome to DukiAI Memory", "Chào mừng đến với DukiAI Memory")
     await send_email(email, subject, html_content)

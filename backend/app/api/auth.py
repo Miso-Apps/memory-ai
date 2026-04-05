@@ -442,6 +442,15 @@ async def verify_otp(body: VerifyOtpRequest, db: AsyncSession = Depends(get_db))
     user.email_verification_expires = None
     await db.flush()
 
+    # Send welcome email after successful OTP verification
+    if _email_transport_ready():
+        try:
+            from app.services import email_service
+
+            await email_service.send_welcome_email(user.email, user.name)
+        except Exception as exc:
+            logger.error("Failed to send welcome email after OTP verification: %s", exc)
+
     tokens = _issue_tokens(str(user.id))
     return {"user": _user_response(user), **tokens}
 
@@ -459,7 +468,9 @@ async def resend_otp(body: ResendOtpRequest, db: AsyncSession = Depends(get_db))
 
     # Silent no-op for unknown emails or already-verified accounts
     if not user or user.email_verified:
-        return {"message": "If an account exists and is unverified, a new code has been sent."}
+        return {
+            "message": "If an account exists and is unverified, a new code has been sent."
+        }
 
     # Generate new 6-digit code and reset expiry
     new_code = f"{secrets.randbelow(1_000_000):06d}"
@@ -469,6 +480,7 @@ async def resend_otp(body: ResendOtpRequest, db: AsyncSession = Depends(get_db))
 
     try:
         from app.services import email_service
+
         await email_service.send_otp_email(user.email, new_code, user.name)
     except Exception as exc:
         logger.error("Failed to resend OTP: %s", exc)
@@ -477,7 +489,9 @@ async def resend_otp(body: ResendOtpRequest, db: AsyncSession = Depends(get_db))
             detail="Email delivery is currently unavailable. Please try again later.",
         ) from exc
 
-    return {"message": "If an account exists and is unverified, a new code has been sent."}
+    return {
+        "message": "If an account exists and is unverified, a new code has been sent."
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -605,6 +619,15 @@ async def google_callback(
         )
         db.add(user)
         await db.flush()
+
+        # Send welcome email to new Google users
+        if _email_transport_ready():
+            try:
+                from app.services import email_service
+
+                await email_service.send_welcome_email(user.email, user.name)
+            except Exception as exc:
+                logger.error("Failed to send welcome email for Google user: %s", exc)
     else:
         # Ensure existing local accounts linked via Google are marked verified
         if not user.email_verified:
