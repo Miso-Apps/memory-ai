@@ -114,6 +114,9 @@ nano .env
 | `REDIS_PASSWORD`      | Choose a strong password                            |
 | `MINIO_ROOT_PASSWORD` | Choose a strong password                            |
 | `OPENAI_API_KEY`      | [platform.openai.com](https://platform.openai.com/) |
+| `GOOGLE_IOS_CLIENT_ID` | iOS OAuth client ID (or CSV for dev+prod audiences) |
+| `GOOGLE_CLIENT_ID`    | Web OAuth client ID (fallback audience)            |
+| `GOOGLE_CLIENT_SECRET`| Web OAuth client secret                             |
 
 ---
 
@@ -417,24 +420,15 @@ eas build --platform ios --profile production --auto-submit
 
 ### 11g. Environment variables for the build
 
-Sensitive values (API URL, keys) should be added as **EAS secrets**, not committed to git:
+Sensitive values (API URL, OAuth client IDs) should be added as **EAS secrets**, not committed to git:
 
 ```bash
-eas secret:create --scope project --name API_BASE_URL --value https://api.dukiai.com
-eas secret:create --scope project --name GOOGLE_CLIENT_ID --value 382213094350-...
+eas secret:create --scope project --name EXPO_PUBLIC_API_BASE_URL --value https://api.dukiai.com
+eas secret:create --scope project --name GOOGLE_IOS_CLIENT_ID --value 382213094350-xxxx.apps.googleusercontent.com
+eas secret:create --scope project --name GOOGLE_IOS_URL_SCHEME --value com.googleusercontent.apps.382213094350-xxxx
 ```
 
-Reference them in `app.config.js` (rename `app.json` → `app.config.js` to use `process.env`):
-```js
-export default {
-  expo: {
-    extra: {
-      apiBaseUrl: process.env.API_BASE_URL,
-      googleClientId: process.env.GOOGLE_CLIENT_ID,
-    },
-  },
-};
-```
+Current app config already reads these values from `mobile/app.config.ts`.
 
 ### Quick reference
 

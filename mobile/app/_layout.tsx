@@ -8,8 +8,10 @@ import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ThemeProvider, useTheme } from '../constants/ThemeContext';
+import Constants from 'expo-constants';
 import '../i18n'; // initialize i18n
 import { agentApi } from '../services/api';
+import { configureGoogleSignIn } from '../services/googleSignIn';
 import { useFonts } from 'expo-font';
 import {
   DMSans_400Regular,
@@ -17,6 +19,12 @@ import {
   DMSans_600SemiBold,
   DMSans_700Bold,
 } from '@expo-google-fonts/dm-sans';
+
+// Configure Google Sign-In once at app startup.
+// iosClientId must match the iOS OAuth credential created in Google Cloud Console
+// with bundle ID com.dukiai.app. The reversed client ID URL scheme is registered
+// via the @react-native-google-signin/google-signin plugin in app.json.
+configureGoogleSignIn(Constants.expoConfig?.extra?.googleIosClientId as string | undefined);
 
 async function registerForPushNotifications(): Promise<void> {
   if (Platform.OS === 'web') return;

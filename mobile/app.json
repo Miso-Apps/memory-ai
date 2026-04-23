@@ -14,16 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.dukiai.app",
-      "infoPlist": {
-        "CFBundleURLTypes": [
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t"
-            ]
-          }
-        ]
-      }
+      "bundleIdentifier": "com.dukiai.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,6 +26,12 @@
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.382213094350-ov6lakaq0vnqhloli563js2683di0caf"
+        }
+      ],
       "expo-router",
       "expo-localization",
       [
@@ -60,8 +57,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "googleClientId": "382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t.apps.googleusercontent.com",
-      "googleReversedClientId": "com.googleusercontent.apps.382213094350-cvj5d3i5hpg9aju8qa6br7s9j621n71t"
+      "googleIosClientId": "382213094350-ov6lakaq0vnqhloli563js2683di0caf.apps.googleusercontent.com"
     }
   }
 }

@@ -1,17 +1,18 @@
 // @ts-ignore — use browser build to avoid Node 'crypto' import in React Native
 import axios from 'axios/dist/browser/axios.cjs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
+import { runGoogleNativeSignIn } from './googleSignIn';
 
-// Needed to properly close the auth session on iOS after redirect
-WebBrowser.maybeCompleteAuthSession();
+const configuredApiBaseUrl =
+  (Constants.expoConfig?.extra?.apiBaseUrl as string | undefined)?.trim() || '';
 
-// Configure API base URL based on environment
-const API_BASE_URL = __DEV__
-  ? 'http://localhost:8000'  // Local development
-  : 'https://api.dukiai.com';  // Production
+// Configure API base URL based on environment.
+// Use EXPO_PUBLIC_API_BASE_URL (propagated via app.config.ts -> expo extra)
+// for simulator/device dev overrides.
+const API_BASE_URL = (
+  configuredApiBaseUrl || (__DEV__ ? 'http://localhost:8000' : 'https://api.dukiai.com')
+).replace(/\/$/, '');
 
 let cachedAccessToken: string | null = null;
 let accessTokenHydrated = false;
@@ -959,15 +960,15 @@ export const authApi = {
   register: async (email: string, password: string, name?: string) => {
     const response = await api.post<
       | {
-          user: { id: string; email: string; name?: string; email_verified?: boolean; auth_provider?: string };
-          access_token: string;
-          refresh_token: string;
-          email_verification_required?: false;
-        }
+        user: { id: string; email: string; name?: string; email_verified?: boolean; auth_provider?: string };
+        access_token: string;
+        refresh_token: string;
+        email_verification_required?: false;
+      }
       | {
-          message: string;
-          email_verification_required: true;
-        }
+        message: string;
+        email_verification_required: true;
+      }
     >('/auth/register', { email, password, name });
     return response.data;
   },
@@ -1009,83 +1010,23 @@ export const authApi = {
 
   // Login with Google
   //
-  // Flow:
-  //   1. PKCE authorization code request → Google consent screen
-  //   2. Exchange code directly with Google (no client_secret needed for native credentials)
-  //   3. Extract id_token from response
-  //   4. POST id_token to our backend /auth/google/login for verification + JWT issuance
+  // Flow (native SDK — no browser redirect needed):
+  //   1. GoogleSignin.signIn() shows the native Google account picker
+  //   2. Google returns an id_token directly (no redirect URI required)
+  //   3. POST id_token to our backend /auth/google/login for verification + JWT issuance
   //
-  // Required setup in Google Cloud Console:
-  //   • Create an OAuth 2.0 credential of type "iOS" (for Expo builds) or
-  //     "Android" — these allow code exchange without a client_secret.
-  //   • For Expo Go dev testing, also add an "Authorized redirect URI" matching
-  //     the URI logged to Metro console: exp://<host>:<port>/--/auth/callback
+  // Required Google Cloud Console setup:
+  //   • iOS credential — Application type: iOS, Bundle ID: com.dukiai.app
+  //   • Android credential — Application type: Android, package: com.dukiai.app
+  //     (add the SHA-1 fingerprint of your signing key for Android builds)
+  //
+  // Local development:
+  //   • Requires a custom dev build (EAS Dev Build or `npx expo run:ios`)
+  //   • Expo Go does NOT support native modules — use: eas build --profile development
   loginWithGoogle: async () => {
-    // Required on iOS so the in-app browser closes after the OAuth redirect.
-    WebBrowser.maybeCompleteAuthSession();
+    const { idToken } = await runGoogleNativeSignIn();
 
-    const googleClientId = Constants.expoConfig?.extra?.googleClientId as string | undefined;
-    if (!googleClientId) {
-      throw new Error('Google Client ID not configured (check app.json extra.googleClientId)');
-    }
-
-    // For a Google iOS credential the redirect URI MUST use the reversed client ID
-    // as the URL scheme (e.g. com.googleusercontent.apps.<id>:/).  Using any other
-    // scheme (e.g. memoryai://) causes a 404 on accounts.google.com.
-    const googleReversedClientId = Constants.expoConfig?.extra?.googleReversedClientId as string | undefined
-      ?? `com.googleusercontent.apps.${googleClientId.replace('.apps.googleusercontent.com', '')}`;
-
-    const redirectUri = AuthSession.makeRedirectUri({
-      scheme: googleReversedClientId,
-    });
-    console.log('[Google OAuth] redirect URI:', redirectUri);
-
-    // Use hardcoded Google OIDC endpoints — avoids a runtime network fetch which
-    // can fail / time out and produce a malformed authorization URL (404 on Google).
-    const discovery: AuthSession.DiscoveryDocument = {
-      authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-      tokenEndpoint: 'https://oauth2.googleapis.com/token',
-      revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
-    };
-
-    // Build authorization request WITHOUT PKCE.
-    // Google iOS credentials do NOT support PKCE (code_challenge); sending it
-    // triggers Error 400: invalid_request "doesn't comply with Google's OAuth 2.0
-    // policy".  iOS native credentials are trusted clients — no PKCE or
-    // client_secret is required; the credential type itself is the security.
-    const request = new AuthSession.AuthRequest({
-      clientId: googleClientId,
-      scopes: ['openid', 'email', 'profile'],
-      redirectUri,
-      usePKCE: false,
-    });
-
-    const authResult = await request.promptAsync(discovery);
-
-    if (authResult.type === 'cancel' || authResult.type === 'dismiss') {
-      throw new Error('Google sign-in was cancelled');
-    }
-    if (authResult.type !== 'success') {
-      throw new Error('Google sign-in failed');
-    }
-
-    // Exchange authorization code → tokens directly with Google.
-    // No code_verifier needed (PKCE disabled for iOS credential).
-    const tokenResponse = await AuthSession.exchangeCodeAsync(
-      {
-        clientId: googleClientId,
-        redirectUri,
-        code: authResult.params.code,
-      },
-      discovery,
-    );
-
-    const idToken = tokenResponse.idToken;
-    if (!idToken) {
-      throw new Error('Google did not return an ID token — ensure openid scope is requested');
-    }
-
-    // Send id_token to backend for secure server-side verification
+    // POST id_token to backend for cryptographic verification and JWT issuance
     const response = await api.post<{
       user: { id: string; email: string; name?: string };
       access_token: string;

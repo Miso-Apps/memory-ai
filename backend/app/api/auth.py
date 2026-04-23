@@ -80,6 +80,16 @@ def _email_transport_ready() -> bool:
     return bool(settings.GMAIL_REFRESH_TOKEN or settings.SMTP_HOST or settings.DEBUG)
 
 
+def _parse_google_audiences(raw: str) -> list[str]:
+    """Parse a comma-separated client-id string into unique trimmed IDs."""
+    audiences: list[str] = []
+    for part in (raw or "").split(","):
+        value = part.strip()
+        if value and value not in audiences:
+            audiences.append(value)
+    return audiences
+
+
 @router.post("/register")
 async def register(body: UserCreate, db: AsyncSession = Depends(get_db)):
     """Register a new user.
@@ -499,6 +509,10 @@ async def resend_otp(body: ResendOtpRequest, db: AsyncSession = Depends(get_db))
 # ---------------------------------------------------------------------------
 
 
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+
 class GoogleInitRequest(BaseModel):
     redirect_uri: str
 
@@ -506,6 +520,103 @@ class GoogleInitRequest(BaseModel):
 class GoogleCallbackRequest(BaseModel):
     code: str
     redirect_uri: str
+
+
+@router.post("/google/login")
+async def google_login(body: GoogleLoginRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Verify a Google ID token sent directly from a native mobile client and
+    issue app JWT tokens.
+
+    Flow (native iOS / Android):
+      1. Mobile exchanges OAuth code with Google and receives an id_token.
+      2. Mobile POSTs the id_token here (no client_secret needed — the iOS
+         credential is a trusted native client).
+      3. Backend verifies the token cryptographically, extracts email/name,
+         and creates or retrieves the user.
+
+    The id_token audience must match GOOGLE_IOS_CLIENT_ID (preferred) or
+    GOOGLE_CLIENT_ID (fallback for web / test configurations).
+    """
+    ios_client_ids = _parse_google_audiences(
+        getattr(settings, "GOOGLE_IOS_CLIENT_ID", "")
+    )
+    web_client_ids = _parse_google_audiences(getattr(settings, "GOOGLE_CLIENT_ID", ""))
+
+    # Build ordered list of client IDs to try — prefer iOS audiences first.
+    client_ids_to_try: list[str] = []
+    for client_id in [*ios_client_ids, *web_client_ids]:
+        if client_id not in client_ids_to_try:
+            client_ids_to_try.append(client_id)
+
+    if not client_ids_to_try:
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "Google login is not configured: set GOOGLE_IOS_CLIENT_ID "
+                "or GOOGLE_CLIENT_ID"
+            ),
+        )
+
+    from google.oauth2 import id_token as google_id_token
+    from google.auth.transport import requests as google_requests
+
+    payload = None
+    last_exc: Exception | None = None
+    request = google_requests.Request()
+    for client_id in client_ids_to_try:
+        try:
+            payload = await asyncio.get_running_loop().run_in_executor(
+                None,
+                lambda cid=client_id: google_id_token.verify_oauth2_token(
+                    body.id_token, request, cid
+                ),
+            )
+            break
+        except Exception as exc:
+            last_exc = exc
+            continue
+
+    if payload is None:
+        logger.warning("Google ID token verification failed: %s", last_exc)
+        raise HTTPException(status_code=401, detail="Invalid or expired Google token")
+
+    email = payload.get("email")
+    name = payload.get("name")
+    if not email:
+        raise HTTPException(status_code=401, detail="No email in Google token")
+
+    # Google guarantees the email belongs to the authenticated user
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        user = User(
+            email=email,
+            password_hash=None,
+            name=name,
+            auth_provider=AuthProvider.GOOGLE.value,
+            email_verified=True,
+        )
+        db.add(user)
+        await db.flush()
+
+        if _email_transport_ready():
+            try:
+                from app.services import email_service
+
+                await email_service.send_welcome_email(user.email, user.name)
+            except Exception as exc:
+                logger.error("Failed to send welcome email for Google user: %s", exc)
+    else:
+        if not user.email_verified:
+            user.email_verified = True
+        if not user.auth_provider or user.auth_provider == AuthProvider.LOCAL.value:
+            user.auth_provider = AuthProvider.GOOGLE.value
+        await db.flush()
+
+    tokens = _issue_tokens(str(user.id))
+    return {"user": _user_response(user), **tokens}
 
 
 @router.post("/google/init")

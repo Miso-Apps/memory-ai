@@ -1,3 +1,3 @@
 #!/bin/bash
 cd "$(dirname "$0")"
-npx expo start --clear --ios
+npx expo run:ios

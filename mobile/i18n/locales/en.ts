@@ -519,6 +519,8 @@ const en = {
     loginFailed: 'Login Failed',
     registerFailed: 'Registration Failed',
     genericError: 'Something went wrong. Please try again.',
+    googleNativeUnavailable:
+      'Google Sign-In is not available in this build. Run a custom iOS dev build with "npm run ios" (or use TestFlight/App Store build).',
     continueWithGoogle: 'Continue with Google',
     orDivider: 'or',
     forgotPassword: 'Forgot password?',

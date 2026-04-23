@@ -19,6 +19,7 @@ import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../constants/ThemeContext';
 import { BrandMark } from '../components/BrandMark';
 import api, { authApi } from '../services/api';
+import { GOOGLE_SIGNIN_ERROR_CODES } from '../services/googleSignIn';
 
 type LoginStep =
   | 'welcome'
@@ -88,6 +89,17 @@ export default function LoginScreen() {
       await loginWithGoogle();
       router.replace('/(tabs)/home');
     } catch (err: any) {
+      // Silently ignore user-initiated cancellation
+      if (err?.code === GOOGLE_SIGNIN_ERROR_CODES.CANCELLED) {
+        return;
+      }
+
+      if (err?.code === GOOGLE_SIGNIN_ERROR_CODES.UNAVAILABLE) {
+        Alert.alert(t('login.errorTitle'), t('login.googleNativeUnavailable'));
+        return;
+      }
+
+      console.error('[Login] Google login error:', err);
       const message = err?.response?.data?.detail || err?.message || t('login.genericError');
       Alert.alert(t('login.loginFailed'), message);
     }

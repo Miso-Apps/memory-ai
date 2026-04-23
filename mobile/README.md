@@ -68,9 +68,33 @@ mobile/
 
 ## Configuration
 
-Environment variables are configured in `app.json` and loaded through Expo's constants.
+Environment variables are configured in `app.config.ts` and loaded through Expo constants / `process.env`.
 
 For local development, the API URL is set to `http://localhost:8000`.
+
+### Google Sign-In for iOS (React Native)
+
+This app uses `@react-native-google-signin/google-signin` (native SDK), so no Swift app rewrite is needed.
+
+Required env variables:
+
+- `EXPO_PUBLIC_API_BASE_URL` — backend URL for the app (`http://localhost:8000` for iOS Simulator, LAN/tunnel URL for physical device)
+- `GOOGLE_IOS_CLIENT_ID` — iOS OAuth client ID from Google Cloud Console
+- `GOOGLE_IOS_URL_SCHEME` — reversed iOS client ID URL scheme (`com.googleusercontent.apps.<client-id-without-domain>`)
+
+You can set these as EAS secrets per profile (`development`, `preview`, `production`) so TestFlight/App Store builds use production credentials while local dev uses development credentials.
+
+Local development notes:
+
+- Use a custom dev build (`npx expo run:ios` or EAS dev build)
+- Expo Go does not support this native Google Sign-In module
+- For physical iPhone testing, `localhost` will not reach your Mac backend; use LAN IP or HTTPS tunnel
+
+Troubleshooting:
+
+- Error `RNGoogleSignin could not be found` means the app binary does not include the native module.
+- Fix by running `npm run ios` (or `./start-ios.sh`) to rebuild and launch the custom iOS dev client.
+- Avoid using Expo Go for Google Sign-In flows.
 
 ## Building for Production
 

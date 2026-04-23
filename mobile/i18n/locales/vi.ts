@@ -516,6 +516,8 @@ const vi = {
     loginFailed: 'Đăng nhập thất bại',
     registerFailed: 'Đăng ký thất bại',
     genericError: 'Đã xảy ra lỗi. Vui lòng thử lại.',
+    googleNativeUnavailable:
+      'Google Sign-In không khả dụng trong bản build này. Hãy chạy bản iOS custom bằng "npm run ios" (hoặc dùng bản TestFlight/App Store).',
     continueWithGoogle: 'Tiếp tục với Google',
     orDivider: 'hoặc',
     forgotPassword: 'Quên mật khẩu?',

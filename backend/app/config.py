@@ -46,8 +46,12 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "whisper-1"
 
     # Google OAuth
-    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_ID: str = ""         # Web / server-side OAuth client ID
     GOOGLE_CLIENT_SECRET: str = ""
+    # iOS native OAuth client ID(s) used to verify mobile id_tokens.
+    # Supports either a single ID or a comma-separated list for multi-env
+    # setups (for example: dev + production app credentials).
+    GOOGLE_IOS_CLIENT_ID: str = ""
 
     # Gmail API (preferred email transport — set GMAIL_REFRESH_TOKEN to enable)
     # Run scripts/get_gmail_token.py once to obtain the refresh token.
