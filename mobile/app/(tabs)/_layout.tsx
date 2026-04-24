@@ -94,6 +94,7 @@ function EnhancedTabButton({ children, onPress, ...rest }: any) {
 function CreateTabButton({ style, ...rest }: any) {
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   const handlePress = () => {
     if (Platform.OS === 'ios') {
@@ -131,7 +132,7 @@ function CreateTabButton({ style, ...rest }: any) {
       onPressOut={handlePressOut}
       activeOpacity={0.9}
       accessibilityRole="button"
-      accessibilityLabel="Lưu nhanh"
+      accessibilityLabel={t('home.quickCapture')}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       <Animated.View style={[styles.fab, {

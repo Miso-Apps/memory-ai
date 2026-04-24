@@ -512,6 +512,7 @@ const vi = {
     passwordPlaceholder: 'Mật khẩu',
     errorTitle: 'Lỗi',
     emailRequired: 'Vui lòng nhập email và mật khẩu',
+    passwordRequired: 'Vui lòng nhập mật khẩu',
     passwordMinLength: 'Mật khẩu phải có ít nhất 8 ký tự',
     loginFailed: 'Đăng nhập thất bại',
     registerFailed: 'Đăng ký thất bại',

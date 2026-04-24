@@ -141,7 +141,7 @@ export default function LoginScreen() {
 
   const handleLoginSubmit = async () => {
     if (!password.trim()) {
-      setFormError(t('login.emailRequired'));
+      setFormError(t('login.passwordRequired'));
       return;
     }
     setFormError('');

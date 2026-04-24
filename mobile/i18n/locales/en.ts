@@ -515,6 +515,7 @@ const en = {
     passwordPlaceholder: 'Password',
     errorTitle: 'Error',
     emailRequired: 'Email and password are required',
+    passwordRequired: 'Password is required',
     passwordMinLength: 'Password must be at least 8 characters',
     loginFailed: 'Login Failed',
     registerFailed: 'Registration Failed',
