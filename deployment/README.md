@@ -338,10 +338,13 @@ eas init --id YOUR_EXPO_PROJECT_ID
 2. Bundle ID: `com.dukiai.app`, Name: **DukiAI Memory**, Primary language.
 3. Save — note the **Apple ID** number (10 digits).
 
-**Set the API base URL** in `mobile/services/api.ts`:
-```ts
-const BASE_URL = "https://api.dukiai.com";   // your DO Droplet URL
+**Set the API base URL** via Expo public env (read by `mobile/app.config.ts`):
+```bash
+cd mobile
+export EXPO_PUBLIC_API_BASE_URL="https://api.dukiai.com"
 ```
+
+If using EAS cloud builds, store it as an EAS secret (see section 11d).
 
 ### 11b. Build for TestFlight (internal testing)
 
