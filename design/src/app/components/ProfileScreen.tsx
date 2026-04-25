@@ -424,7 +424,7 @@ export function ProfileScreen() {
                   <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-accent/20 to-accent/10 flex items-center justify-center mx-auto mb-4">
                     <Sparkles className="w-10 h-10 text-accent" strokeWidth={2} />
                   </div>
-                  <h3 className="text-xl font-medium mb-2">AI Living Memory</h3>
+                  <h3 className="text-xl font-medium mb-2">DukiAI Memory</h3>
                   <p className="text-sm text-muted-foreground mb-3">
                     Phiên bản 1.0.0
                   </p>
@@ -483,7 +483,7 @@ export function ProfileScreen() {
                 <div className="p-5 text-center">
                   <p className="text-xs text-muted-foreground/60 leading-relaxed">
                     Được xây dựng với ❤️<br />
-                    © 2025 AI Living Memory
+                    © 2025 DukiAI Memory
                   </p>
                 </div>
               </div>

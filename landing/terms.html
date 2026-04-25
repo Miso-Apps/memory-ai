@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DukiAI Memory Terms of Service</title>
+    <meta name="description" content="Terms of service for DukiAI Memory." />
+    <style>
+        :root {
+            --bg: #f7f7fb;
+            --surface: #ffffff;
+            --text: #1f2430;
+            --muted: #566074;
+            --border: #e5e7ef;
+            --accent: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: radial-gradient(circle at 20% 0%, #eef0ff 0%, var(--bg) 45%);
+            color: var(--text);
+            line-height: 1.65;
+        }
+
+        .wrap {
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            font-size: 14px;
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .lang-btn {
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 26px 24px;
+            box-shadow: 0 8px 26px rgba(31, 36, 48, 0.06);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 32px;
+            line-height: 1.15;
+        }
+
+        .meta {
+            margin: 0 0 18px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        h2 {
+            margin-top: 24px;
+            margin-bottom: 8px;
+            font-size: 20px;
+            line-height: 1.3;
+        }
+
+        p {
+            margin: 0 0 10px;
+        }
+
+        ul {
+            margin: 0 0 10px;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .footer-links {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .footer-links a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="topbar">
+            <a class="brand" href="/">DukiAI Memory</a>
+            <button id="lang-switcher" class="lang-btn" type="button">VI</button>
+        </div>
+
+        <article class="card">
+            <h1 data-i18n="title">Terms of Service</h1>
+            <p class="meta" data-i18n="meta">Effective date: April 25, 2026</p>
+
+            <p data-i18n="intro">
+                These terms govern your use of DukiAI Memory apps and related services. By using the service, you agree
+                to
+                these terms.
+            </p>
+
+            <h2 data-i18n="sec1.title">1. Service Scope</h2>
+            <p data-i18n="sec1.body">
+                DukiAI Memory provides tools to capture, organize, search, and recall personal memories using
+                AI-assisted
+                features.
+            </p>
+
+            <h2 data-i18n="sec2.title">2. Accounts</h2>
+            <ul>
+                <li data-i18n="sec2.item1">You are responsible for your account credentials and activity under your
+                    account.</li>
+                <li data-i18n="sec2.item2">You must provide accurate information and keep your contact details updated.
+                </li>
+            </ul>
+
+            <h2 data-i18n="sec3.title">3. Acceptable Use</h2>
+            <ul>
+                <li data-i18n="sec3.item1">Do not use the service for unlawful, abusive, or harmful activity.</li>
+                <li data-i18n="sec3.item2">Do not attempt to disrupt infrastructure, bypass security, or scrape private
+                    data.</li>
+            </ul>
+
+            <h2 data-i18n="sec4.title">4. Your Content</h2>
+            <p data-i18n="sec4.body">
+                You retain ownership of your content. You grant us the minimum rights required to operate and secure the
+                service for you.
+            </p>
+
+            <h2 data-i18n="sec5.title">5. Availability and Changes</h2>
+            <p data-i18n="sec5.body">
+                We continuously improve the product and may update features, pricing, or terms over time. We may suspend
+                access
+                for maintenance, security, or legal reasons.
+            </p>
+
+            <h2 data-i18n="sec6.title">6. Limitation of Liability</h2>
+            <p data-i18n="sec6.body">
+                The service is provided on an "as is" basis to the extent permitted by law. We are not liable for
+                indirect,
+                incidental, or consequential damages.
+            </p>
+
+            <h2 data-i18n="sec7.title">7. Contact</h2>
+            <p data-i18n="sec7.body">
+                For legal questions, contact: support@memory-ai.app
+            </p>
+
+            <div class="footer-links">
+                <a href="/privacy" data-i18n="link.privacy">Privacy Policy</a>
+                <a href="/" data-i18n="link.home">Back to Home</a>
+            </div>
+        </article>
+    </div>
+
+    <script>
+        const translations = {
+            en: {
+                title: 'Terms of Service',
+                meta: 'Effective date: April 25, 2026',
+                intro: 'These terms govern your use of DukiAI Memory apps and related services. By using the service, you agree to these terms.',
+                'sec1.title': '1. Service Scope',
+                'sec1.body': 'DukiAI Memory provides tools to capture, organize, search, and recall personal memories using AI-assisted features.',
+                'sec2.title': '2. Accounts',
+                'sec2.item1': 'You are responsible for your account credentials and activity under your account.',
+                'sec2.item2': 'You must provide accurate information and keep your contact details updated.',
+                'sec3.title': '3. Acceptable Use',
+                'sec3.item1': 'Do not use the service for unlawful, abusive, or harmful activity.',
+                'sec3.item2': 'Do not attempt to disrupt infrastructure, bypass security, or scrape private data.',
+                'sec4.title': '4. Your Content',
+                'sec4.body': 'You retain ownership of your content. You grant us the minimum rights required to operate and secure the service for you.',
+                'sec5.title': '5. Availability and Changes',
+                'sec5.body': 'We continuously improve the product and may update features, pricing, or terms over time. We may suspend access for maintenance, security, or legal reasons.',
+                'sec6.title': '6. Limitation of Liability',
+                'sec6.body': 'The service is provided on an "as is" basis to the extent permitted by law. We are not liable for indirect, incidental, or consequential damages.',
+                'sec7.title': '7. Contact',
+                'sec7.body': 'For legal questions, contact: support@memory-ai.app',
+                'link.privacy': 'Privacy Policy',
+                'link.home': 'Back to Home'
+            },
+            vi: {
+                title: 'Điều Khoản Sử Dụng',
+                meta: 'Hiệu lực: 25/04/2026',
+                intro: 'Điều khoản này quy định việc bạn sử dụng ứng dụng DukiAI Memory và các dịch vụ liên quan. Khi sử dụng dịch vụ, bạn đồng ý với các điều khoản này.',
+                'sec1.title': '1. Phạm Vi Dịch Vụ',
+                'sec1.body': 'DukiAI Memory cung cấp công cụ để ghi nhanh, sắp xếp, tìm kiếm và gợi nhớ ký ức cá nhân với hỗ trợ AI.',
+                'sec2.title': '2. Tài Khoản',
+                'sec2.item1': 'Bạn chịu trách nhiệm với thông tin đăng nhập và mọi hoạt động trên tài khoản của mình.',
+                'sec2.item2': 'Bạn cần cung cấp thông tin chính xác và cập nhật thông tin liên hệ khi thay đổi.',
+                'sec3.title': '3. Sử Dụng Hợp Lệ',
+                'sec3.item1': 'Không sử dụng dịch vụ cho mục đích trái pháp luật, lạm dụng hoặc gây hại.',
+                'sec3.item2': 'Không cố gắng phá vỡ hạ tầng, vượt qua cơ chế bảo mật hoặc thu thập dữ liệu riêng tư trái phép.',
+                'sec4.title': '4. Nội Dung Của Bạn',
+                'sec4.body': 'Bạn vẫn sở hữu nội dung của mình. Bạn cấp cho chúng tôi quyền tối thiểu cần thiết để vận hành và bảo mật dịch vụ cho bạn.',
+                'sec5.title': '5. Sẵn Sàng Dịch Vụ và Cập Nhật',
+                'sec5.body': 'Chúng tôi liên tục cải tiến sản phẩm và có thể cập nhật tính năng, giá hoặc điều khoản theo thời gian. Chúng tôi có thể tạm dừng để bảo trì, bảo mật hoặc vì yêu cầu pháp lý.',
+                'sec6.title': '6. Giới Hạn Trách Nhiệm',
+                'sec6.body': 'Dịch vụ được cung cấp theo nguyên tắc "nguyên trạng" trong phạm vi pháp luật cho phép. Chúng tôi không chịu trách nhiệm với thiệt hại gián tiếp, ngẫu nhiên hoặc hệ quả.',
+                'sec7.title': '7. Liên Hệ',
+                'sec7.body': 'Cho các câu hỏi pháp lý, vui lòng liên hệ: support@memory-ai.app',
+                'link.privacy': 'Chính Sách Bảo Mật',
+                'link.home': 'Về Trang Chủ'
+            }
+        };
+
+        const savedLang = localStorage.getItem('memory-ai-lang');
+        let lang = savedLang || ((navigator.language || '').toLowerCase().startsWith('vi') ? 'vi' : 'en');
+
+        function applyLanguage(nextLang) {
+            lang = nextLang;
+            localStorage.setItem('memory-ai-lang', nextLang);
+            document.documentElement.lang = nextLang === 'vi' ? 'vi' : 'en';
+            document.getElementById('lang-switcher').textContent = nextLang === 'vi' ? 'EN' : 'VI';
+
+            document.querySelectorAll('[data-i18n]').forEach((el) => {
+                const key = el.getAttribute('data-i18n');
+                const value = translations[nextLang][key];
+                if (value) el.textContent = value;
+            });
+        }
+
+        document.getElementById('lang-switcher').addEventListener('click', () => {
+            applyLanguage(lang === 'en' ? 'vi' : 'en');
+        });
+
+        if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            const privacyLink = document.querySelector('a[href="/privacy"]');
+            const homeLink = document.querySelector('a[href="/"]');
+            if (privacyLink) privacyLink.setAttribute('href', '/privacy.html');
+            if (homeLink) homeLink.setAttribute('href', '/index.html');
+        }
+
+        applyLanguage(lang);
+    </script>
+</body>
+
+</html>

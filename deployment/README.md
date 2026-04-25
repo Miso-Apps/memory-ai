@@ -155,6 +155,8 @@ The script will:
 5. Start MinIO and create the `memories` bucket
 6. Bring up the full stack (`docker compose up -d`)
 
+If SSL bootstrap or migrations fail, the script aborts immediately so an invalid deployment state is not shipped.
+
 > **⚠️ SSL Bootstrap Issue** — If Nginx crashes on first run with
 > `cannot load certificate … fullchain.pem: No such file or directory`,
 > the cert doesn't exist yet and Nginx can't start to serve the ACME challenge.
@@ -338,6 +340,14 @@ eas init --id YOUR_EXPO_PROJECT_ID
 2. Bundle ID: `com.dukiai.app`, Name: **DukiAI Memory**, Primary language.
 3. Save — note the **Apple ID** number (10 digits).
 
+**Legal links readiness (required before App Review):**
+- Ensure the in-app Privacy Policy and Terms URLs are reachable and return `200`.
+- Quick check:
+```bash
+curl -L -s -o /dev/null -w '%{http_code}\n' https://your-domain/privacy
+curl -L -s -o /dev/null -w '%{http_code}\n' https://your-domain/terms
+```
+
 **Set the API base URL** via Expo public env (read by `mobile/app.config.ts`):
 ```bash
 cd mobile
@@ -487,6 +497,40 @@ const STORE_URLS = {
 ```
 
 Commit and push — Netlify auto-deploys in ~30 seconds.
+
+### 12c.1 Legal pages for mobile review
+
+Keep these pages live on the same domain used in mobile settings:
+- `/privacy`
+- `/terms`
+
+Current project files:
+- `landing/privacy.html`
+- `landing/terms.html`
+
+Quick verification:
+```bash
+curl -L -s -o /dev/null -w '%{http_code}\n' https://dukiai.com/privacy
+curl -L -s -o /dev/null -w '%{http_code}\n' https://dukiai.com/terms
+```
+
+### 12c.2 Access legal pages in local deployment
+
+For local testing, serve the `landing/` folder directly:
+
+```bash
+cd landing
+python3 -m http.server 8080
+```
+
+Then open:
+- `http://localhost:8080/index.html`
+- `http://localhost:8080/privacy.html`
+- `http://localhost:8080/terms.html`
+
+Notes:
+- The production paths are `/privacy` and `/terms`.
+- In localhost mode, the page script rewrites those links to `/privacy.html` and `/terms.html` automatically.
 
 ### 12d. Preview deploys
 

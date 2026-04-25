@@ -133,7 +133,14 @@ const vi = {
     terms: 'Điều khoản sử dụng',
     privacyPolicy: 'Chính sách bảo mật',
     contactSupport: 'Liên hệ hỗ trợ',
-    credits: 'Được xây dựng với ❤️\n© 2025 AI Living Memory',
+    supportFallbackTitle: 'Liên hệ hỗ trợ',
+    supportFallbackMessage: 'Thiết bị chưa có ứng dụng email mặc định. Bạn có thể liên hệ qua {{email}}.',
+    copySupportEmail: 'Sao chép email hỗ trợ',
+    supportCopiedTitle: 'Đã sao chép',
+    supportCopiedMessage: 'Đã sao chép email hỗ trợ vào bộ nhớ tạm.',
+    supportOpenError: 'Không thể mở tùy chọn hỗ trợ. Vui lòng thử lại.',
+    supportEmailBody: 'Vui lòng mô tả vấn đề của bạn bên dưới.',
+    credits: 'Được xây dựng với ❤️\n© 2025 DukiAI Memory',
   },
 
   // Home screen

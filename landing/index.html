@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Primary Meta Tags -->
-  <title>DukiAI Memory — Your Second Brain</title>
-  <meta name="title" content="DukiAI Memory — Your Second Brain" />
+  <title>DukiAI Memory — Your second brain, always with you</title>
+  <meta name="title" content="DukiAI Memory — Your second brain, always with you" />
   <meta name="description"
-    content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension." />
+    content="Capture text, links, voice, and photos. Review recall suggestions, ask AI across your memory archive, and track weekly insight trends. Available on iOS, Android, and Chrome." />
   <meta name="keywords"
     content="memory app, second brain, AI notes, voice memos, personal knowledge management, GPT-4, note taking, digital memory, thought capture, chrome extension" />
   <meta name="robots" content="index, follow" />
@@ -22,9 +22,9 @@
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://dukiai.com" />
-  <meta property="og:title" content="DukiAI Memory — Your Second Brain" />
+  <meta property="og:title" content="DukiAI Memory — Your second brain, always with you" />
   <meta property="og:description"
-    content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Now with a Chrome Extension." />
+    content="Capture text, links, voice, and photos. Review recall suggestions, ask AI across your memory archive, and track weekly insight trends. Now with a Chrome Extension." />
   <meta property="og:image" content="https://dukiai.com/og-image.jpg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
@@ -35,9 +35,9 @@
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://dukiai.com" />
-  <meta property="twitter:title" content="DukiAI Memory — Your Second Brain" />
+  <meta property="twitter:title" content="DukiAI Memory — Your second brain, always with you" />
   <meta property="twitter:description"
-    content="Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension." />
+    content="Capture text, links, voice, and photos. Review recall suggestions, ask AI across your memory archive, and track weekly insight trends. Available on iOS, Android, and Chrome." />
   <meta property="twitter:image" content="https://dukiai.com/twitter-image.jpg" />
 
   <!-- Favicon -->
@@ -47,8 +47,8 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 
   <!-- Theme Color -->
-  <meta name="theme-color" content="#6366F1" />
-  <meta name="msapplication-TileColor" content="#6366F1" />
+  <meta name="theme-color" content="#C2600A" />
+  <meta name="msapplication-TileColor" content="#C2600A" />
 
   <!-- Preconnect for Performance -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -74,16 +74,16 @@
       "ratingValue": "4.9",
       "ratingCount": "2847"
     },
-    "description": "Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it. Available on iOS, Android, and as a Chrome Extension.",
+    "description": "Capture text, links, voice, and photos. Review recall suggestions, ask AI across your memory archive, and track weekly insight trends. Available on iOS, Android, and Chrome.",
     "screenshot": "https://dukiai.com/screenshots/app-preview.jpg",
     "featureList": [
-      "Frictionless capture of thoughts, links, voice, and photos",
-      "Semantic search powered by AI",
-      "GPT-4 powered summaries and chat",
-      "Voice transcription with Whisper AI",
-      "Weekly insights and patterns",
+      "Capture text, links, voice, and photos in one flow",
+      "Recall feed and dismissed suggestions",
+      "GPT-powered summaries and memory chat",
+      "Voice transcription with Whisper",
+      "Weekly insights, streaks, and 4-week activity trends",
       "Chrome browser extension",
-      "Cross-platform sync"
+      "Decision replay workspace"
     ]
   }
   </script>
@@ -112,20 +112,20 @@
     }
 
     :root {
-      --bg: #FAFAF9;
-      --bg-alt: #F5F5F4;
+      --bg: #FBF7F2;
+      --bg-alt: #F5F0EA;
       --surface: #FFFFFF;
-      --border: rgba(0, 0, 0, 0.07);
-      --text: #1C1917;
-      --text-2: #57534E;
-      --text-3: #A8A29E;
-      --accent: #6366F1;
-      --accent-2: #8B5CF6;
-      --accent-3: #7C3AED;
-      --accent-glow: rgba(99, 102, 241, 0.25);
-      --accent-light: rgba(99, 102, 241, 0.08);
-      --success: #10B981;
-      --warning: #F59E0B;
+      --border: rgba(44, 24, 16, 0.12);
+      --text: #2C1810;
+      --text-2: #5A4035;
+      --text-3: #B89080;
+      --accent: #C2600A;
+      --accent-2: #E8844A;
+      --accent-3: #8B5E3C;
+      --accent-glow: rgba(194, 96, 10, 0.24);
+      --accent-light: rgba(194, 96, 10, 0.1);
+      --success: #059669;
+      --warning: #D97706;
       --radius: 20px;
       --radius-lg: 32px;
       --radius-full: 9999px;
@@ -255,7 +255,7 @@
       z-index: 100;
       backdrop-filter: blur(20px) saturate(1.5);
       -webkit-backdrop-filter: blur(20px) saturate(1.5);
-      background: rgba(250, 250, 249, 0.82);
+      background: rgba(251, 247, 242, 0.9);
       border-bottom: 1px solid var(--border);
     }
 
@@ -278,7 +278,7 @@
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -404,7 +404,7 @@
       height: 600px;
       left: -200px;
       top: -100px;
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.4) 0%, rgba(139, 92, 246, 0.2) 60%, transparent 100%);
+      background: radial-gradient(circle, rgba(194, 96, 10, 0.34) 0%, rgba(232, 132, 74, 0.17) 60%, transparent 100%);
     }
 
     .blob-2 {
@@ -412,7 +412,7 @@
       height: 500px;
       right: -150px;
       top: 50px;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.15) 60%, transparent 100%);
+      background: radial-gradient(circle, rgba(232, 132, 74, 0.27) 0%, rgba(184, 92, 32, 0.14) 60%, transparent 100%);
     }
 
     .blob-3 {
@@ -420,7 +420,7 @@
       height: 400px;
       left: 40%;
       bottom: -100px;
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(194, 96, 10, 0.18) 0%, transparent 70%);
     }
 
     .hero-inner {
@@ -449,7 +449,7 @@
       align-items: center;
       gap: 8px;
       background: var(--accent-light);
-      border: 1px solid rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(194, 96, 10, 0.24);
       color: var(--accent);
       border-radius: var(--radius-full);
       padding: 6px 14px;
@@ -477,7 +477,7 @@
     }
 
     .hero-h1 .gradient-text {
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, #EC4899 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, #B85C20 100%);
       background-size: 200% 200%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -739,7 +739,7 @@
 
     /* Phone screens content */
     .screen-home {
-      background: linear-gradient(180deg, #FAFAF9 0%, #F5F5F4 100%);
+      background: linear-gradient(180deg, #FBF7F2 0%, #F5F0EA 100%);
       padding: 52px 16px 16px;
     }
 
@@ -753,14 +753,14 @@
 
     .pscreen-greeting {
       font-size: 10px;
-      color: #9CA3AF;
+      color: #B89080;
       font-weight: 500;
     }
 
     .pscreen-title {
       font-size: 18px;
       font-weight: 700;
-      color: #1C1917;
+      color: #2C1810;
       margin-top: 2px;
     }
 
@@ -782,12 +782,12 @@
     .pscreen-stat-num {
       font-size: 16px;
       font-weight: 800;
-      color: #6366F1;
+      color: #C2600A;
     }
 
     .pscreen-stat-label {
       font-size: 9px;
-      color: #9CA3AF;
+      color: #B89080;
     }
 
     .pscreen-memory {
@@ -817,15 +817,15 @@
     }
 
     .type-text {
-      background: #EEF2FF;
+      background: #FFF3E8;
     }
 
     .type-voice {
-      background: #F0FDF4;
+      background: #FFE9D8;
     }
 
     .type-link {
-      background: #FFF7ED;
+      background: #FFF3E8;
     }
 
     .pscreen-memory-content {
@@ -836,7 +836,7 @@
 
     .pscreen-memory-time {
       font-size: 9px;
-      color: #9CA3AF;
+      color: #B89080;
       margin-top: 3px;
     }
 
@@ -845,34 +845,34 @@
       align-items: center;
       gap: 4px;
       margin-top: 6px;
-      background: #EEF2FF;
+      background: #FFF3E8;
       border-radius: 100px;
       padding: 2px 7px;
       font-size: 9px;
       font-weight: 600;
-      color: #6366F1;
+      color: #C2600A;
     }
 
     .screen-capture {
-      background: #FAFAF9;
+      background: #FBF7F2;
       padding: 52px 16px 16px;
     }
 
     .pscreen-capture-title {
       font-size: 16px;
       font-weight: 700;
-      color: #1C1917;
+      color: #2C1810;
       margin-bottom: 4px;
     }
 
     .pscreen-capture-sub {
       font-size: 10px;
-      color: #9CA3AF;
+      color: #B89080;
       margin-bottom: 16px;
     }
 
     .pscreen-input {
-      background: #F3F4F6;
+      background: #F5F0EA;
       border-radius: 12px;
       padding: 10px 12px;
       margin-bottom: 12px;
@@ -888,7 +888,7 @@
       display: inline-block;
       width: 1.5px;
       height: 11px;
-      background: #6366F1;
+      background: #C2600A;
       margin-left: 1px;
       vertical-align: text-bottom;
       animation: blink 1s ease infinite;
@@ -913,8 +913,8 @@
     }
 
     .pscreen-type-btn.active {
-      background: #6366F1;
-      border-color: #6366F1;
+      background: #C2600A;
+      border-color: #C2600A;
     }
 
     .pscreen-type-btn-icon {
@@ -924,7 +924,7 @@
     .pscreen-type-btn-label {
       font-size: 8px;
       font-weight: 600;
-      color: #9CA3AF;
+      color: #B89080;
     }
 
     .pscreen-type-btn.active .pscreen-type-btn-label {
@@ -932,12 +932,12 @@
     }
 
     .screen-search {
-      background: #FAFAF9;
+      background: #FBF7F2;
       padding: 52px 16px 16px;
     }
 
     .pscreen-search-bar {
-      background: #F3F4F6;
+      background: #F5F0EA;
       border-radius: 10px;
       padding: 9px 12px;
       margin-bottom: 12px;
@@ -952,7 +952,7 @@
 
     .pscreen-search-text {
       font-size: 10px;
-      color: #9CA3AF;
+      color: #B89080;
     }
 
     .pscreen-result {
@@ -972,13 +972,13 @@
 
     .pscreen-result-meta {
       font-size: 9px;
-      color: #9CA3AF;
+      color: #B89080;
       margin-top: 3px;
     }
 
     .pscreen-ai-insight {
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.08));
-      border: 1px solid rgba(99, 102, 241, 0.2);
+      background: linear-gradient(135deg, rgba(194, 96, 10, 0.1), rgba(232, 132, 74, 0.08));
+      border: 1px solid rgba(194, 96, 10, 0.2);
       border-radius: 12px;
       padding: 10px 12px;
       margin-top: 10px;
@@ -987,7 +987,7 @@
     .pscreen-ai-insight-title {
       font-size: 10px;
       font-weight: 700;
-      color: #6366F1;
+      color: #C2600A;
       margin-bottom: 4px;
     }
 
@@ -1101,7 +1101,7 @@
       position: absolute;
       inset: 0;
       opacity: 0;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.04) 0%, transparent 60%);
+      background: linear-gradient(135deg, rgba(194, 96, 10, 0.05) 0%, transparent 60%);
       transition: opacity .25s;
     }
 
@@ -1126,11 +1126,11 @@
     }
 
     .feature-icon-purple {
-      background: rgba(99, 102, 241, 0.1);
+      background: rgba(194, 96, 10, 0.1);
     }
 
     .feature-icon-indigo {
-      background: rgba(139, 92, 246, 0.1);
+      background: rgba(232, 132, 74, 0.12);
     }
 
     .feature-icon-green {
@@ -1142,15 +1142,15 @@
     }
 
     .feature-icon-pink {
-      background: rgba(236, 72, 153, 0.1);
+      background: rgba(184, 92, 32, 0.11);
     }
 
     .feature-icon-blue {
-      background: rgba(59, 130, 246, 0.1);
+      background: rgba(194, 96, 10, 0.11);
     }
 
     .feature-icon-chrome {
-      background: rgba(99, 102, 241, 0.08);
+      background: rgba(194, 96, 10, 0.09);
     }
 
     .feature-title {
@@ -1488,19 +1488,19 @@
     }
 
     .hm-1 {
-      background: rgba(99, 102, 241, .2);
+      background: rgba(194, 96, 10, .2);
     }
 
     .hm-2 {
-      background: rgba(99, 102, 241, .4);
+      background: rgba(194, 96, 10, .4);
     }
 
     .hm-3 {
-      background: rgba(99, 102, 241, .65);
+      background: rgba(194, 96, 10, .65);
     }
 
     .hm-4 {
-      background: #6366F1;
+      background: #C2600A;
     }
 
     /* Insights cards */
@@ -1603,7 +1603,7 @@
 
     /* ─── AI SECTION ────────────────────────────────── */
     .ai-section {
-      background: linear-gradient(135deg, #0F0F23 0%, #1A0A2E 50%, #0A0A1A 100%);
+      background: linear-gradient(135deg, #1C1108 0%, #2A170B 50%, #140D08 100%);
       padding: 100px 0;
       position: relative;
       overflow: hidden;
@@ -1617,7 +1617,7 @@
     .ai-bg-dots {
       position: absolute;
       inset: 0;
-      background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+      background-image: radial-gradient(rgba(194, 96, 10, 0.18) 1px, transparent 1px);
       background-size: 32px 32px;
       pointer-events: none;
     }
@@ -1629,7 +1629,7 @@
       top: -200px;
       left: 50%;
       transform: translateX(-50%);
-      background: radial-gradient(circle, rgba(99, 102, 241, 0.2) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(194, 96, 10, 0.22) 0%, transparent 70%);
       pointer-events: none;
     }
 
@@ -1887,7 +1887,7 @@
     /* ─── FINAL CTA ─────────────────────────────────── */
     .final-cta {
       padding: 120px 0;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(139, 92, 246, 0.04) 50%, rgba(236, 72, 153, 0.03) 100%);
+      background: linear-gradient(135deg, rgba(194, 96, 10, 0.08) 0%, rgba(232, 132, 74, 0.06) 50%, rgba(184, 92, 32, 0.04) 100%);
       position: relative;
       overflow: hidden;
     }
@@ -1901,7 +1901,7 @@
     .final-cta-ring {
       position: absolute;
       border-radius: 50%;
-      border: 1px solid rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(194, 96, 10, 0.14);
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -1990,7 +1990,7 @@
 
     .footer-social-btn:hover {
       background: var(--accent-light);
-      border-color: rgba(99, 102, 241, 0.3);
+      border-color: rgba(194, 96, 10, 0.32);
     }
 
     .footer-col-title {
@@ -2083,7 +2083,8 @@
           <div class="nav-logo-icon">
             <svg viewBox="0 0 24 24">
               <!-- Brain: symmetric two-lobe outline -->
-              <path d="M12 15.8 C10.9 16.9 9.4 16.5 9 16.1 C5.6 15.4 3.4 13.1 3.4 10.5 C3.4 7.5 5.6 5.3 8.6 5.3 C9.4 4.9 10.1 4.9 10.9 5.3 C11.3 4.5 11.6 4.1 12 4.1 C12.4 4.1 12.8 4.5 13.1 5.3 C13.9 4.9 14.6 4.9 15.4 5.3 C18.4 5.3 20.6 7.5 20.6 10.5 C20.6 13.1 18.4 15.4 15 16.1 C14.6 16.5 13.1 16.9 12 15.8 Z" />
+              <path
+                d="M12 15.8 C10.9 16.9 9.4 16.5 9 16.1 C5.6 15.4 3.4 13.1 3.4 10.5 C3.4 7.5 5.6 5.3 8.6 5.3 C9.4 4.9 10.1 4.9 10.9 5.3 C11.3 4.5 11.6 4.1 12 4.1 C12.4 4.1 12.8 4.5 13.1 5.3 C13.9 4.9 14.6 4.9 15.4 5.3 C18.4 5.3 20.6 7.5 20.6 10.5 C20.6 13.1 18.4 15.4 15 16.1 C14.6 16.5 13.1 16.9 12 15.8 Z" />
               <!-- Neural nodes -->
               <circle cx="8" cy="10.5" r="1.2" style="fill:white;stroke:none" />
               <circle cx="16" cy="10.5" r="1.2" style="fill:white;stroke:none" />
@@ -2133,7 +2134,7 @@
             <span data-i18n="hero.title.line3">always with you.</span>
           </h1>
           <p class="hero-sub" data-i18n="hero.subtitle">
-            Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it.
+            Save in seconds. Revisit in Recall. Ask AI when you need context from your past notes.
           </p>
           <div class="hero-actions">
             <a href="#download" class="store-btn" data-store="appStore">
@@ -2166,9 +2167,9 @@
             <div class="hero-social-stars">
               <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
             </div>
-            <p class="hero-social-text"><strong>4.9/5</strong> from early users</p>
+            <p class="hero-social-text" data-i18n="hero.socialPrimary"><strong>Capture • Recall • Ask AI</strong></p>
             <div class="hero-social-divider"></div>
-            <p class="hero-social-text"><strong>Free</strong> to download</p>
+            <p class="hero-social-text" data-i18n="hero.socialSecondary"><strong>iOS · Android · Chrome</strong></p>
           </div>
         </div>
 
@@ -2278,6 +2279,10 @@
                     <span class="pscreen-type-btn-icon">🎤</span>
                     <span class="pscreen-type-btn-label">Voice</span>
                   </div>
+                  <div class="pscreen-type-btn">
+                    <span class="pscreen-type-btn-icon">📷</span>
+                    <span class="pscreen-type-btn-label">Photo</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2320,9 +2325,8 @@
       <div class="section-header-center reveal">
         <div class="section-label" data-i18n="features.label">✦ Everything you need</div>
         <h2 class="section-title" data-i18n="features.title">Built for how<br>you actually think</h2>
-        <p class="section-sub" data-i18n="features.subtitle">Not a note-taking app. Not a to-do list. DukiAI Memory is your
-          trusted companion that
-          remembers so you don't have to.</p>
+        <p class="section-sub" data-i18n="features.subtitle">Saving is central. Forgetting is normal. DukiAI Memory helps
+          you capture fast and recall with context.</p>
       </div>
       <div class="features-grid">
         <div class="feature-card reveal reveal-delay-1">
@@ -2344,9 +2348,8 @@
         <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon feature-icon-green">💡</div>
           <div class="feature-title" data-i18n="feature3.title">Proactive Recall</div>
-          <p class="feature-desc" data-i18n="feature3.desc">DukiAI Memory surfaces relevant memories at the right moment. No
-            digging — it appears when
-            a past thought becomes relevant again.</p>
+          <p class="feature-desc" data-i18n="feature3.desc">Recall shows suggestions when your old notes become relevant.
+            Review, dismiss, and reopen them whenever needed.</p>
           <span class="feature-tag" data-i18n="feature3.tag">Context-aware AI</span>
         </div>
         <div class="feature-card reveal reveal-delay-1">
@@ -2360,21 +2363,19 @@
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon feature-icon-pink">📊</div>
           <div class="feature-title" data-i18n="feature5.title">Weekly Insights</div>
-          <p class="feature-desc" data-i18n="feature5.desc">See patterns in your thinking with beautiful heatmaps, daily
-            streaks, and weekly
-            AI-generated recaps of what occupied your mind most.</p>
+          <p class="feature-desc" data-i18n="feature5.desc">Track 4-week activity, daily streaks, and weekly recap insights
+            so you can see where your attention is going.</p>
           <span class="feature-tag" data-i18n="feature5.tag">AI-generated recaps</span>
         </div>
         <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon feature-icon-blue">💬</div>
           <div class="feature-title" data-i18n="feature6.title">Ask Your Memories</div>
-          <p class="feature-desc" data-i18n="feature6.desc">Have a conversation with your past self. Chat with your
-            entire memory archive: "What
-            did I think about last month's meeting?" — answered instantly.</p>
+          <p class="feature-desc" data-i18n="feature6.desc">Ask questions across your archive and get grounded answers with
+            source references from your saved memories.</p>
           <span class="feature-tag" data-i18n="feature6.tag">GPT-4 powered chat</span>
         </div>
         <div class="feature-card reveal reveal-delay-1"
-          style="border-color:rgba(99,102,241,0.25);background:linear-gradient(135deg,rgba(99,102,241,0.03),var(--surface));">
+          style="border-color:rgba(194,96,10,0.25);background:linear-gradient(135deg,rgba(194,96,10,0.04),var(--surface));">
           <div class="feature-icon feature-icon-chrome">🧩</div>
           <div class="feature-title" data-i18n="feature7.title">Browser Extension</div>
           <p class="feature-desc" data-i18n="feature7.desc">Save anything from the web in one keystroke. <kbd
@@ -2384,11 +2385,10 @@
         </div>
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon feature-icon-purple">🔄</div>
-          <div class="feature-title" data-i18n="feature8.title">Cross-Platform Sync</div>
-          <p class="feature-desc" data-i18n="feature8.desc">Save on your phone, recall on your laptop, reflect on your
-            tablet. Everything syncs in
-            real time across mobile, web, and the browser extension.</p>
-          <span class="feature-tag" data-i18n="feature8.tag">Real-time everywhere</span>
+          <div class="feature-title" data-i18n="feature8.title">Decision Replay</div>
+          <p class="feature-desc" data-i18n="feature8.desc">Record a decision, expected outcome, and revisit date. Reflect
+            later to learn from what actually happened.</p>
+          <span class="feature-tag" data-i18n="feature8.tag">Reflect with context</span>
         </div>
       </div>
     </div>
@@ -2552,7 +2552,7 @@
                     Whisper transcription</div>
                 </div>
                 <div
-                  style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(139,92,246,0.04));border-radius:16px;padding:14px;text-align:center;border:1px solid rgba(99,102,241,0.2);">
+                  style="background:linear-gradient(135deg,rgba(194,96,10,0.08),rgba(232,132,74,0.05));border-radius:16px;padding:14px;text-align:center;border:1px solid rgba(194,96,10,0.2);">
                   <div style="font-size:22px;margin-bottom:8px;">🧩</div>
                   <div style="font-size:12px;font-weight:700;color:var(--accent);" data-i18n="bento4.extension">
                     Extension</div>
@@ -2566,7 +2566,7 @@
 
         <!-- Extension showcase -->
         <div class="bento-cell bento-5 reveal" id="extension"
-          style="border-color:rgba(99,102,241,0.2);background:linear-gradient(135deg,rgba(99,102,241,0.03) 0%,var(--surface) 50%);">
+          style="border-color:rgba(194,96,10,0.2);background:linear-gradient(135deg,rgba(194,96,10,0.04) 0%,var(--surface) 50%);">
           <div class="bento-content" style="flex-direction:row;align-items:center;gap:40px;flex-wrap:wrap;">
             <div style="flex:1;min-width:240px;">
               <div class="bento-label" data-i18n="bento5.label">🧩 Chrome Extension</div>
@@ -2645,7 +2645,7 @@
                     </div>
                     <span class="ext-pill-kbd">⌘⇧L</span>
                   </div>
-                  <div class="ext-pill" style="border-color:rgba(99,102,241,0.2);background:var(--accent-light);">
+                  <div class="ext-pill" style="border-color:rgba(194,96,10,0.2);background:var(--accent-light);">
                     <span class="ext-pill-icon">💬</span>
                     <div class="ext-pill-text">
                       <div class="ext-pill-title" data-i18n="bento5.pill4.title">Omnibox</div>
@@ -2706,7 +2706,7 @@
     <div class="container">
       <div class="ai-inner">
         <div class="reveal">
-          <div class="section-label" style="color:rgba(139,92,246,0.8);" data-i18n="ai.label">✦ AI under the hood</div>
+          <div class="section-label" style="color:rgba(232,132,74,0.9);" data-i18n="ai.label">✦ AI under the hood</div>
           <h2 class="ai-title" data-i18n="ai.title">Intelligence that<br>actually understands you</h2>
           <p class="ai-sub" data-i18n="ai.subtitle">Backed by OpenAI's most capable models, your memories are more than
             stored — they're
@@ -2725,7 +2725,7 @@
                 seconds, in any language</p>
             </div>
             <div class="ai-feature-item">
-              <div class="ai-feature-dot" style="background:#EC4899;"></div>
+              <div class="ai-feature-dot" style="background:#E8844A;"></div>
               <p class="ai-feature-text" data-i18n="ai.feature3"><strong>Vector embeddings</strong> — Semantic search
                 powered by
                 text-embedding-3-large and pgvector for near-instant recall</p>
@@ -2737,7 +2737,7 @@
                 word-by-word as the AI thinks</p>
             </div>
             <div class="ai-feature-item">
-              <div class="ai-feature-dot" style="background:#3B82F6;"></div>
+              <div class="ai-feature-dot" style="background:#B85C20;"></div>
               <p class="ai-feature-text" data-i18n="ai.feature5"><strong>Auto-categorization</strong> — Memories are
                 organized into topics
                 automatically, no manual tagging needed</p>
@@ -2770,7 +2770,7 @@
                 finding meaning in work.</span></div>
             <div class="ai-terminal-line"><span class="ai-terminal-cmd" style="color:rgba(255,255,255,.9);">You revisit
                 this every ~11 days. 💡</span></div>
-            <div class="ai-terminal-line" style="margin-top:12px;"><span style="color:rgba(99,102,241,.8);">▋</span>
+            <div class="ai-terminal-line" style="margin-top:12px;"><span style="color:rgba(194,96,10,.85);">▋</span>
             </div>
           </div>
         </div>
@@ -2784,7 +2784,8 @@
       <div class="section-header-center reveal">
         <div class="section-label" data-i18n="privacy.label">✦ Your data, your rules</div>
         <h2 class="section-title" data-i18n="privacy.title">Privacy isn't a feature —<br>it's the foundation</h2>
-        <p class="section-sub" data-i18n="privacy.subtitle">Your memories are deeply personal. We built DukiAI Memory with
+        <p class="section-sub" data-i18n="privacy.subtitle">Your memories are deeply personal. We built DukiAI Memory
+          with
           privacy at every layer, not as
           an afterthought.</p>
       </div>
@@ -2835,7 +2836,7 @@
             <p class="testimonial-quote">I've tried Notion, Apple Notes, Obsidian — nothing has come close to how
               naturally DukiAI Memory fits into my day. The proactive recall feature is like magic.</p>
             <div class="testimonial-author">
-              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6);">A</div>
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#C2600A,#E8844A);">A</div>
               <div>
                 <div class="testimonial-name">Alex Kim</div>
                 <div class="testimonial-handle">Product Designer, SF</div>
@@ -2847,7 +2848,7 @@
             <p class="testimonial-quote">I record 2-3 voice memos a day driving to work. Knowing Whisper automatically
               transcribes and makes them searchable completely changed how I capture ideas.</p>
             <div class="testimonial-author">
-              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#EC4899,#F43F5E);">M</div>
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#8B5E3C,#C2600A);">M</div>
               <div>
                 <div class="testimonial-name">Maya Patel</div>
                 <div class="testimonial-handle">Entrepreneur, London</div>
@@ -2859,7 +2860,7 @@
             <p class="testimonial-quote">The weekly insight recaps are surprisingly thoughtful. It told me I've been
               obsessing over one topic for 6 weeks. That awareness alone was worth downloading the app.</p>
             <div class="testimonial-author">
-              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#10B981,#059669);">T</div>
+              <div class="testimonial-avatar" style="background:linear-gradient(135deg,#E8844A,#B85C20);">T</div>
               <div>
                 <div class="testimonial-name">Tran Minh Duc</div>
                 <div class="testimonial-handle">Software Engineer, Hanoi</div>
@@ -2947,7 +2948,8 @@
             <div class="nav-logo-icon">
               <svg viewBox="0 0 24 24">
                 <!-- Brain: symmetric two-lobe outline -->
-                <path d="M12 15.8 C10.9 16.9 9.4 16.5 9 16.1 C5.6 15.4 3.4 13.1 3.4 10.5 C3.4 7.5 5.6 5.3 8.6 5.3 C9.4 4.9 10.1 4.9 10.9 5.3 C11.3 4.5 11.6 4.1 12 4.1 C12.4 4.1 12.8 4.5 13.1 5.3 C13.9 4.9 14.6 4.9 15.4 5.3 C18.4 5.3 20.6 7.5 20.6 10.5 C20.6 13.1 18.4 15.4 15 16.1 C14.6 16.5 13.1 16.9 12 15.8 Z" />
+                <path
+                  d="M12 15.8 C10.9 16.9 9.4 16.5 9 16.1 C5.6 15.4 3.4 13.1 3.4 10.5 C3.4 7.5 5.6 5.3 8.6 5.3 C9.4 4.9 10.1 4.9 10.9 5.3 C11.3 4.5 11.6 4.1 12 4.1 C12.4 4.1 12.8 4.5 13.1 5.3 C13.9 4.9 14.6 4.9 15.4 5.3 C18.4 5.3 20.6 7.5 20.6 10.5 C20.6 13.1 18.4 15.4 15 16.1 C14.6 16.5 13.1 16.9 12 15.8 Z" />
                 <!-- Neural nodes -->
                 <circle cx="8" cy="10.5" r="1.2" style="fill:white;stroke:none" />
                 <circle cx="16" cy="10.5" r="1.2" style="fill:white;stroke:none" />
@@ -2987,17 +2989,17 @@
           <p class="footer-col-title" data-i18n="footer.company">Company</p>
           <ul>
             <li><a href="#" data-i18n="footer.company.about">About</a></li>
-            <li><a href="#" data-i18n="footer.company.privacy">Privacy Policy</a></li>
-            <li><a href="#" data-i18n="footer.company.terms">Terms of Service</a></li>
-            <li><a href="#" data-i18n="footer.company.contact">Contact</a></li>
+            <li><a href="/privacy" data-i18n="footer.company.privacy">Privacy Policy</a></li>
+            <li><a href="/terms" data-i18n="footer.company.terms">Terms of Service</a></li>
+            <li><a href="mailto:support@memory-ai.app" data-i18n="footer.company.contact">Contact</a></li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
         <p data-i18n="footer.copyright">© 2026 DukiAI Memory. All rights reserved.</p>
         <div class="footer-bottom-links">
-          <a href="#" data-i18n="footer.links.privacy">Privacy</a>
-          <a href="#" data-i18n="footer.links.terms">Terms</a>
+          <a href="/privacy" data-i18n="footer.links.privacy">Privacy</a>
+          <a href="/terms" data-i18n="footer.links.terms">Terms</a>
           <a href="#" data-i18n="footer.links.cookies">Cookies</a>
         </div>
       </div>
@@ -3071,13 +3073,15 @@
         'hero.title.line1': 'Your',
         'hero.title.line2': 'second brain,',
         'hero.title.line3': 'always with you.',
-        'hero.subtitle': 'Capture every thought, link, and voice memo. Let AI surface what matters — right when you need it.',
+        'hero.subtitle': 'Save in seconds. Revisit in Recall. Ask AI when you need context from your past notes.',
         'hero.downloadOn': 'Download on the',
         'hero.appStore': 'App Store',
         'hero.getItOn': 'Get it on',
         'hero.googlePlay': 'Google Play',
         'hero.socialStars': '★ 4.9',
         'hero.socialText': '<strong>2,847 users</strong> love DukiAI Memory',
+        'hero.socialPrimary': '<strong>Capture • Recall • Ask AI</strong>',
+        'hero.socialSecondary': '<strong>iOS · Android · Chrome</strong>',
         'hero.or': 'or',
         'hero.installExtension': 'Install Chrome Extension',
         'trust.encrypted': 'End-to-end encrypted',
@@ -3088,7 +3092,7 @@
         'trust.multilingual': 'Multilingual',
         'features.label': '✦ Everything you need',
         'features.title': 'Built for how<br>you actually think',
-        'features.subtitle': 'Not a note-taking app. Not a to-do list. DukiAI Memory is your trusted companion that remembers so you don\'t have to.',
+        'features.subtitle': 'Saving is central. Forgetting is normal. DukiAI Memory helps you capture fast and recall with context.',
         'feature1.title': 'Frictionless Capture',
         'feature1.desc': 'Save a thought in under 3 seconds. Text, link, voice, or photo — DukiAI Memory detects your clipboard and suggests saving automatically.',
         'feature1.tag': 'Smart clipboard detection',
@@ -3096,23 +3100,23 @@
         'feature2.desc': 'Search by meaning, not exact keywords. "career anxiety" finds all your notes about job changes, goals, and financial worries — automatically.',
         'feature2.tag': 'Powered by pgvector',
         'feature3.title': 'Proactive Recall',
-        'feature3.desc': 'DukiAI Memory surfaces relevant memories at the right moment. No digging — it appears when a past thought becomes relevant again.',
+        'feature3.desc': 'Recall shows suggestions when your old notes become relevant. Review, dismiss, and reopen them whenever needed.',
         'feature3.tag': 'Context-aware AI',
         'feature4.title': 'Voice Memos',
         'feature4.desc': 'Record your thoughts hands-free. Automatic transcription by OpenAI Whisper turns every audio note into searchable text instantly.',
         'feature4.tag': 'Whisper transcription',
         'feature5.title': 'Weekly Insights',
-        'feature5.desc': 'See patterns in your thinking with beautiful heatmaps, daily streaks, and weekly AI-generated recaps of what occupied your mind most.',
+        'feature5.desc': 'Track 4-week activity, daily streaks, and weekly recap insights so you can see where your attention is going.',
         'feature5.tag': 'AI-generated recaps',
         'feature6.title': 'Ask Your Memories',
-        'feature6.desc': 'Have a conversation with your past self. Chat with your entire memory archive: "What did I think about last month\'s meeting?" — answered instantly.',
+        'feature6.desc': 'Ask questions across your archive and get grounded answers with source references from your saved memories.',
         'feature6.tag': 'GPT-4 powered chat',
         'feature7.title': 'Browser Extension',
         'feature7.desc': 'Save anything from the web in one keystroke. ⌘M opens Quick Capture. Save selected text, links, or the whole page — all synced instantly to your memory.',
         'feature7.tag': 'Chrome · ⌘M shortcut',
-        'feature8.title': 'Cross-Platform Sync',
-        'feature8.desc': 'Save on your phone, recall on your laptop, reflect on your tablet. Everything syncs in real time across mobile, web, and the browser extension.',
-        'feature8.tag': 'Real-time everywhere',
+        'feature8.title': 'Decision Replay',
+        'feature8.desc': 'Record a decision, expected outcome, and revisit date. Reflect later to learn from what actually happened.',
+        'feature8.tag': 'Reflect with context',
         'how.label': '✦ Simple by design',
         'how.title': 'Up and running<br>in 60 seconds',
         'how.subtitle': 'No complex setup. No tags or folders required. Just capture and let AI handle the rest.',
@@ -3201,7 +3205,7 @@
         'testimonials.title': 'People are remembering<br>more than ever',
         'cta.label': '✦ Start for free today',
         'cta.title': 'Stop forgetting what<br><span class="gradient-text">matters most.</span>',
-        'cta.subtitle': 'Join thousands of people who never lose a thought. Free to download, no credit card needed.',
+        'cta.subtitle': 'Start your personal memory system in minutes. Free to download, no credit card needed.',
         'cta.note': 'Free forever plan available · iOS 15+ · Android 8+ · Chrome Extension',
         'footer.tagline': 'Your trusted companion for capturing, recalling, and reflecting on what matters most to you.',
         'footer.copyright': '© 2026 DukiAI Memory. All rights reserved.'
@@ -3217,13 +3221,15 @@
         'hero.title.line1': 'Bộ não',
         'hero.title.line2': 'thứ hai,',
         'hero.title.line3': 'luôn ở bên bạn.',
-        'hero.subtitle': 'Ghi lại mọi suy nghĩ, liên kết và ghi âm. Để AI gợi lên những gì quan trọng — đúng khi bạn cần.',
+        'hero.subtitle': 'Lưu trong vài giây. Xem lại trong Recall. Hỏi AI khi bạn cần bối cảnh từ ghi chú cũ.',
         'hero.downloadOn': 'Tải về trên',
         'hero.appStore': 'App Store',
         'hero.getItOn': 'Tải về trên',
         'hero.googlePlay': 'Google Play',
         'hero.socialStars': '★ 4.9',
         'hero.socialText': '<strong>2,847 người dùng</strong> yêu thích DukiAI Memory',
+        'hero.socialPrimary': '<strong>Lưu • Nhắc • Hỏi AI</strong>',
+        'hero.socialSecondary': '<strong>iOS · Android · Chrome</strong>',
         'hero.or': 'hoặc',
         'hero.installExtension': 'Cài đặt Tiện ích Chrome',
         'trust.encrypted': 'Mã hóa đầu-cuối',
@@ -3234,7 +3240,7 @@
         'trust.multilingual': 'Đa ngôn ngữ',
         'features.label': '✦ Mọi thứ bạn cần',
         'features.title': 'Được xây dựng cho<br>cách bạn thực sự suy nghĩ',
-        'features.subtitle': 'Không phải ứng dụng ghi chú. Không phải danh sách công việc. DukiAI Memory là người bạn đồng hành đáng tin cậy, ghi nhớ thay bạn.',
+        'features.subtitle': 'Lưu giữ là trọng tâm. Quên là bình thường. DukiAI Memory giúp bạn lưu nhanh và xem lại có ngữ cảnh.',
         'feature1.title': 'Ghi Chép Dễ Dàng',
         'feature1.desc': 'Lưu suy nghĩ trong vòng 3 giây. Văn bản, liên kết, giọng nói hay ảnh — DukiAI Memory tự động phát hiện clipboard và gợi ý lưu.',
         'feature1.tag': 'Phát hiện clipboard thông minh',
@@ -3242,23 +3248,23 @@
         'feature2.desc': 'Tìm kiếm theo ý nghĩa, không phải từ khóa chính xác. "lo lắng nghề nghiệp" tìm thấy tất cả ghi chú về thay đổi công việc, mục tiêu và lo lắng tài chính — tự động.',
         'feature2.tag': 'Được hỗ trợ bởi pgvector',
         'feature3.title': 'Nhớ Lại Chủ Động',
-        'feature3.desc': 'DukiAI Memory gợi lên ký ức liên quan đúng lúc. Không cần tìm kiếm — nó xuất hiện khi suy nghĩ cũ trở nên liên quan trở lại.',
+        'feature3.desc': 'Recall gợi ý khi ghi chú cũ trở nên liên quan. Bạn có thể xem, bỏ qua hoặc mở lại bất cứ lúc nào.',
         'feature3.tag': 'AI nhận biết ngữ cảnh',
         'feature4.title': 'Ghi Âm Giọng Nói',
         'feature4.desc': 'Ghi lại suy nghĩ mà không cần dùng tay. OpenAI Whisper tự động chuyển đổi mọi ghi âm thành văn bản có thể tìm kiếm ngay lập tức.',
         'feature4.tag': 'Chuyển đổi Whisper',
         'feature5.title': 'Thông Tin Hàng Tuần',
-        'feature5.desc': 'Xem các mẫu trong suy nghĩ của bạn với bản đồ nhiệt đẹp, chuỗi ngày và bản tóm tắt hàng tuần do AI tạo ra về những gì bạn quan tâm nhất.',
+        'feature5.desc': 'Theo dõi hoạt động 4 tuần, chuỗi ngày và recap hàng tuần để thấy rõ bạn đang tập trung vào điều gì.',
         'feature5.tag': 'Tóm tắt do AI tạo',
         'feature6.title': 'Hỏi Ký Ức Của Bạn',
-        'feature6.desc': 'Trò chuyện với chính mình trong quá khứ. Chat với toàn bộ kho lưu trữ ký ức: "Tôi đã nghĩ gì về cuộc họp tháng trước?" — được trả lời ngay lập tức.',
+        'feature6.desc': 'Đặt câu hỏi trên toàn bộ kho ký ức và nhận câu trả lời có dẫn nguồn từ những gì bạn đã lưu.',
         'feature6.tag': 'Chat bằng GPT-4',
         'feature7.title': 'Tiện Ích Trình Duyệt',
         'feature7.desc': 'Lưu bất cứ thứ gì từ web chỉ bằng một phím. ⌘M mở Ghi Chép Nhanh. Lưu văn bản được chọn, liên kết hoặc toàn bộ trang — tất cả đồng bộ ngay lập tức.',
         'feature7.tag': 'Chrome · phím tắt ⌘M',
-        'feature8.title': 'Đồng Bộ Đa Nền Tảng',
-        'feature8.desc': 'Lưu trên điện thoại, nhớ lại trên laptop, suy ngẫm trên máy tính bảng. Mọi thứ đồng bộ theo thời gian thực trên di động, web và tiện ích trình duyệt.',
-        'feature8.tag': 'Thời gian thực mọi nơi',
+        'feature8.title': 'Nhật Ký Quyết Định',
+        'feature8.desc': 'Lưu quyết định, kết quả kỳ vọng và ngày xem lại. Phản tư sau đó để học từ kết quả thực tế.',
+        'feature8.tag': 'Phản tư theo ngữ cảnh',
         'how.label': '✦ Đơn giản theo thiết kế',
         'how.title': 'Bắt đầu sử dụng<br>trong 60 giây',
         'how.subtitle': 'Không cần cài đặt phức tạp. Không cần thẻ hoặc thư mục. Chỉ cần ghi lại và để AI xử lý phần còn lại.',
@@ -3347,7 +3353,7 @@
         'testimonials.title': 'Mọi người đang ghi nhớ<br>nhiều hơn bao giờ hết',
         'cta.label': '✦ Bắt đầu miễn phí hôm nay',
         'cta.title': 'Đừng quên những gì<br><span class="gradient-text">quan trọng nhất.</span>',
-        'cta.subtitle': 'Tham gia cùng hàng nghìn người không bao giờ đánh mất một suy nghĩ. Miễn phí tải về, không cần thẻ tín dụng.',
+        'cta.subtitle': 'Bắt đầu hệ thống ký ức cá nhân của bạn chỉ trong vài phút. Miễn phí tải về, không cần thẻ tín dụng.',
         'cta.note': 'Gói miễn phí vĩnh viễn · iOS 15+ · Android 8+ · Tiện ích Chrome',
         'footer.tagline': 'Người bạn đồng hành đáng tin cậy để ghi lại, nhớ lại và suy ngẫm về những gì quan trọng nhất với bạn.',
         'footer.copyright': '© 2026 DukiAI Memory. Tất cả quyền được bảo lưu.'
@@ -3405,8 +3411,21 @@
       setLanguage(newLang);
     });
 
+    function normalizeLocalLegalLinks() {
+      if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return;
+
+      document.querySelectorAll('a[href="/privacy"]').forEach((el) => {
+        el.setAttribute('href', '/privacy.html');
+      });
+
+      document.querySelectorAll('a[href="/terms"]').forEach((el) => {
+        el.setAttribute('href', '/terms.html');
+      });
+    }
+
     // Initialize language on page load
     setLanguage(currentLang);
+    normalizeLocalLegalLinks();
 
     // ── Mobile Swipe Functionality ──────────────────────────────────────────
     // Detect if device is mobile/tablet

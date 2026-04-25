@@ -134,7 +134,14 @@ const en = {
     terms: 'Terms of Service',
     privacyPolicy: 'Privacy Policy',
     contactSupport: 'Contact support',
-    credits: 'Built with ❤️\n© 2025 AI Living Memory',
+    supportFallbackTitle: 'Contact support',
+    supportFallbackMessage: 'No email app is available on this device. Reach us at {{email}}.',
+    copySupportEmail: 'Copy support email',
+    supportCopiedTitle: 'Copied',
+    supportCopiedMessage: 'Support email copied to clipboard.',
+    supportOpenError: 'Unable to open support options. Please try again.',
+    supportEmailBody: 'Please describe your issue below.',
+    credits: 'Built with ❤️\n© 2025 DukiAI Memory',
   },
 
   // Home screen

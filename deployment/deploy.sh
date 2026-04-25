@@ -68,7 +68,7 @@ if [[ "$INIT_MODE" == true ]]; then
         -d "$DOMAIN" \
         --email "${EMAIL_FROM:-admin@$DOMAIN}" \
         --agree-tos --no-eff-email \
-        || warn "Certbot failed — check DNS and try again. Continuing without SSL..."
+        || error "Certbot failed — check DNS and try again. Aborting init to avoid an invalid TLS setup."
 
     # Swap to full HTTPS config
     info "Reloading Nginx with HTTPS config..."
@@ -114,7 +114,7 @@ info "Bringing up all services..."
 $COMPOSE up -d --remove-orphans
 
 info "Running database migrations..."
-$COMPOSE exec -T api python migrate.py || warn "Migration failed — check logs with: docker compose logs api"
+$COMPOSE exec -T api python migrate.py || error "Migration failed — check logs with: docker compose logs api"
 
 info "Reloading Nginx..."
 $COMPOSE exec -T nginx nginx -s reload 2>/dev/null || true

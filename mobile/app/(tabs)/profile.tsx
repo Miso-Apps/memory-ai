@@ -18,6 +18,7 @@ import {
   Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ExpoClipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { memoriesApi, insightsApi, userApi } from '../../services/api';
@@ -51,6 +52,10 @@ import { useTheme, type ThemeMode } from '../../constants/ThemeContext';
 import type { ThemeColors } from '../../constants/ThemeContext';
 import type { SupportedLanguage } from '../../i18n';
 import { ScreenHeader } from '../../components/ScreenHeader';
+import { openSupportContact } from '../../utils/supportContact';
+
+const PRIVACY_POLICY_URL = 'https://dukiai.com/privacy';
+const TERMS_OF_SERVICE_URL = 'https://dukiai.com/terms';
 
 function BottomSheetModal({
   visible,
@@ -604,8 +609,32 @@ export default function ProfileScreen() {
     }
   };
 
-  const handleContactSupport = () => {
-    Linking.openURL('mailto:support@memory-ai.app?subject=Memory%20AI%20Support');
+  const handleContactSupport = async () => {
+    try {
+      await openSupportContact(
+        {
+          canOpenURL: Linking.canOpenURL,
+          openURL: Linking.openURL,
+          alert: Alert.alert,
+          copyText: ExpoClipboard.setStringAsync,
+        },
+        {
+          email: 'support@memory-ai.app',
+          subject: 'DukiAI Memory Support',
+          body: `${t('about.supportEmailBody')}\n\n- App: DukiAI Memory\n- Platform: ${Platform.OS}`,
+          text: {
+            fallbackTitle: t('about.supportFallbackTitle'),
+            fallbackMessage: t('about.supportFallbackMessage'),
+            copyEmail: t('about.copySupportEmail'),
+            copiedTitle: t('about.supportCopiedTitle'),
+            copiedMessage: t('about.supportCopiedMessage'),
+            cancel: t('common.cancel'),
+          },
+        },
+      );
+    } catch {
+      Alert.alert(t('common.error'), t('about.supportOpenError'));
+    }
   };
 
   const handleLanguageSelect = async (lang: SupportedLanguage) => {
@@ -796,8 +825,8 @@ export default function ProfileScreen() {
       {/* Account Modal */}
       <BottomSheetModal visible={activeModal === 'account'} onClose={closeAccountModal} title={
         accountSubView === 'changeEmail' ? t('account.changeEmailTitle') :
-        accountSubView === 'changePassword' ? t('account.changePasswordTitle') :
-        t('account.title')
+          accountSubView === 'changePassword' ? t('account.changePasswordTitle') :
+            t('account.title')
       }>
         {accountSubView === 'main' && (
           <>
@@ -973,7 +1002,7 @@ export default function ProfileScreen() {
         </View>
         <SectionDivider />
         <View style={m.section}>
-          <ExternalLinkButton label={t('privacy.privacyPolicy')} url="https://memoriai.app/privacy" />
+          <ExternalLinkButton label={t('privacy.privacyPolicy')} url={PRIVACY_POLICY_URL} />
         </View>
         <SectionDivider />
         <View style={m.section}>
@@ -987,7 +1016,7 @@ export default function ProfileScreen() {
       <BottomSheetModal visible={activeModal === 'about'} onClose={() => setActiveModal(null)} title={t('about.title')}>
         <View style={[m.section, m.centeredSection]}>
           <View style={[m.appIcon, { backgroundColor: colors.accentSubtle }]}><Sparkles size={40} color={colors.accent} strokeWidth={2} /></View>
-          <Text style={[m.appName, { color: colors.textPrimary }]}>AI Living Memory</Text>
+          <Text style={[m.appName, { color: colors.textPrimary }]}>DukiAI Memory</Text>
           <Text style={[m.appVersion, { color: colors.textMuted }]}>{t('about.version')}</Text>
           <Text style={[m.appDesc, { color: colors.textTertiary }]}>{t('about.description')}</Text>
         </View>
@@ -1002,8 +1031,8 @@ export default function ProfileScreen() {
         </View>
         <SectionDivider />
         <View style={[m.section, { gap: 10 }]}>
-          <ExternalLinkButton label={t('about.terms')} url="https://memoriai.app/terms" />
-          <ExternalLinkButton label={t('about.privacyPolicy')} url="https://memoriai.app/privacy" />
+          <ExternalLinkButton label={t('about.terms')} url={TERMS_OF_SERVICE_URL} />
+          <ExternalLinkButton label={t('about.privacyPolicy')} url={PRIVACY_POLICY_URL} />
         </View>
         <SectionDivider />
         <View style={m.section}>
